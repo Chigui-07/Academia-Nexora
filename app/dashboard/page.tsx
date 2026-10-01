@@ -1,5 +1,6 @@
 import AppShell from "@/components/AppShell";
 import DashboardWelcome from "@/components/DashboardWelcome";
+import DashboardStats from "@/components/DashboardStats";
 
 export default function DashboardPage() {
   return (
@@ -13,20 +14,7 @@ export default function DashboardPage() {
         <span className="stage-badge">🌱 Fundamentos · Año 1</span>
       </div>
 
-      <section className="stats-grid">
-        <article className="stat-card">
-          <div className="stat-label">Tareas pendientes</div>
-          <div className="stat-value">0</div>
-        </article>
-        <article className="stat-card">
-          <div className="stat-label">Promedio actual</div>
-          <div className="stat-value">—</div>
-        </article>
-        <article className="stat-card">
-          <div className="stat-label">Cursos activos</div>
-          <div className="stat-value">0</div>
-        </article>
-      </section>
+      <DashboardStats />
 
       <section className="dashboard-grid">
         <article className="panel">
