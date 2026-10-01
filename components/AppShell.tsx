@@ -9,6 +9,7 @@ import { supabase } from "@/lib/supabase";
 const studentNavItems = [
   ["🏠", "Inicio", "/dashboard"],
   ["📚", "Cursos", "/courses"],
+  ["🧠", "Diagnósticos", "/diagnostics"],
   ["📝", "Tareas", "/tasks"],
   ["📊", "Calificaciones", "/grades"],
   ["🏅", "Perfil", "/profile"],

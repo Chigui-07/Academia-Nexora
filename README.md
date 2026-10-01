@@ -6,9 +6,9 @@ La plataforma utiliza un sistema académico propio. Las materias continúan a lo
 
 ## 📌 Estado del proyecto
 
-**Fase actual:** v0.5 — Primer diagnóstico funcional de Matemática.
+**Fase actual:** v0.6 — Resultado e historial de diagnósticos.
 
-La interfaz está publicada mediante GitHub Pages y utiliza Supabase para autenticación y datos. Ya existen registro, confirmación por correo, inicio/cierre de sesión, perfiles, roles, onboarding, identidad académica, solicitudes persistentes de cursos, banco de diagnóstico de Matemática y la primera interfaz funcional para responderlo.
+La interfaz está publicada mediante GitHub Pages y utiliza Supabase para autenticación y datos. Ya existen registro, confirmación por correo, inicio/cierre de sesión, perfiles, roles, onboarding, identidad académica, solicitudes persistentes de cursos, banco de diagnóstico de Matemática, diagnóstico funcional y resultados persistentes.
 
 ## 🖥️ Interfaz actual
 
@@ -26,7 +26,7 @@ Incluye:
 - Solicitudes persistentes de cursos con grado/nivel, autoevaluación y diagnóstico opcional.
 - Recomendaciones básicas de cursos relacionados.
 - Cola y avisos privados de solicitudes para Administración.
-- Cursos, Tareas, Calificaciones, Perfil y Administración.
+- Menú con Inicio, Cursos, **Diagnósticos**, Tareas, Calificaciones, Perfil y Administración cuando corresponde.
 - Modo oscuro por defecto y modo claro opcional.
 
 ## 👤 Identidad académica
@@ -102,6 +102,33 @@ El banco de Matemática contiene **194 preguntas permanentes**:
 
 Las preguntas se dividen en grupos internos para que la selección sea equilibrada y no dependa de azar sin control.
 
+### Resultado de colocación
+
+Al terminar Matemática se genera automáticamente un resultado persistente. El cálculo utiliza un umbral de referencia del **70 %** para considerar dominado un nivel completo.
+
+El resultado guarda:
+
+- **ubicación estimada**: primer nivel que todavía necesita refuerzo;
+- nivel hasta el que existe una base dominada de forma consecutiva;
+- temas que el diagnóstico detectó como dominados;
+- temas que conviene reforzar;
+- resumen por nivel con respuestas, aciertos y porcentaje;
+- si el diagnóstico terminó normalmente o mediante **Mi límite**.
+
+Si todos los niveles alcanzan el criterio de dominio, la ubicación queda en Nivel 6 y se registra que la base del diagnóstico completo fue dominada.
+
+### Historial de Diagnósticos
+
+El menú principal incluye **🧠 Diagnósticos**. Esta sección funciona como una fotografía del punto de partida del estudiante:
+
+- muestra diagnósticos en progreso y permite continuarlos;
+- conserva permanentemente los resultados finalizados;
+- recuerda qué temas dominaba el usuario cuando comenzó;
+- recuerda qué temas necesitaba reforzar;
+- permite desplegar el detalle de cómo le fue en cada nivel.
+
+La idea es que, meses después, el estudiante pueda mirar el diagnóstico original y reconocer temas que antes no sabía o no recordaba y que ahora ya domina.
+
 ### Motor del diagnóstico
 
 Supabase contiene:
@@ -111,15 +138,10 @@ Supabase contiene:
 - `diagnostic_questions` — banco permanente;
 - `diagnostic_attempts` — intento único de cada estudiante por materia;
 - `diagnostic_attempt_questions` — preguntas sorteadas y orden fijo de cada intento;
-- `diagnostic_answers` — respuestas realizadas.
+- `diagnostic_answers` — respuestas realizadas;
+- `diagnostic_results` — fotografía persistente del resultado final.
 
-El motor dispone de RPC para:
-
-- iniciar o recuperar el intento único de Matemática;
-- obtener solamente las preguntas del nivel actual;
-- guardar respuestas al navegar;
-- guardar y continuar con **Siguiente**;
-- terminar mediante **Mi límite**.
+El motor dispone de RPC para iniciar o recuperar el intento, obtener preguntas del nivel actual, guardar respuestas, avanzar con **Siguiente** y finalizar con **Mi límite**. La creación del resultado ocurre dentro de la lógica segura de Supabase cuando el intento termina.
 
 ### Seguridad del diagnóstico
 
@@ -128,10 +150,8 @@ El motor dispone de RPC para:
 - Los RPC públicos se ejecutan como `SECURITY INVOKER`; las operaciones privilegiadas están aisladas fuera del esquema público expuesto.
 - El estudiante no tiene permisos directos para insertar/modificar intentos ni para escribir `is_correct`.
 - El estudiante tampoco puede consultar directamente `is_correct` durante la prueba.
-- RLS limita los intentos, preguntas seleccionadas y respuestas al usuario correspondiente.
-- Supabase Security Advisor se mantiene sin avisos después de estos cambios.
-
-Todavía falta construir el **resultado de colocación**, es decir, transformar las respuestas y el punto de `Mi límite` en una recomendación de nivel y temas a reforzar.
+- `diagnostic_results` permite al estudiante leer su propio resumen, pero no modificarlo.
+- RLS limita intentos, preguntas seleccionadas, respuestas y resultados al usuario correspondiente.
 
 ## 🌱 Formación esencial
 
@@ -225,10 +245,10 @@ Una cuenta puede tener varios roles: `student`, `teacher` y `admin`.
 
 ## 🚧 Próximos objetivos
 
-1. Crear el **resultado de colocación** del diagnóstico de Matemática.
-2. Probar el diagnóstico completo con la primera cuenta real.
-3. Convertir la cuenta principal en `student + teacher + admin`.
-4. Implementar el catálogo persistente de materias y asignaciones.
+1. Probar el diagnóstico completo y su resultado con la primera cuenta real.
+2. Convertir la cuenta principal en `student + teacher + admin`.
+3. Implementar el catálogo persistente de materias y asignaciones.
+4. Usar el resultado del diagnóstico para decidir el primer tema de cada curso.
 5. Implementar Formación esencial.
 6. Crear clases, tareas, entregas y calificaciones reales.
 7. Añadir recuperación de contraseña.
@@ -285,11 +305,23 @@ Una cuenta puede tener varios roles: `student`, `teacher` y `admin`.
 - Se creó un acceso al diagnóstico desde la sección **Cursos** cuando existe una solicitud de Matemática con diagnóstico activado.
 - Se endurecieron permisos para que el frontend no pueda modificar directamente intentos ni consultar `is_correct`.
 - La lógica privilegiada quedó aislada de los RPC públicos.
-- Supabase Security Advisor volvió a quedar con **0 avisos**.
+
+## 1 de octubre de 2026 — v0.6: resultado e historial
+
+- Se creó `diagnostic_results` para conservar una fotografía permanente del diagnóstico inicial.
+- Se definió un criterio del **70 %** para considerar dominado un nivel completo.
+- El sistema calcula la primera zona que necesita refuerzo y la usa como ubicación estimada.
+- Se guardan temas dominados, temas a reforzar y un resumen por nivel.
+- El resultado se genera automáticamente tanto al completar los seis niveles como al pulsar **Mi límite**.
+- La pantalla final muestra la ubicación estimada y los temas detectados.
+- Se añadió **Diagnósticos** al menú principal.
+- La nueva sección permite revisar resultados antiguos y continuar intentos que siguen abiertos.
+- El diagnóstico completado desde Cursos ahora enlaza al historial en vez de quedar como un botón deshabilitado.
+- El estudiante puede leer su resultado, pero no modificarlo.
 
 ### Siguiente objetivo
 
-Calcular y mostrar el **resultado de colocación**: nivel estimado, habilidades dominadas y temas recomendados para comenzar.
+Probar el flujo completo con la primera cuenta real y utilizar el resultado para elegir automáticamente el primer contenido de Matemática.
 
 ---
 
