@@ -73,6 +73,7 @@ function formatDate(value: string | null) {
 
 export default function DiagnosticsPage() {
   const [items, setItems] = useState<DiagnosticItem[]>([]);
+  const [availableRequests, setAvailableRequests] = useState<CourseRequest[]>([]);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -101,7 +102,8 @@ export default function DiagnosticsPage() {
             .from("course_requests")
             .select("id, course_name, diagnostic_opt_in")
             .eq("user_id", session.user.id)
-            .eq("diagnostic_opt_in", true),
+            .eq("diagnostic_opt_in", true)
+            .order("created_at", { ascending: false }),
         ]);
 
         if (attemptResponse.error) throw attemptResponse.error;
@@ -114,7 +116,9 @@ export default function DiagnosticsPage() {
 
         const resultByAttempt = new Map(results.map((result) => [result.attempt_id, result]));
         const requestById = new Map(requests.map((request) => [request.id, request]));
+        const attemptedRequestIds = new Set(attempts.map((attempt) => attempt.course_request_id));
 
+        setAvailableRequests(requests.filter((request) => !attemptedRequestIds.has(request.id)));
         setItems(
           attempts.map((attempt) => ({
             attempt,
@@ -135,6 +139,8 @@ export default function DiagnosticsPage() {
     loadDiagnostics();
   }, []);
 
+  const hasDiagnostics = availableRequests.length > 0 || items.length > 0;
+
   return (
     <AppShell>
       <div className="page-header">
@@ -142,7 +148,7 @@ export default function DiagnosticsPage() {
           <p className="eyebrow">Tu punto de partida</p>
           <h1>Diagnósticos</h1>
           <p>
-            Aquí queda guardado cómo estabas al comenzar cada materia, para que más adelante puedas recordar qué dominabas y qué necesitabas reforzar.
+            Aquí puedes iniciar diagnósticos disponibles, continuar los que dejaste en progreso y consultar permanentemente tus resultados anteriores.
           </p>
         </div>
       </div>
@@ -151,129 +157,167 @@ export default function DiagnosticsPage() {
         <div className="empty-state">Cargando tus diagnósticos...</div>
       ) : error ? (
         <div className="auth-message auth-error">{error}</div>
-      ) : items.length === 0 ? (
+      ) : !hasDiagnostics ? (
         <article className="panel">
           <div className={styles.emptyIcon}>🧠</div>
-          <h2>Aún no has comenzado ningún diagnóstico</h2>
+          <h2>No tienes diagnósticos disponibles todavía</h2>
           <p className="muted-copy">
-            Cuando realices el diagnóstico inicial de una materia, su resultado quedará guardado aquí de forma permanente.
+            Cuando solicites una materia que tenga diagnóstico inicial, aparecerá aquí. El diagnóstico es opcional y se realiza una sola vez.
           </p>
-          <button className="secondary-button" type="button" onClick={() => goTo("/courses/")}>
-            Ir a Cursos
+          <button className="secondary-button" type="button" onClick={() => goTo("/request-course/")}>
+            Solicitar un curso
           </button>
         </article>
       ) : (
-        <div className={styles.list}>
-          {items.map(({ attempt, courseName, result }) => {
-            const inProgress = attempt.status === "in_progress";
-            const masteredTopics = result?.mastered_topics ?? [];
-            const reinforceTopics = result?.reinforce_topics ?? [];
-            const levels = result?.level_summary ?? [];
+        <>
+          {availableRequests.length > 0 && (
+            <div className={styles.list} style={{ marginBottom: 18 }}>
+              {availableRequests.map((request) => {
+                const isMath = request.course_name.toLowerCase().includes("matem");
+                return (
+                  <article className={styles.card} key={request.id}>
+                    <div className={styles.cardHeader}>
+                      <div>
+                        <p className="eyebrow">Diagnóstico inicial</p>
+                        <h2>{request.course_name}</h2>
+                        <span className={styles.dateText}>Todavía no iniciado</span>
+                      </div>
+                      <span className={`${styles.status} ${styles.statusProgress}`}>Disponible</span>
+                    </div>
 
-            return (
-              <article className={styles.card} key={attempt.id}>
-                <div className={styles.cardHeader}>
-                  <div>
-                    <p className="eyebrow">Diagnóstico inicial</p>
-                    <h2>{courseName}</h2>
-                    <span className={styles.dateText}>
-                      {inProgress ? `Comenzado el ${formatDate(attempt.started_at)}` : `Realizado el ${formatDate(attempt.completed_at)}`}
+                    <div className={styles.progressPanel}>
+                      <div>
+                        <strong>Opcional · una sola vez</strong>
+                        <span>Sirve para encontrar desde qué temas conviene comenzar a enseñarte.</span>
+                      </div>
+                      {isMath && (
+                        <button
+                          className="primary-button"
+                          type="button"
+                          onClick={() => goTo(`/diagnostic/math/?request=${request.id}`)}
+                        >
+                          Comenzar diagnóstico
+                        </button>
+                      )}
+                    </div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
+
+          <div className={styles.list}>
+            {items.map(({ attempt, courseName, result }) => {
+              const inProgress = attempt.status === "in_progress";
+              const masteredTopics = result?.mastered_topics ?? [];
+              const reinforceTopics = result?.reinforce_topics ?? [];
+              const levels = result?.level_summary ?? [];
+
+              return (
+                <article className={styles.card} key={attempt.id}>
+                  <div className={styles.cardHeader}>
+                    <div>
+                      <p className="eyebrow">Diagnóstico inicial</p>
+                      <h2>{courseName}</h2>
+                      <span className={styles.dateText}>
+                        {inProgress ? `Comenzado el ${formatDate(attempt.started_at)}` : `Realizado el ${formatDate(attempt.completed_at)}`}
+                      </span>
+                    </div>
+                    <span className={`${styles.status} ${inProgress ? styles.statusProgress : styles.statusDone}`}>
+                      {inProgress ? "En progreso" : attempt.status === "limit_reached" ? "Mi límite" : "Finalizado"}
                     </span>
                   </div>
-                  <span className={`${styles.status} ${inProgress ? styles.statusProgress : styles.statusDone}`}>
-                    {inProgress ? "En progreso" : attempt.status === "limit_reached" ? "Mi límite" : "Finalizado"}
-                  </span>
-                </div>
 
-                {inProgress ? (
-                  <div className={styles.progressPanel}>
-                    <div>
-                      <strong>Nivel {attempt.current_level}</strong>
-                      <span>Tu intento sigue guardado. Continuarás con las mismas preguntas.</span>
-                    </div>
-                    {attempt.course_key === "matematica" && (
-                      <button
-                        className="primary-button"
-                        type="button"
-                        onClick={() => goTo(`/diagnostic/math/?request=${attempt.course_request_id}`)}
-                      >
-                        Continuar diagnóstico
-                      </button>
-                    )}
-                  </div>
-                ) : result ? (
-                  <>
-                    <div className={styles.placement}>
-                      <span className={styles.placementIcon}>📍</span>
+                  {inProgress ? (
+                    <div className={styles.progressPanel}>
                       <div>
-                        <small>Ubicación estimada al comenzar</small>
-                        <strong>Nivel {result.placement_level}: {result.placement_title}</strong>
-                        <p>
-                          {result.mastered_through_level === 6
-                            ? "Mostraste dominio de los seis niveles del diagnóstico."
-                            : result.mastered_through_level > 0
-                              ? `Tu base quedó dominada hasta el Nivel ${result.mastered_through_level}.`
-                              : "El diagnóstico recomendó comenzar reforzando desde las bases."}
-                        </p>
+                        <strong>Nivel {attempt.current_level}</strong>
+                        <span>Tu intento sigue guardado. Continuarás con las mismas preguntas.</span>
                       </div>
+                      {attempt.course_key === "matematica" && (
+                        <button
+                          className="primary-button"
+                          type="button"
+                          onClick={() => goTo(`/diagnostic/math/?request=${attempt.course_request_id}`)}
+                        >
+                          Continuar diagnóstico
+                        </button>
+                      )}
                     </div>
-
-                    <div className={styles.topicColumns}>
-                      <section>
-                        <h3>✅ Lo que dominabas</h3>
-                        {masteredTopics.length > 0 ? (
-                          <div className={styles.chips}>
-                            {masteredTopics.map((topic) => (
-                              <span className={styles.goodChip} key={`${topic.level}-${topic.key}`}>{topic.topic}</span>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className={styles.mutedSmall}>Todavía no había un tema confirmado como dominado.</p>
-                        )}
-                      </section>
-
-                      <section>
-                        <h3>📚 Lo que necesitabas reforzar</h3>
-                        {reinforceTopics.length > 0 ? (
-                          <div className={styles.chips}>
-                            {reinforceTopics.map((topic) => (
-                              <span className={styles.reinforceChip} key={`${topic.level}-${topic.key}`}>{topic.topic}</span>
-                            ))}
-                          </div>
-                        ) : (
-                          <p className={styles.mutedSmall}>No se detectaron temas de refuerzo dentro de lo que respondiste.</p>
-                        )}
-                      </section>
-                    </div>
-
-                    {levels.length > 0 && (
-                      <details className={styles.details}>
-                        <summary>Ver cómo te fue por nivel</summary>
-                        <div className={styles.levelList}>
-                          {levels
-                            .filter((level) => level.answered > 0)
-                            .map((level) => (
-                              <div className={styles.levelRow} key={level.level}>
-                                <div>
-                                  <strong>Nivel {level.level}: {level.title}</strong>
-                                  <span>{level.correct} correctas de {level.total} seleccionadas · {level.answered} respondidas</span>
-                                </div>
-                                <b>{level.percentage}%</b>
-                              </div>
-                            ))}
+                  ) : result ? (
+                    <>
+                      <div className={styles.placement}>
+                        <span className={styles.placementIcon}>📍</span>
+                        <div>
+                          <small>Ubicación estimada al comenzar</small>
+                          <strong>Nivel {result.placement_level}: {result.placement_title}</strong>
+                          <p>
+                            {result.mastered_through_level === 6
+                              ? "Mostraste dominio de los seis niveles del diagnóstico."
+                              : result.mastered_through_level > 0
+                                ? `Tu base quedó dominada hasta el Nivel ${result.mastered_through_level}.`
+                                : "El diagnóstico recomendó comenzar reforzando desde las bases."}
+                          </p>
                         </div>
-                      </details>
-                    )}
-                  </>
-                ) : (
-                  <div className="auth-message auth-error">
-                    El diagnóstico terminó, pero todavía no encontramos su resumen. Administración puede revisarlo.
-                  </div>
-                )}
-              </article>
-            );
-          })}
-        </div>
+                      </div>
+
+                      <div className={styles.topicColumns}>
+                        <section>
+                          <h3>✅ Lo que dominabas</h3>
+                          {masteredTopics.length > 0 ? (
+                            <div className={styles.chips}>
+                              {masteredTopics.map((topic) => (
+                                <span className={styles.goodChip} key={`${topic.level}-${topic.key}`}>{topic.topic}</span>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className={styles.mutedSmall}>Todavía no había un tema confirmado como dominado.</p>
+                          )}
+                        </section>
+
+                        <section>
+                          <h3>📚 Lo que necesitabas reforzar</h3>
+                          {reinforceTopics.length > 0 ? (
+                            <div className={styles.chips}>
+                              {reinforceTopics.map((topic) => (
+                                <span className={styles.reinforceChip} key={`${topic.level}-${topic.key}`}>{topic.topic}</span>
+                              ))}
+                            </div>
+                          ) : (
+                            <p className={styles.mutedSmall}>No se detectaron temas de refuerzo dentro de lo que respondiste.</p>
+                          )}
+                        </section>
+                      </div>
+
+                      {levels.length > 0 && (
+                        <details className={styles.details}>
+                          <summary>Ver cómo te fue por nivel</summary>
+                          <div className={styles.levelList}>
+                            {levels
+                              .filter((level) => level.answered > 0)
+                              .map((level) => (
+                                <div className={styles.levelRow} key={level.level}>
+                                  <div>
+                                    <strong>Nivel {level.level}: {level.title}</strong>
+                                    <span>{level.correct} correctas de {level.total} seleccionadas · {level.answered} respondidas</span>
+                                  </div>
+                                  <b>{level.percentage}%</b>
+                                </div>
+                              ))}
+                          </div>
+                        </details>
+                      )}
+                    </>
+                  ) : (
+                    <div className="auth-message auth-error">
+                      El diagnóstico terminó, pero todavía no encontramos su resumen. Administración puede revisarlo.
+                    </div>
+                  )}
+                </article>
+              );
+            })}
+          </div>
+        </>
       )}
     </AppShell>
   );
