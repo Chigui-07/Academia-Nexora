@@ -1,4 +1,5 @@
 import AppShell from "@/components/AppShell";
+import DashboardWelcome from "@/components/DashboardWelcome";
 
 export default function DashboardPage() {
   return (
@@ -6,7 +7,7 @@ export default function DashboardPage() {
       <div className="page-header">
         <div>
           <p className="eyebrow">Panel principal</p>
-          <h1>Hola, Chigui 👋</h1>
+          <DashboardWelcome />
           <p>Tu progreso académico empezará a aparecer aquí.</p>
         </div>
         <span className="stage-badge">🌱 Fundamentos · Año 1</span>
