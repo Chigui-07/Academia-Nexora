@@ -27,6 +27,35 @@ type SaveResult = {
   level_completed: boolean;
 };
 
+type TopicSummary = {
+  level: number;
+  key: string;
+  topic: string;
+  correct: number;
+  total: number;
+  limit_here?: boolean;
+};
+
+type LevelSummary = {
+  level: number;
+  title: string;
+  answered: number;
+  total: number;
+  correct: number;
+  percentage: number;
+  mastered: boolean;
+};
+
+type DiagnosticResult = {
+  final_status: "completed" | "limit_reached";
+  placement_level: number;
+  placement_title: string;
+  mastered_through_level: number;
+  mastered_topics: TopicSummary[];
+  reinforce_topics: TopicSummary[];
+  level_summary: LevelSummary[];
+};
+
 const levelTitles: Record<number, string> = {
   1: "Operaciones básicas",
   2: "Números, fracciones y decimales",
@@ -43,6 +72,7 @@ export default function MathDiagnosticPage() {
   const [questions, setQuestions] = useState<Question[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [result, setResult] = useState<DiagnosticResult | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [savedMessage, setSavedMessage] = useState<string | null>(null);
@@ -52,6 +82,17 @@ export default function MathDiagnosticPage() {
     () => questions.filter((question) => question.answered).length,
     [questions]
   );
+
+  async function loadResult(id: string) {
+    const { data, error: resultError } = await supabase
+      .from("diagnostic_results")
+      .select("final_status, placement_level, placement_title, mastered_through_level, mastered_topics, reinforce_topics, level_summary")
+      .eq("attempt_id", id)
+      .maybeSingle();
+
+    if (resultError) throw resultError;
+    setResult((data as DiagnosticResult | null) ?? null);
+  }
 
   async function loadQuestions(id: string) {
     const { data, error: loadError } = await supabase.rpc("get_math_diagnostic_questions", {
@@ -111,6 +152,8 @@ export default function MathDiagnosticPage() {
 
         if (attempt.status === "in_progress") {
           await loadQuestions(attempt.attempt_id);
+        } else if (attempt.status === "completed" || attempt.status === "limit_reached") {
+          await loadResult(attempt.attempt_id);
         }
       } catch (caughtError) {
         const raw = caughtError instanceof Error ? caughtError.message : "No se pudo abrir el diagnóstico.";
@@ -149,8 +192,8 @@ export default function MathDiagnosticPage() {
 
       if (saveError) throw saveError;
 
-      const result = data?.[0] as SaveResult | undefined;
-      if (!result) throw new Error("No se pudo guardar la respuesta.");
+      const saveResult = data?.[0] as SaveResult | undefined;
+      if (!saveResult) throw new Error("No se pudo guardar la respuesta.");
 
       if (mode !== "limit") {
         setQuestions((previous) =>
@@ -164,20 +207,23 @@ export default function MathDiagnosticPage() {
       }
 
       if (mode === "limit") {
-        setStatus(result.attempt_status);
-        return result;
+        setStatus(saveResult.attempt_status);
+        await loadResult(attemptId);
+        return saveResult;
       }
 
-      if (result.level_completed) {
-        setStatus(result.attempt_status);
-        setLevel(result.current_level);
+      if (saveResult.level_completed) {
+        setStatus(saveResult.attempt_status);
+        setLevel(saveResult.current_level);
 
-        if (result.attempt_status === "in_progress") {
+        if (saveResult.attempt_status === "in_progress") {
           await loadQuestions(attemptId);
+        } else if (saveResult.attempt_status === "completed") {
+          await loadResult(attemptId);
         }
       }
 
-      return result;
+      return saveResult;
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : "No se pudo guardar la respuesta.");
       return null;
@@ -206,8 +252,8 @@ export default function MathDiagnosticPage() {
     event.preventDefault();
     if (!currentQuestion || busy) return;
 
-    const result = await saveQuestion(currentQuestion, "next");
-    if (!result || result.level_completed) return;
+    const saveResult = await saveQuestion(currentQuestion, "next");
+    if (!saveResult || saveResult.level_completed) return;
 
     const updatedAnswered = questions.map((question, index) =>
       index === currentIndex ? true : question.answered
@@ -255,17 +301,88 @@ export default function MathDiagnosticPage() {
   }
 
   if (status === "completed" || status === "limit_reached") {
+    const masteredTopics = result?.mastered_topics ?? [];
+    const reinforceTopics = result?.reinforce_topics ?? [];
+    const attemptedLevels = (result?.level_summary ?? []).filter((item) => item.answered > 0);
+
     return (
       <AppShell>
         <div className={styles.finishedWrap}>
-          <article className={styles.finishedCard}>
-            <span className={styles.finishedIcon}>{status === "completed" ? "🏁" : "🧠"}</span>
-            <p className="eyebrow">Diagnóstico finalizado</p>
-            <h1>{status === "completed" ? "Completaste todos los niveles" : "Registramos tu límite actual"}</h1>
-            <p>
-              Tus respuestas quedaron guardadas. Este diagnóstico es de una sola vez y se utilizará para decidir desde qué punto conviene comenzar Matemática.
-            </p>
-            <button className="primary-button" type="button" onClick={() => goTo("/courses/")}>Volver a Cursos</button>
+          <article className={styles.resultCard}>
+            <div className={styles.resultHero}>
+              <span className={styles.finishedIcon}>{status === "completed" ? "🏁" : "🧠"}</span>
+              <p className="eyebrow">Diagnóstico finalizado</p>
+              {result ? (
+                <>
+                  <small className={styles.resultLabel}>Tu ubicación estimada al comenzar es</small>
+                  <h1>Nivel {result.placement_level}: {result.placement_title}</h1>
+                  <p>
+                    {result.mastered_through_level === 6
+                      ? "Mostraste dominio de los seis niveles incluidos en este diagnóstico."
+                      : result.mastered_through_level > 0
+                        ? `Tu base quedó dominada hasta el Nivel ${result.mastered_through_level}. Desde aquí podremos decidir qué reforzar antes de avanzar.`
+                        : "Conviene comenzar reforzando desde las bases para construir una mejor progresión en Matemática."}
+                  </p>
+                </>
+              ) : (
+                <>
+                  <h1>{status === "completed" ? "Completaste todos los niveles" : "Registramos tu límite actual"}</h1>
+                  <p>Tus respuestas quedaron guardadas y el resultado permanecerá disponible en Diagnósticos.</p>
+                </>
+              )}
+            </div>
+
+            {result && (
+              <>
+                <div className={styles.resultColumns}>
+                  <section>
+                    <h2>✅ Lo que dominabas</h2>
+                    {masteredTopics.length > 0 ? (
+                      <div className={styles.resultChips}>
+                        {masteredTopics.map((topic) => (
+                          <span className={styles.masteredChip} key={`${topic.level}-${topic.key}`}>{topic.topic}</span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className={styles.resultEmpty}>Aún no había un tema confirmado como dominado.</p>
+                    )}
+                  </section>
+
+                  <section>
+                    <h2>📚 Lo que conviene reforzar</h2>
+                    {reinforceTopics.length > 0 ? (
+                      <div className={styles.resultChips}>
+                        {reinforceTopics.map((topic) => (
+                          <span className={styles.reinforceChip} key={`${topic.level}-${topic.key}`}>{topic.topic}</span>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className={styles.resultEmpty}>No detectamos temas de refuerzo dentro de lo que respondiste.</p>
+                    )}
+                  </section>
+                </div>
+
+                {attemptedLevels.length > 0 && (
+                  <div className={styles.levelSummary}>
+                    <h2>Resumen por nivel</h2>
+                    {attemptedLevels.map((item) => (
+                      <div className={styles.levelSummaryRow} key={item.level}>
+                        <div>
+                          <strong>Nivel {item.level}: {item.title}</strong>
+                          <span>{item.correct} correctas · {item.answered} respondidas de {item.total}</span>
+                        </div>
+                        <b>{item.percentage}%</b>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+
+            <div className={styles.finishedActions}>
+              <button className="primary-button" type="button" onClick={() => goTo("/diagnostics/")}>Ver mis diagnósticos</button>
+              <button className="secondary-button" type="button" onClick={() => goTo("/courses/")}>Volver a Cursos</button>
+            </div>
           </article>
         </div>
       </AppShell>
