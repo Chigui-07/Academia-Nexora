@@ -1,8 +1,13 @@
 import Link from "next/link";
+import ThemeToggle from "../components/ThemeToggle";
 
 export default function LoginPage() {
   return (
     <main className="login-page">
+      <div className="login-theme-toggle">
+        <ThemeToggle />
+      </div>
+
       <section className="login-brand">
         <div className="logo-mark">
           <span className="logo-icon">N</span>
