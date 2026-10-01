@@ -10,7 +10,7 @@ export const metadata: Metadata = {
 const themeScript = `
   try {
     const saved = localStorage.getItem('nexora-theme');
-    const theme = saved || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    const theme = saved || 'dark';
     document.documentElement.dataset.theme = theme;
     document.documentElement.style.colorScheme = theme;
   } catch (_) {}
