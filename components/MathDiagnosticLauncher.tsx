@@ -60,7 +60,7 @@ export default function MathDiagnosticLauncher() {
 
   const finished = attempt?.status === "completed" || attempt?.status === "limit_reached";
   const label = finished
-    ? "Diagnóstico de Matemática completado"
+    ? "Ver resultado del diagnóstico"
     : attempt?.status === "in_progress"
       ? "Continuar diagnóstico de Matemática"
       : "Iniciar diagnóstico de Matemática";
@@ -84,8 +84,7 @@ export default function MathDiagnosticLauncher() {
       <button
         className={finished ? "secondary-button" : "primary-button"}
         type="button"
-        disabled={finished}
-        onClick={() => goTo(`/diagnostic/math/?request=${request.id}`)}
+        onClick={() => finished ? goTo("/diagnostics/") : goTo(`/diagnostic/math/?request=${request.id}`)}
       >
         {label}
       </button>
