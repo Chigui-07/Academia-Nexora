@@ -6,9 +6,9 @@ La plataforma tendrá un sistema académico propio. Las materias continúan a lo
 
 ## 📌 Estado del proyecto
 
-**Fase actual:** v0.3 — Bienvenida y elección de cursos.
+**Fase actual:** v0.3 — Bienvenida, identidad académica y elección de cursos.
 
-La interfaz está publicada mediante GitHub Pages y utiliza Supabase para autenticación y datos. Ya existe registro, confirmación por correo, inicio/cierre de sesión, perfiles, roles, onboarding y solicitudes persistentes de cursos.
+La interfaz está publicada mediante GitHub Pages y utiliza Supabase para autenticación y datos. Ya existe registro, confirmación por correo, inicio/cierre de sesión, perfiles, roles, onboarding, identidad académica y solicitudes persistentes de cursos.
 
 ## 🖥️ Interfaz actual
 
@@ -17,6 +17,8 @@ Incluye:
 - Inicio de sesión real.
 - Registro separado del login.
 - Nombre y apellido reales obligatorios durante el registro; no se usan apodos como identidad académica.
+- Nombre de usuario personal/decorativo, donde sí se permiten apodos o sobrenombres.
+- Carné Nexora único y permanente generado automáticamente para cada cuenta.
 - Reglas de Academia Nexora aceptadas durante el registro.
 - Confirmación de correo mediante Supabase Auth.
 - Sesión almacenada solo durante la sesión del navegador mediante `sessionStorage`.
@@ -37,8 +39,20 @@ Incluye:
 - **Cursos** — materias asignadas, solicitudes y recomendaciones.
 - **Tareas** — actividades disponibles según fecha y hora de apertura/cierre.
 - **Calificaciones** — notas por materia, bloque y promedio general.
-- **Perfil** — progreso, etapa, año, logros e insignias.
+- **Perfil** — identidad académica, progreso, etapa, año, logros e insignias.
 - **Administración** — herramientas de profesor/administrador; las solicitudes de cursos son exclusivas de administradores.
+
+## 👤 Identidad académica
+
+Cada usuario tiene tres elementos distintos:
+
+- **Nombre y apellido reales** — identidad académica usada en tareas, calificaciones, registros y espacios profesionales.
+- **Carné Nexora** — identificador académico único y permanente con formato similar a `NXR-26-4K7P`.
+- **Nombre de usuario** — elemento personal del perfil; puede ser un apodo o sobrenombre y no reemplaza la identidad académica.
+
+El carné se genera automáticamente al crear la cuenta. No puede ser modificado por el estudiante y no sirve como contraseña ni como método de inicio de sesión.
+
+En vistas administrativas se utiliza **nombre real + carné**, evitando depender del nombre de usuario para identificar correctamente a dos personas que puedan llamarse igual.
 
 ## 📚 Solicitudes de cursos
 
@@ -151,14 +165,15 @@ Academia Nexora usa **Supabase Auth**.
 Al registrarse un usuario:
 
 1. Debe escribir al menos un nombre y un apellido reales. Estos datos se guardan separados y se usan para su identidad académica.
-2. También elige un nombre de usuario para identificar su cuenta dentro de la plataforma.
+2. Elige un nombre de usuario único que puede ser un apodo o sobrenombre y se utiliza como personalización del perfil.
 3. Supabase gestiona su identidad y contraseña.
 4. Se crea automáticamente su registro en `profiles`.
-5. Se asigna automáticamente `student` en `user_roles`.
-6. Empieza en **Fundamentos · Año 1**.
-7. Su tema inicial es **dark**.
-8. Debe aceptar las reglas de Academia Nexora.
-9. Después de confirmar el correo completa la bienvenida y solicita su primer curso.
+5. Se genera automáticamente un **Carné Nexora** único y permanente.
+6. Se asigna automáticamente `student` en `user_roles`.
+7. Empieza en **Fundamentos · Año 1**.
+8. Su tema inicial es **dark**.
+9. Debe aceptar las reglas de Academia Nexora.
+10. Después de confirmar el correo completa la bienvenida y solicita su primer curso.
 
 Una cuenta puede tener varios roles: `student`, `teacher` y `admin`.
 
@@ -168,6 +183,7 @@ Una cuenta puede tener varios roles: `student`, `teacher` y `admin`.
 - Los estudiantes solo pueden consultar sus propias solicitudes y datos permitidos.
 - Las solicitudes de otros estudiantes y los avisos internos solo están disponibles para `admin`.
 - Los usuarios pueden consultar sus propios roles, pero no asignarse permisos elevados.
+- El carné académico no tiene permisos de edición para usuarios normales.
 - La web utiliza únicamente la **publishable key** de Supabase.
 - `service_role` y otras claves privadas no se incluyen en el frontend.
 - La Data API fue configurada sin exposición automática de tablas; los permisos del frontend se conceden explícitamente.
@@ -200,10 +216,10 @@ Está prevista una insignia especial al cumplir un año usando Academia Nexora, 
 
 ## 🚧 Próximos objetivos
 
-1. Probar la primera cuenta real de principio a fin.
+1. Probar la primera cuenta real de principio a fin, incluyendo generación del Carné Nexora.
 2. Convertir la cuenta principal en `student + teacher + admin`.
-3. Implementar el catálogo persistente de materias y asignaciones.
-4. Crear el contenido del primer diagnóstico real por materia.
+3. Implementar los primeros **ejercicios de prueba** y el flujo del diagnóstico real.
+4. Implementar el catálogo persistente de materias y asignaciones.
 5. Implementar los cursos de Formación esencial de los primeros 365 días.
 6. Crear clases, tareas, entregas y calificaciones reales.
 7. Añadir recuperación de contraseña.
@@ -227,12 +243,18 @@ Está prevista una insignia especial al cumplir un año usando Academia Nexora, 
 - Se crearon `profiles` y `user_roles` con RLS.
 - Se añadió registro, login, sesión, cierre de sesión y roles.
 
-## 1 de octubre de 2026 — v0.3: onboarding y solicitudes
+## 1 de octubre de 2026 — v0.3: onboarding, identidad y solicitudes
 
 - Se separó formalmente el flujo de Login y Registro.
 - Se incorporaron las reglas de Academia Nexora al registro y se guarda su aceptación.
 - Se estableció como obligatorio registrar **nombre y apellido reales**, dejando los apodos fuera de la identidad académica.
 - Se añadieron `first_name` y `last_name` a `profiles` y el nombre mostrado se construye automáticamente con ambos.
+- Se redefinió el **nombre de usuario** como elemento personal/decorativo; puede contener apodos o sobrenombres.
+- Se añadió `student_code` a `profiles` como Carné Nexora único y permanente.
+- El carné se genera automáticamente con formato `NXR-AA-XXXX`, donde `AA` representa el año de registro.
+- Se bloqueó la edición del carné para usuarios normales.
+- El perfil muestra nombre académico, carné y nombre de usuario como conceptos separados.
+- Las vistas administrativas usan nombre real + carné en lugar del nombre de usuario.
 - Se añadió una bienvenida para nuevas cuentas después de confirmar el correo.
 - Se creó `course_requests` para solicitudes persistentes de materias.
 - Se añadieron grado/nivel actual, autoevaluación y opción de diagnóstico.
@@ -252,7 +274,7 @@ Está prevista una insignia especial al cumplir un año usando Academia Nexora, 
 
 ### Siguiente objetivo
 
-Probar una primera cuenta real con el nuevo flujo completo: **Registro → reglas → confirmación → bienvenida → solicitud de curso → Administración**.
+Implementar y probar los primeros ejercicios del diagnóstico: dificultad progresiva con **Siguiente** y **Mi límite**.
 
 ---
 
