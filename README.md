@@ -16,6 +16,7 @@ Incluye:
 
 - Inicio de sesión real.
 - Registro separado del login.
+- Nombre y apellido reales obligatorios durante el registro; no se usan apodos como identidad académica.
 - Reglas de Academia Nexora aceptadas durante el registro.
 - Confirmación de correo mediante Supabase Auth.
 - Sesión almacenada solo durante la sesión del navegador mediante `sessionStorage`.
@@ -149,13 +150,15 @@ Academia Nexora usa **Supabase Auth**.
 
 Al registrarse un usuario:
 
-1. Supabase gestiona su identidad y contraseña.
-2. Se crea automáticamente su registro en `profiles`.
-3. Se asigna automáticamente `student` en `user_roles`.
-4. Empieza en **Fundamentos · Año 1**.
-5. Su tema inicial es **dark**.
-6. Debe aceptar las reglas de Academia Nexora.
-7. Después de confirmar el correo completa la bienvenida y solicita su primer curso.
+1. Debe escribir al menos un nombre y un apellido reales. Estos datos se guardan separados y se usan para su identidad académica.
+2. También elige un nombre de usuario para identificar su cuenta dentro de la plataforma.
+3. Supabase gestiona su identidad y contraseña.
+4. Se crea automáticamente su registro en `profiles`.
+5. Se asigna automáticamente `student` en `user_roles`.
+6. Empieza en **Fundamentos · Año 1**.
+7. Su tema inicial es **dark**.
+8. Debe aceptar las reglas de Academia Nexora.
+9. Después de confirmar el correo completa la bienvenida y solicita su primer curso.
 
 Una cuenta puede tener varios roles: `student`, `teacher` y `admin`.
 
@@ -169,6 +172,7 @@ Una cuenta puede tener varios roles: `student`, `teacher` y `admin`.
 - `service_role` y otras claves privadas no se incluyen en el frontend.
 - La Data API fue configurada sin exposición automática de tablas; los permisos del frontend se conceden explícitamente.
 - La sesión se almacena en `sessionStorage`, no permanentemente en el navegador.
+- El nombre y apellido quedan dentro del perfil académico y no se convierten automáticamente en información pública externa.
 
 ## 🏆 Logros e insignias
 
@@ -227,6 +231,8 @@ Está prevista una insignia especial al cumplir un año usando Academia Nexora, 
 
 - Se separó formalmente el flujo de Login y Registro.
 - Se incorporaron las reglas de Academia Nexora al registro y se guarda su aceptación.
+- Se estableció como obligatorio registrar **nombre y apellido reales**, dejando los apodos fuera de la identidad académica.
+- Se añadieron `first_name` y `last_name` a `profiles` y el nombre mostrado se construye automáticamente con ambos.
 - Se añadió una bienvenida para nuevas cuentas después de confirmar el correo.
 - Se creó `course_requests` para solicitudes persistentes de materias.
 - Se añadieron grado/nivel actual, autoevaluación y opción de diagnóstico.
