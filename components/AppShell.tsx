@@ -21,6 +21,7 @@ type Profile = {
   stage: string;
   school_year: number;
   theme: "light" | "dark";
+  onboarding_completed_at: string | null;
 };
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
@@ -44,7 +45,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       const [{ data: profileData }, { data: roleData }] = await Promise.all([
         supabase
           .from("profiles")
-          .select("display_name, stage, school_year, theme")
+          .select("display_name, stage, school_year, theme, onboarding_completed_at")
           .eq("id", session.user.id)
           .single(),
         supabase
@@ -57,6 +58,11 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
       const loadedRoles = (roleData ?? []).map((item) => item.role as string);
       const loadedProfile = profileData as Profile | null;
+
+      if (!loadedProfile?.onboarding_completed_at) {
+        replaceWith("/welcome/");
+        return;
+      }
 
       setEmail(session.user.email ?? "");
       setProfile(loadedProfile);
