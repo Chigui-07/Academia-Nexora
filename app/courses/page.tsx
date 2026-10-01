@@ -1,5 +1,6 @@
 import AppShell from "@/components/AppShell";
 import CourseRequestForm from "@/components/CourseRequestForm";
+import MathDiagnosticLauncher from "@/components/MathDiagnosticLauncher";
 
 export default function CoursesPage() {
   return (
@@ -20,6 +21,7 @@ export default function CoursesPage() {
         </article>
       </section>
 
+      <MathDiagnosticLauncher />
       <CourseRequestForm />
     </AppShell>
   );
