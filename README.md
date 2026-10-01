@@ -1,14 +1,14 @@
 # 🎓 Academia Nexora
 
-**Academia Nexora** es una plataforma educativa multiusuario pensada para aprender desde cero, avanzar por etapas académicas y combinar clases, tareas, práctica, calificaciones, diagnósticos, logros y actividades interactivas.
+**Academia Nexora** es una plataforma educativa multiusuario pensada para aprender desde cero, avanzar por etapas académicas y combinar clases, tareas, ejercicios, calificaciones, diagnósticos, logros y actividades interactivas.
 
-La plataforma tendrá un sistema académico propio. Las materias continúan a lo largo de los años y aumentan progresivamente en cantidad de temas, profundidad y dificultad.
+La plataforma utiliza un sistema académico propio. Las materias continúan a lo largo de los años y aumentan progresivamente en cantidad de temas, profundidad y dificultad.
 
 ## 📌 Estado del proyecto
 
-**Fase actual:** v0.4 — Identidad académica y primer banco de diagnóstico.
+**Fase actual:** v0.5 — Primer diagnóstico funcional de Matemática.
 
-La interfaz está publicada mediante GitHub Pages y utiliza Supabase para autenticación y datos. Ya existen registro, confirmación por correo, inicio/cierre de sesión, perfiles, roles, onboarding, identidad académica, solicitudes persistentes de cursos y el primer banco permanente de diagnóstico de Matemática.
+La interfaz está publicada mediante GitHub Pages y utiliza Supabase para autenticación y datos. Ya existen registro, confirmación por correo, inicio/cierre de sesión, perfiles, roles, onboarding, identidad académica, solicitudes persistentes de cursos, banco de diagnóstico de Matemática y la primera interfaz funcional para responderlo.
 
 ## 🖥️ Interfaz actual
 
@@ -37,11 +37,11 @@ Cada usuario tiene tres elementos distintos:
 - **Carné Nexora** — identificador único y permanente con formato similar a `NXR-26-4K7P`.
 - **Nombre de usuario** — elemento personal del perfil; puede ser un apodo o sobrenombre.
 
-El carné se genera automáticamente al crear la cuenta, no puede ser modificado por el estudiante y no sirve como contraseña ni como método de inicio de sesión. En vistas administrativas se utiliza **nombre real + carné** para evitar confusiones entre usuarios con nombres iguales.
+El carné se genera automáticamente al crear la cuenta, no puede ser modificado por el estudiante y no sirve como contraseña ni como método de inicio de sesión. En vistas administrativas se utiliza **nombre real + carné**.
 
 ## 🔐 Cuenta y contraseña
 
-Durante el registro se recuerda al usuario que debe **guardar y recordar su contraseña**, porque la necesita para volver a iniciar sesión. También se recomienda no compartirla y usar un gestor de contraseñas si dispone de uno.
+Durante el registro se recuerda al usuario que debe **guardar y recordar su contraseña**, porque la necesita para volver a iniciar sesión. También se recomienda no compartirla y utilizar un gestor de contraseñas si dispone de uno.
 
 Después de crear una cuenta, el mensaje de confirmación vuelve a recordar que la contraseña será necesaria para entrar posteriormente.
 
@@ -55,22 +55,40 @@ Cada estudiante puede solicitar cursos desde la bienvenida inicial o desde **Cur
 - si desea realizar el diagnóstico opcional;
 - estado: `Pendiente`, `En revisión` o `Atendida`.
 
-Una solicitud **no crea ni asigna automáticamente** una materia. Administración debe revisarla.
+Una solicitud no crea ni asigna automáticamente una materia. Administración debe revisarla.
 
 ## 🧠 Diagnóstico inicial
 
-El diagnóstico es **opcional** y no representa una calificación académica. Su objetivo es encontrar el punto adecuado desde donde comenzar a enseñar una materia.
+El diagnóstico es **opcional**, no da puntos y no representa una calificación académica. Su objetivo es encontrar el mejor punto desde donde comenzar a enseñar una materia.
 
-La experiencia tendrá únicamente dos acciones principales:
+### Regla de un solo intento
 
-- **Siguiente** — guardar la respuesta y continuar.
-- **Mi límite** — terminar cuando el estudiante considera que ya no sabe continuar.
+El diagnóstico inicial de una materia se realiza **una sola vez**.
 
-`Mi límite` no resta puntos ni cuenta como error. Durante el diagnóstico no es necesario mostrar inmediatamente si cada respuesta fue correcta o incorrecta; el análisis se presenta al terminar.
+- Si el usuario cierra la página mientras está en progreso, puede continuar el mismo intento más tarde.
+- Las preguntas sorteadas quedan guardadas para que no cambien al volver.
+- Una vez terminado como `completed` o `limit_reached`, no puede crear otro intento de esa materia.
+- Pulsar **Mi límite** termina el diagnóstico y registra el nivel en el que el estudiante decidió detenerse.
+
+### Interfaz de preguntas
+
+La primera interfaz funcional está implementada para Matemática:
+
+- se muestra **una pregunta a la vez**;
+- la pregunta aparece dentro de una tarjeta con estilo de hoja/cuaderno;
+- a la izquierda aparece un navegador con pequeñas tarjetas numeradas;
+- tocar un número permite volver a una pregunta del nivel actual;
+- las preguntas ya respondidas cambian visualmente de estado;
+- el usuario puede escribir su respuesta y pulsar **Siguiente**;
+- **Mi límite** está disponible en cualquier momento;
+- no se muestra durante la prueba si una respuesta fue correcta o incorrecta;
+- al cambiar de pregunta, una respuesta escrita puede guardarse sin avanzar de nivel.
+
+Para evitar una columna con hasta 64 números, el navegador muestra únicamente las preguntas del **nivel actual**. Al terminar un nivel, se cargan las preguntas del siguiente.
 
 ### Banco permanente de Matemática
 
-Ya existe en Supabase el primer banco permanente de diagnóstico:
+El banco de Matemática contiene **194 preguntas permanentes**:
 
 | Nivel | Contenido | Banco | Selección por intento |
 |---|---|---:|---:|
@@ -80,21 +98,40 @@ Ya existe en Supabase el primer banco permanente de diagnóstico:
 | 4 | Álgebra básica | 30 | 10 |
 | 5 | Álgebra intermedia y geometría | 30 | 10 |
 | 6 | Razonamiento avanzado | 24 | 8 |
-| **Total** |  | **194** | **64 máximo si completa todos los niveles** |
+| **Total** |  | **194** | **64 máximo** |
 
-Las preguntas se dividen en grupos internos para que la selección no sea aleatoria sin control. Por ejemplo, en el Nivel 1 se garantiza una combinación de suma, resta, operaciones combinadas, multiplicación, división y problemas.
+Las preguntas se dividen en grupos internos para que la selección sea equilibrada y no dependa de azar sin control.
 
-Las preguntas permanecen guardadas y pueden reutilizarse en futuros intentos; cada intento seleccionará un subconjunto equilibrado del banco.
+### Motor del diagnóstico
 
-### Seguridad del banco
+Supabase contiene:
 
-- Las preguntas y metadatos necesarios pueden ser consultados por el frontend autenticado.
-- **Las respuestas correctas (`answer_key`) no tienen permiso de lectura para el usuario autenticado.**
-- Las respuestas del estudiante se guardarán en sus intentos de diagnóstico.
-- La calificación debe realizarse mediante lógica segura, sin enviar la clave de respuestas al navegador.
-- El banco completo con respuestas no se mantiene como documento público en GitHub.
+- `diagnostic_levels` — niveles del diagnóstico;
+- `diagnostic_question_pools` — grupos y cantidad de preguntas a escoger;
+- `diagnostic_questions` — banco permanente;
+- `diagnostic_attempts` — intento único de cada estudiante por materia;
+- `diagnostic_attempt_questions` — preguntas sorteadas y orden fijo de cada intento;
+- `diagnostic_answers` — respuestas realizadas.
 
-La base de datos ya contiene `diagnostic_levels`, `diagnostic_question_pools`, `diagnostic_questions`, `diagnostic_attempts` y `diagnostic_answers`. El siguiente paso es conectar este banco con la interfaz y el motor real del diagnóstico.
+El motor dispone de RPC para:
+
+- iniciar o recuperar el intento único de Matemática;
+- obtener solamente las preguntas del nivel actual;
+- guardar respuestas al navegar;
+- guardar y continuar con **Siguiente**;
+- terminar mediante **Mi límite**.
+
+### Seguridad del diagnóstico
+
+- El frontend puede leer los enunciados necesarios, pero no `answer_key`.
+- La respuesta correcta se compara mediante lógica privilegiada aislada en Supabase.
+- Los RPC públicos se ejecutan como `SECURITY INVOKER`; las operaciones privilegiadas están aisladas fuera del esquema público expuesto.
+- El estudiante no tiene permisos directos para insertar/modificar intentos ni para escribir `is_correct`.
+- El estudiante tampoco puede consultar directamente `is_correct` durante la prueba.
+- RLS limita los intentos, preguntas seleccionadas y respuestas al usuario correspondiente.
+- Supabase Security Advisor se mantiene sin avisos después de estos cambios.
+
+Todavía falta construir el **resultado de colocación**, es decir, transformar las respuestas y el punto de `Mi límite` en una recomendación de nivel y temas a reforzar.
 
 ## 🌱 Formación esencial
 
@@ -107,7 +144,7 @@ Durante los primeros **365 días** de una cuenta se planea incluir cursos base o
 - Lógica y razonamiento.
 - Organización y hábitos de estudio.
 
-Después del primer año dejarán de ser obligatorios y el usuario decidirá cuáles desea continuar. No se mostrará una cuenta regresiva constante de días ni se usarán rachas que presionen al estudiante.
+Después del primer año dejarán de ser obligatorios y el usuario decidirá cuáles desea continuar. No se utilizarán rachas que castiguen al estudiante por no entrar todos los días.
 
 ## 📚 Estructura de cada curso
 
@@ -168,18 +205,6 @@ Academia Nexora usa **Supabase Auth**. Al registrarse un usuario:
 
 Una cuenta puede tener varios roles: `student`, `teacher` y `admin`.
 
-## 🔐 Seguridad
-
-- Row Level Security (RLS) en las tablas que contienen datos de usuarios y flujos académicos.
-- Los estudiantes solo consultan sus propios datos permitidos.
-- Solicitudes globales y avisos internos son exclusivos de `admin`.
-- Los usuarios no pueden asignarse permisos elevados.
-- El Carné Nexora no es editable por usuarios normales.
-- El frontend utiliza únicamente la **publishable key** de Supabase.
-- `service_role` y otras claves privadas no se incluyen en GitHub Pages.
-- Los permisos de Data API se conceden explícitamente.
-- Las claves de respuestas de los diagnósticos no están disponibles para el frontend autenticado.
-
 ## 🏆 Sistema académico
 
 | Etapa | Años | Nota mínima |
@@ -195,20 +220,19 @@ Una cuenta puede tener varios roles: `student`, `teacher` y `admin`.
 - **Frontend:** Next.js + TypeScript + CSS.
 - **Hosting:** GitHub Pages + GitHub Actions.
 - **Base de datos / Auth / Storage:** Supabase.
-- **Backend seguro:** Supabase Edge Functions.
+- **Backend seguro:** Supabase PostgreSQL/RPC y futuras Edge Functions.
 - **IA futura:** OpenAI API desde backend seguro.
 
 ## 🚧 Próximos objetivos
 
-1. Crear el **motor del diagnóstico de Matemática** que seleccione preguntas equilibradas desde el banco.
-2. Implementar la pantalla de pregunta con **Siguiente** y **Mi límite**.
-3. Guardar los intentos y respuestas reales del estudiante.
-4. Calificar desde lógica segura y generar el resultado de colocación.
-5. Probar la primera cuenta real y convertir la cuenta principal en `student + teacher + admin`.
-6. Implementar el catálogo persistente de materias y asignaciones.
-7. Crear Formación esencial, clases, tareas, entregas y calificaciones.
-8. Añadir recuperación de contraseña.
-9. Continuar con PMA, IA automática, insignias y minijuegos.
+1. Crear el **resultado de colocación** del diagnóstico de Matemática.
+2. Probar el diagnóstico completo con la primera cuenta real.
+3. Convertir la cuenta principal en `student + teacher + admin`.
+4. Implementar el catálogo persistente de materias y asignaciones.
+5. Implementar Formación esencial.
+6. Crear clases, tareas, entregas y calificaciones reales.
+7. Añadir recuperación de contraseña.
+8. Continuar con PMA, IA automática, insignias y minijuegos.
 
 ---
 
@@ -243,17 +267,29 @@ Una cuenta puede tener varios roles: `student`, `teacher` y `admin`.
 - Se añadió al registro un aviso explícito para **guardar y recordar la contraseña**.
 - Se creó la estructura persistente de niveles, grupos y preguntas de diagnóstico.
 - Se creó el banco completo de Matemática con **194 preguntas permanentes** distribuidas en 6 niveles.
-- El Nivel 1 quedó con 44 preguntas: 10 de suma/resta, 25 de multiplicación/división/combinadas y 9 problemas.
-- Se equilibró el bloque del Nivel 1 en **8 multiplicaciones, 8 divisiones y 9 operaciones combinadas** dentro de sus grupos correspondientes.
-- Los niveles 2–6 cubren números/fracciones, proporciones, álgebra, geometría y razonamiento avanzado.
-- Cada nivel define cuántas preguntas se extraen de cada grupo para mantener una prueba equilibrada.
-- Las respuestas correctas permanecen en Supabase pero **no pueden ser consultadas por el frontend autenticado**.
-- Se comprobó que el banco mantiene exactamente 44, 36, 30, 30, 30 y 24 preguntas por nivel.
-- Supabase Security Advisor se mantiene sin avisos de seguridad.
+- El Nivel 1 quedó con 44 preguntas y se equilibraron multiplicaciones, divisiones y operaciones combinadas.
+- Cada nivel define cuántas preguntas se extraen de cada grupo.
+- Las respuestas correctas permanecen en Supabase sin permiso de lectura para el frontend autenticado.
+
+## 1 de octubre de 2026 — v0.5: diagnóstico funcional
+
+- Se cambió la regla del diagnóstico para permitir **un solo intento por materia**.
+- Un intento en progreso puede continuarse, pero uno terminado no puede repetirse.
+- Se creó `diagnostic_attempt_questions` para conservar las preguntas sorteadas y su orden.
+- Se implementó la selección equilibrada de preguntas del banco.
+- Se creó una interfaz con estilo de hoja/cuaderno y una pregunta a la vez.
+- Se añadió el panel lateral de números para navegar entre preguntas del nivel actual.
+- Las preguntas respondidas muestran un estado visual diferente.
+- Se implementaron **Siguiente** y **Mi límite**.
+- Las respuestas se pueden guardar al navegar sin mostrar si son correctas.
+- Se creó un acceso al diagnóstico desde la sección **Cursos** cuando existe una solicitud de Matemática con diagnóstico activado.
+- Se endurecieron permisos para que el frontend no pueda modificar directamente intentos ni consultar `is_correct`.
+- La lógica privilegiada quedó aislada de los RPC públicos.
+- Supabase Security Advisor volvió a quedar con **0 avisos**.
 
 ### Siguiente objetivo
 
-Convertir este banco en un diagnóstico funcional: **selección de preguntas → respuesta → Siguiente / Mi límite → evaluación segura → resultado de colocación**.
+Calcular y mostrar el **resultado de colocación**: nivel estimado, habilidades dominadas y temas recomendados para comenzar.
 
 ---
 
