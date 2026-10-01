@@ -135,6 +135,8 @@ export default function AuthForm({ mode }: { mode: AuthMode }) {
         setError("Ya existe una cuenta con ese correo.");
       } else if (normalized.includes("first_name_and_last_name_required")) {
         setError("Debes escribir tu nombre y apellido para crear la cuenta.");
+      } else if (normalized.includes("signups not allowed") || normalized.includes("signup_disabled")) {
+        setError("El registro de nuevas cuentas está desactivado en este momento. Administración debe habilitar los registros en Supabase.");
       } else {
         setError(rawMessage);
       }
@@ -187,7 +189,7 @@ export default function AuthForm({ mode }: { mode: AuthMode }) {
               id="username"
               value={username}
               onChange={(event) => setUsername(event.target.value.replace(/\s/g, ""))}
-              placeholder="chigui"
+              placeholder="Escribe tu usuario"
               autoComplete="username"
               minLength={3}
               maxLength={30}
