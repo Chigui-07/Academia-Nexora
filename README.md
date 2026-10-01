@@ -1,96 +1,74 @@
 # 🎓 Academia Nexora
 
-**Academia Nexora** es una plataforma educativa multiusuario pensada para aprender desde cero, avanzar por etapas académicas y combinar clases, tareas, ejercicios, calificaciones, diagnósticos, logros y actividades interactivas.
-
-La plataforma utiliza un sistema académico propio. Las materias continúan a lo largo de los años y aumentan progresivamente en cantidad de temas, profundidad y dificultad.
+**Academia Nexora** es una plataforma educativa multiusuario para aprender desde cero, avanzar por etapas y organizar cursos, clases, tareas, ejercicios, calificaciones, diagnósticos y logros.
 
 ## 📌 Estado del proyecto
 
-**Fase actual:** v0.6 — Resultado e historial de diagnósticos.
+**Fase actual: v0.7 — Catálogo, solicitudes e inscripciones reales.**
 
-La interfaz está publicada mediante GitHub Pages y utiliza Supabase para autenticación y datos. Ya existen registro, confirmación por correo, inicio/cierre de sesión, perfiles, roles, onboarding, identidad académica, solicitudes persistentes de cursos, banco de diagnóstico de Matemática, diagnóstico funcional y resultados persistentes.
+Frontend: Next.js + TypeScript + CSS, publicado con GitHub Pages.  
+Backend, autenticación y datos: Supabase.
 
-## 🖥️ Interfaz actual
+Ya existen registro, confirmación por correo, inicio/cierre de sesión, perfiles, Carné Nexora, roles, onboarding, solicitudes de cursos, diagnóstico funcional de Matemática, historial de diagnósticos, catálogo persistente de materias e inscripciones reales.
 
-Incluye:
+## 🧭 Navegación principal
 
-- Inicio de sesión real y registro separado.
-- Nombre y apellido reales obligatorios como identidad académica.
-- Nombre de usuario único y personal/decorativo, donde sí se permiten apodos o sobrenombres.
-- Carné Nexora único y permanente generado automáticamente para cada cuenta.
-- Aviso durante el registro para guardar y recordar la contraseña.
-- Reglas de Academia Nexora aceptadas durante el registro.
-- Confirmación de correo mediante Supabase Auth.
-- Sesión almacenada durante la sesión del navegador mediante `sessionStorage`.
-- Dashboard protegido y bienvenida obligatoria para cuentas nuevas.
-- Solicitudes persistentes de cursos con grado/nivel, autoevaluación y diagnóstico opcional.
-- Recomendaciones básicas de cursos relacionados.
-- Cola y avisos privados de solicitudes para Administración.
-- Menú con Inicio, Cursos, **Diagnósticos**, Tareas, Calificaciones, Perfil y Administración cuando corresponde.
-- Modo oscuro por defecto y modo claro opcional.
+- 🏠 Inicio
+- 📚 Cursos
+- ➕ Solicitar curso
+- 🧠 Diagnósticos
+- 📝 Tareas
+- 📊 Calificaciones
+- 🏅 Perfil
+- ⚙️ Administración, cuando la cuenta tiene permisos
 
-## 👤 Identidad académica
+**Cursos** muestra únicamente materias ya asignadas. Las solicitudes y diagnósticos viven en sus propias secciones para evitar confusiones.
 
-Cada usuario tiene tres elementos distintos:
+## 👤 Identidad y roles
 
-- **Nombre y apellido reales** — se usan en tareas, calificaciones, registros y espacios profesionales.
-- **Carné Nexora** — identificador único y permanente con formato similar a `NXR-26-4K7P`.
-- **Nombre de usuario** — elemento personal del perfil; puede ser un apodo o sobrenombre.
+Cada cuenta usa:
 
-El carné se genera automáticamente al crear la cuenta, no puede ser modificado por el estudiante y no sirve como contraseña ni como método de inicio de sesión. En vistas administrativas se utiliza **nombre real + carné**.
+- nombre y apellido reales para espacios académicos;
+- Carné Nexora único y permanente;
+- nombre de usuario personal/decorativo.
 
-## 🔐 Cuenta y contraseña
+Los roles disponibles son `student`, `teacher` y `admin`. Una cuenta puede tener varios roles al mismo tiempo.
 
-Durante el registro se recuerda al usuario que debe **guardar y recordar su contraseña**, porque la necesita para volver a iniciar sesión. También se recomienda no compartirla y utilizar un gestor de contraseñas si dispone de uno.
+## 📚 Catálogo y solicitudes
 
-Después de crear una cuenta, el mensaje de confirmación vuelve a recordar que la contraseña será necesaria para entrar posteriormente.
+Supabase contiene un catálogo persistente en `courses`. El catálogo inicial incluye:
 
-## 📚 Solicitudes de cursos
+- Matemática
+- Física
+- Inglés
+- Programación básica
+- Historia
+- Geografía
+- Química
+- Biología
 
-Cada estudiante puede solicitar cursos desde la bienvenida inicial o desde **Cursos**. Por cada solicitud se guarda:
+El estudiante entra a **Solicitar curso**, busca una materia y envía una solicitud indicando su grado/nivel actual y cuánto considera que conoce del tema.
 
-- curso solicitado;
-- grado o nivel actual;
-- nivel que el estudiante cree tener;
-- si desea realizar el diagnóstico opcional;
-- estado: `Pendiente`, `En revisión` o `Atendida`.
+Los estados actuales son:
 
-Una solicitud no crea ni asigna automáticamente una materia. Administración debe revisarla.
+- `pending` — pendiente;
+- `in_review` — en revisión;
+- `handled` — aceptada;
+- `rejected` — rechazada.
 
-## 🧠 Diagnóstico inicial
+Una solicitud aceptada crea una inscripción real en `course_enrollments`. Una solicitud rechazada no crea inscripción y puede volver a solicitarse posteriormente.
 
-El diagnóstico es **opcional**, no da puntos y no representa una calificación académica. Su objetivo es encontrar el mejor punto desde donde comenzar a enseñar una materia.
+## 🧠 Diagnósticos
 
-### Regla de un solo intento
+El diagnóstico inicial es opcional, no da puntos y se realiza una sola vez por materia.
 
-El diagnóstico inicial de una materia se realiza **una sola vez**.
+Actualmente Matemática dispone de diagnóstico funcional con **194 preguntas permanentes** distribuidas en 6 niveles. Las preguntas se seleccionan de grupos equilibrados y permanecen fijas durante el intento.
 
-- Si el usuario cierra la página mientras está en progreso, puede continuar el mismo intento más tarde.
-- Las preguntas sorteadas quedan guardadas para que no cambien al volver.
-- Una vez terminado como `completed` o `limit_reached`, no puede crear otro intento de esa materia.
-- Pulsar **Mi límite** termina el diagnóstico y registra el nivel en el que el estudiante decidió detenerse.
+La interfaz muestra una pregunta a la vez, navegación lateral numerada, botones **Siguiente** y **Mi límite**, y guarda las respuestas sin mostrar durante la prueba si fueron correctas.
 
-### Interfaz de preguntas
+El banco de Matemática:
 
-La primera interfaz funcional está implementada para Matemática:
-
-- se muestra **una pregunta a la vez**;
-- la pregunta aparece dentro de una tarjeta con estilo de hoja/cuaderno;
-- a la izquierda aparece un navegador con pequeñas tarjetas numeradas;
-- tocar un número permite volver a una pregunta del nivel actual;
-- las preguntas ya respondidas cambian visualmente de estado;
-- el usuario puede escribir su respuesta y pulsar **Siguiente**;
-- **Mi límite** está disponible en cualquier momento;
-- no se muestra durante la prueba si una respuesta fue correcta o incorrecta;
-- al cambiar de pregunta, una respuesta escrita puede guardarse sin avanzar de nivel.
-
-Para evitar una columna con hasta 64 números, el navegador muestra únicamente las preguntas del **nivel actual**. Al terminar un nivel, se cargan las preguntas del siguiente.
-
-### Banco permanente de Matemática
-
-El banco de Matemática contiene **194 preguntas permanentes**:
-
-| Nivel | Contenido | Banco | Selección por intento |
+| Nivel | Contenido | Banco | Selección |
 |---|---|---:|---:|
 | 1 | Operaciones básicas y problemas | 44 | 14 |
 | 2 | Números negativos, fracciones y decimales | 36 | 12 |
@@ -98,132 +76,101 @@ El banco de Matemática contiene **194 preguntas permanentes**:
 | 4 | Álgebra básica | 30 | 10 |
 | 5 | Álgebra intermedia y geometría | 30 | 10 |
 | 6 | Razonamiento avanzado | 24 | 8 |
-| **Total** |  | **194** | **64 máximo** |
+| **Total** | | **194** | **64 máximo** |
 
-Las preguntas se dividen en grupos internos para que la selección sea equilibrada y no dependa de azar sin control.
+Al finalizar se genera `diagnostic_results`, que conserva:
 
-### Resultado de colocación
+- ubicación estimada;
+- nivel dominado de forma consecutiva;
+- temas dominados;
+- temas a reforzar;
+- resumen por nivel;
+- si terminó normalmente o con **Mi límite**.
 
-Al terminar Matemática se genera automáticamente un resultado persistente. El cálculo utiliza un umbral de referencia del **70 %** para considerar dominado un nivel completo.
+Se usa un criterio de referencia del **70 %** para considerar dominado un nivel completo.
 
-El resultado guarda:
+La sección **Diagnósticos** es ahora el único lugar permanente para iniciar, continuar y consultar diagnósticos. Al solicitar una materia que tenga diagnóstico, Nexora ofrece inmediatamente **Comenzar diagnóstico** o **Ir al inicio**. Si el estudiante decide hacerlo después, seguirá apareciendo como disponible en Diagnósticos.
 
-- **ubicación estimada**: primer nivel que todavía necesita refuerzo;
-- nivel hasta el que existe una base dominada de forma consecutiva;
-- temas que el diagnóstico detectó como dominados;
-- temas que conviene reforzar;
-- resumen por nivel con respuestas, aciertos y porcentaje;
-- si el diagnóstico terminó normalmente o mediante **Mi límite**.
+## 📘 Cursos activos
 
-Si todos los niveles alcanzan el criterio de dominio, la ubicación queda en Nivel 6 y se registra que la base del diagnóstico completo fue dominada.
+`course_enrollments` relaciona cada estudiante con sus materias aceptadas.
 
-### Historial de Diagnósticos
+Al entrar a un curso se dispone de un espacio propio con pestañas:
 
-El menú principal incluye **🧠 Diagnósticos**. Esta sección funciona como una fotografía del punto de partida del estudiante:
+- Resumen
+- Clases
+- Tareas
+- Ejercicios
+- Calificaciones
 
-- muestra diagnósticos en progreso y permite continuarlos;
-- conserva permanentemente los resultados finalizados;
-- recuerda qué temas dominaba el usuario cuando comenzó;
-- recuerda qué temas necesitaba reforzar;
-- permite desplegar el detalle de cómo le fue en cada nivel.
+Si existe resultado de diagnóstico, el curso guarda también el nivel y tema recomendado para comenzar. Si el diagnóstico termina después de la inscripción, el resultado se sincroniza automáticamente con el curso.
 
-La idea es que, meses después, el estudiante pueda mirar el diagnóstico original y reconocer temas que antes no sabía o no recordaba y que ahora ya domina.
+## ⚙️ Administración
 
-### Motor del diagnóstico
+Administración puede revisar solicitudes y ver:
 
-Supabase contiene:
+- nombre académico y Carné Nexora;
+- materia solicitada;
+- grado/nivel;
+- autoevaluación del estudiante;
+- estado del diagnóstico cuando existe.
 
-- `diagnostic_levels` — niveles del diagnóstico;
-- `diagnostic_question_pools` — grupos y cantidad de preguntas a escoger;
-- `diagnostic_questions` — banco permanente;
-- `diagnostic_attempts` — intento único de cada estudiante por materia;
-- `diagnostic_attempt_questions` — preguntas sorteadas y orden fijo de cada intento;
-- `diagnostic_answers` — respuestas realizadas;
-- `diagnostic_results` — fotografía persistente del resultado final.
+Acciones disponibles:
 
-El motor dispone de RPC para iniciar o recuperar el intento, obtener preguntas del nivel actual, guardar respuestas, avanzar con **Siguiente** y finalizar con **Mi límite**. La creación del resultado ocurre dentro de la lógica segura de Supabase cuando el intento termina.
+- **En revisión**;
+- **Aceptar curso** — crea/reactiva la inscripción;
+- **Rechazar**.
 
-### Seguridad del diagnóstico
+## 🔐 Seguridad
 
-- El frontend puede leer los enunciados necesarios, pero no `answer_key`.
-- La respuesta correcta se compara mediante lógica privilegiada aislada en Supabase.
-- Los RPC públicos se ejecutan como `SECURITY INVOKER`; las operaciones privilegiadas están aisladas fuera del esquema público expuesto.
-- El estudiante no tiene permisos directos para insertar/modificar intentos ni para escribir `is_correct`.
-- El estudiante tampoco puede consultar directamente `is_correct` durante la prueba.
-- `diagnostic_results` permite al estudiante leer su propio resumen, pero no modificarlo.
-- RLS limita intentos, preguntas seleccionadas, respuestas y resultados al usuario correspondiente.
+- Supabase Auth gestiona las cuentas.
+- RLS limita perfiles, solicitudes, inscripciones y diagnósticos según usuario y rol.
+- Las claves correctas del diagnóstico no se envían al navegador.
+- La corrección se realiza en lógica segura del servidor.
+- El estudiante no puede modificar directamente `is_correct` ni sus resultados finales.
+- Las acciones administrativas sensibles verifican el rol `admin` dentro de Supabase.
 
-## 🌱 Formación esencial
-
-Durante los primeros **365 días** de una cuenta se planea incluir cursos base obligatorios:
-
-- Caligrafía y escritura clara.
-- Comprensión y expresión lectora.
-- Ortografía y redacción.
-- Cálculo mental y agilidad numérica.
-- Lógica y razonamiento.
-- Organización y hábitos de estudio.
-
-Después del primer año dejarán de ser obligatorios y el usuario decidirá cuáles desea continuar. No se utilizarán rachas que castiguen al estudiante por no entrar todos los días.
-
-## 📚 Estructura de cada curso
-
-Cada curso tendrá:
-
-- clases y explicaciones;
-- tareas;
-- ejercicios;
-- calificaciones.
-
-Cada materia se divide en **4 bloques** y cada bloque tiene un máximo de **100 puntos**.
-
-## 📝 Actividades
+## 📝 Actividades planificadas
 
 ### Tareas de cuaderno
 
-- Tienen punteo y fecha/hora de apertura y cierre.
-- Incluyen instrucciones/documentos.
-- Pueden solicitar respuestas dentro de la plataforma.
-- Requieren fotografía del procedimiento cuando corresponda.
-- Una vez entregadas, no se corrigen posteriormente.
+- puntos;
+- apertura y cierre;
+- instrucciones/documentos;
+- respuestas;
+- fotografía del procedimiento cuando corresponda;
+- sin corrección posterior a la entrega.
 
 ### Tareas virtuales
 
-- Se realizan dentro de Academia Nexora.
-- Tienen punteo y calendario.
-- No requieren fotografía del procedimiento.
-- Podrán ser calificadas automáticamente mediante lógica segura/IA.
+- se realizan dentro de Nexora;
+- tienen puntos y calendario;
+- podrán ser calificadas automáticamente de forma segura.
 
 ### Ejercicios
 
-- Son de práctica y no tienen punteo ni fecha límite.
-- Se pueden corregir y volver a intentar.
-- Algunos podrán convertirse en minijuegos educativos.
+- práctica sin puntos;
+- se pueden corregir y repetir;
+- algunos podrán ser minijuegos.
+
+Cuando se desarrolle el rol Profesor, tareas y ejercicios podrán tener un **cronómetro opcional configurado por el profesor**.
 
 ## 🔁 PMA
 
-El PMA es un segundo intento opcional de una tarea. Conserva el mismo valor de puntos y Academia Nexora registra automáticamente como nota oficial la **más alta** entre ambos intentos.
+El PMA será un segundo intento opcional de una tarea, con el mismo valor de puntos. La nota oficial será automáticamente la mayor entre ambos intentos.
 
-## 🤖 Inteligencia artificial
+## 🌱 Formación esencial
 
-Para la cuenta principal, una IA podrá actuar como profesor automático y crear clases/actividades según progreso, diagnóstico, resultados anteriores, dificultad, calendario y puntos disponibles. Las reglas académicas importantes serán controladas por la plataforma y no dependerán únicamente de la IA.
+Durante los primeros 365 días se planean actividades breves de:
 
-## 👥 Usuarios y permisos
+- Caligrafía y escritura clara
+- Comprensión y expresión lectora
+- Ortografía y redacción
+- Cálculo mental y agilidad numérica
+- Lógica y razonamiento
+- Organización y hábitos de estudio
 
-Academia Nexora usa **Supabase Auth**. Al registrarse un usuario:
-
-1. escribe nombre y apellido reales;
-2. elige un nombre de usuario único;
-3. crea correo y contraseña;
-4. acepta las reglas;
-5. Supabase crea su identidad;
-6. se crea su perfil y Carné Nexora;
-7. recibe el rol `student`;
-8. comienza en **Fundamentos · Año 1**;
-9. usa tema oscuro inicialmente;
-10. confirma su correo y completa el onboarding.
-
-Una cuenta puede tener varios roles: `student`, `teacher` y `admin`.
+Después del primer año pasarán a ser opcionales.
 
 ## 🏆 Sistema académico
 
@@ -235,94 +182,85 @@ Una cuenta puede tener varios roles: `student`, `teacher` y `admin`.
 | 🎓 Superior | 7–8 | 75/100 |
 | 🏆 Dominio | 9–10 | 80/100 |
 
-## 🛠️ Tecnología
+Cada curso tendrá 4 bloques de hasta 100 puntos.
 
-- **Frontend:** Next.js + TypeScript + CSS.
-- **Hosting:** GitHub Pages + GitHub Actions.
-- **Base de datos / Auth / Storage:** Supabase.
-- **Backend seguro:** Supabase PostgreSQL/RPC y futuras Edge Functions.
-- **IA futura:** OpenAI API desde backend seguro.
+## 🗄️ Tablas principales actuales
+
+- `profiles`
+- `user_roles`
+- `courses`
+- `course_requests`
+- `course_enrollments`
+- `admin_notifications`
+- `diagnostic_levels`
+- `diagnostic_question_pools`
+- `diagnostic_questions`
+- `diagnostic_attempts`
+- `diagnostic_attempt_questions`
+- `diagnostic_answers`
+- `diagnostic_results`
 
 ## 🚧 Próximos objetivos
 
-1. Probar el diagnóstico completo y su resultado con la primera cuenta real.
-2. Convertir la cuenta principal en `student + teacher + admin`.
-3. Implementar el catálogo persistente de materias y asignaciones.
-4. Usar el resultado del diagnóstico para decidir el primer tema de cada curso.
-5. Implementar Formación esencial.
-6. Crear clases, tareas, entregas y calificaciones reales.
-7. Añadir recuperación de contraseña.
-8. Continuar con PMA, IA automática, insignias y minijuegos.
+1. Probar aceptar la primera solicitud y abrir el primer curso real.
+2. Hacer que el Dashboard calcule cursos activos, tareas pendientes y promedio con datos reales.
+3. Desarrollar el rol Profesor.
+4. Crear clases, tareas, ejercicios y entregas persistentes.
+5. Añadir cronómetro opcional a tareas y ejercicios.
+6. Implementar calificaciones por bloques y PMA.
+7. Añadir Formación esencial.
+8. Añadir recuperación de contraseña e IA educativa segura.
 
 ---
 
 # 📒 Bitácora
 
-## 30 de septiembre de 2026 — Inicio del proyecto
+## 30 de septiembre de 2026 — Inicio
 
 - Se creó Academia Nexora y su repositorio.
-- Se definieron Cursos, Tareas, Calificaciones, Perfil y Administración.
-- Se definieron tareas de cuaderno, tareas virtuales, ejercicios y PMA.
-- Se definieron 4 bloques de 100 puntos y etapas académicas progresivas.
-- Se creó la interfaz inicial con Next.js y TypeScript.
-- Se eligió GitHub Pages y se configuró el despliegue automático.
-- Se creó y conectó Supabase.
-- Se configuró autenticación, perfiles y roles.
+- Se definieron cursos, tareas, ejercicios, calificaciones, PMA y etapas académicas.
+- Se configuraron GitHub Pages y Supabase.
 
-## 1 de octubre de 2026 — v0.3: onboarding e identidad
+## 1 de octubre de 2026 — v0.3: cuentas y onboarding
 
-- Se separó Login y Registro.
-- Se añadieron reglas de Academia Nexora.
-- Nombre y apellido reales pasaron a ser obligatorios.
-- El nombre de usuario quedó como elemento personal/decorativo.
-- Se creó el Carné Nexora único y permanente.
-- Se añadió onboarding y solicitudes persistentes de cursos.
-- Se preparó la estructura inicial de diagnósticos.
-- Se crearon avisos privados para Administración.
-- Se configuró `sessionStorage` para la sesión del navegador.
-- Se definió Formación esencial para los primeros 365 días.
+- Registro, login y confirmación por correo.
+- Identidad con nombre real, usuario y Carné Nexora.
+- Roles, reglas, onboarding y solicitudes persistentes.
+- Formación esencial definida para los primeros 365 días.
 
-## 1 de octubre de 2026 — v0.4: banco de diagnóstico de Matemática
+## 1 de octubre de 2026 — v0.4: banco de Matemática
 
-- Se añadió al registro un aviso explícito para **guardar y recordar la contraseña**.
-- Se creó la estructura persistente de niveles, grupos y preguntas de diagnóstico.
-- Se creó el banco completo de Matemática con **194 preguntas permanentes** distribuidas en 6 niveles.
-- El Nivel 1 quedó con 44 preguntas y se equilibraron multiplicaciones, divisiones y operaciones combinadas.
-- Cada nivel define cuántas preguntas se extraen de cada grupo.
-- Las respuestas correctas permanecen en Supabase sin permiso de lectura para el frontend autenticado.
+- Banco permanente de 194 preguntas en 6 niveles.
+- Respuestas correctas protegidas del frontend.
 
 ## 1 de octubre de 2026 — v0.5: diagnóstico funcional
 
-- Se cambió la regla del diagnóstico para permitir **un solo intento por materia**.
-- Un intento en progreso puede continuarse, pero uno terminado no puede repetirse.
-- Se creó `diagnostic_attempt_questions` para conservar las preguntas sorteadas y su orden.
-- Se implementó la selección equilibrada de preguntas del banco.
-- Se creó una interfaz con estilo de hoja/cuaderno y una pregunta a la vez.
-- Se añadió el panel lateral de números para navegar entre preguntas del nivel actual.
-- Las preguntas respondidas muestran un estado visual diferente.
-- Se implementaron **Siguiente** y **Mi límite**.
-- Las respuestas se pueden guardar al navegar sin mostrar si son correctas.
-- Se creó un acceso al diagnóstico desde la sección **Cursos** cuando existe una solicitud de Matemática con diagnóstico activado.
-- Se endurecieron permisos para que el frontend no pueda modificar directamente intentos ni consultar `is_correct`.
-- La lógica privilegiada quedó aislada de los RPC públicos.
+- Intento único por materia.
+- Preguntas sorteadas persistentes.
+- Navegación por tarjetas numeradas.
+- Siguiente y Mi límite.
+- Corrección segura en Supabase.
 
-## 1 de octubre de 2026 — v0.6: resultado e historial
+## 1 de octubre de 2026 — v0.6: resultados e historial
 
-- Se creó `diagnostic_results` para conservar una fotografía permanente del diagnóstico inicial.
-- Se definió un criterio del **70 %** para considerar dominado un nivel completo.
-- El sistema calcula la primera zona que necesita refuerzo y la usa como ubicación estimada.
-- Se guardan temas dominados, temas a reforzar y un resumen por nivel.
-- El resultado se genera automáticamente tanto al completar los seis niveles como al pulsar **Mi límite**.
-- La pantalla final muestra la ubicación estimada y los temas detectados.
-- Se añadió **Diagnósticos** al menú principal.
-- La nueva sección permite revisar resultados antiguos y continuar intentos que siguen abiertos.
-- El diagnóstico completado desde Cursos ahora enlaza al historial en vez de quedar como un botón deshabilitado.
-- El estudiante puede leer su resultado, pero no modificarlo.
+- Resultados persistentes con ubicación estimada.
+- Temas dominados y temas a reforzar.
+- Nueva sección Diagnósticos.
 
-### Siguiente objetivo
+## 1 de octubre de 2026 — v0.7: catálogo, cursos e inscripciones
 
-Probar el flujo completo con la primera cuenta real y utilizar el resultado para elegir automáticamente el primer contenido de Matemática.
+- Se separó **Solicitar curso** de **Cursos**.
+- Cursos ahora muestra únicamente materias aceptadas.
+- Se creó el catálogo persistente `courses`.
+- Se creó `course_enrollments`.
+- Administración puede aceptar o rechazar solicitudes.
+- Aceptar crea una inscripción real.
+- Cada curso dispone de Resumen, Clases, Tareas, Ejercicios y Calificaciones.
+- Diagnósticos quedó como sección exclusiva para iniciar, continuar y consultar pruebas de nivel.
+- Después de solicitar Matemática se puede comenzar el diagnóstico o volver al inicio.
+- Los resultados de diagnóstico se sincronizan con el punto de inicio del curso.
+- Se registró el cronómetro configurable como función futura del rol Profesor.
 
 ---
 
-> Este README funciona como **resumen general del proyecto y bitácora de desarrollo** y debe mantenerse actualizado con cada cambio importante.
+> Este README funciona como **resumen general y bitácora del proyecto** y debe mantenerse actualizado con cada cambio importante.
