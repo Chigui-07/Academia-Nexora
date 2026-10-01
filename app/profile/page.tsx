@@ -1,4 +1,5 @@
 import AppShell from "@/components/AppShell";
+import ProfileIdentityCard from "@/components/ProfileIdentityCard";
 
 export default function ProfilePage() {
   return (
@@ -7,10 +8,12 @@ export default function ProfilePage() {
         <div>
           <p className="eyebrow">Perfil</p>
           <h1>Mi progreso</h1>
-          <p>Aquí se mostrarán tu etapa, año, historial e insignias.</p>
+          <p>Aquí se mostrarán tu identidad académica, etapa, año, historial e insignias.</p>
         </div>
         <span className="stage-badge">🌱 Fundamentos · Año 1</span>
       </div>
+
+      <ProfileIdentityCard />
 
       <section className="stats-grid">
         <article className="stat-card">
