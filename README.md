@@ -6,24 +6,27 @@ La plataforma tendrá un sistema académico propio. Las materias se mantienen a 
 
 ## 📌 Estado del proyecto
 
-**Fase actual:** interfaz inicial v0.1.
+**Fase actual:** v0.2 — Cuentas y usuarios.
 
-Ya existe una primera interfaz navegable y publicada. Esta versión utiliza datos de demostración y todavía no incluye autenticación real, base de datos ni IA.
+La interfaz base ya está publicada en GitHub Pages y el proyecto de Supabase ya está conectado. La rama `feat/auth` incorpora registro, inicio de sesión, confirmación por correo, perfiles persistentes, roles y cierre de sesión.
 
-## 🖥️ Interfaz v0.1
+## 🖥️ Interfaz actual
 
-Actualmente incluye:
+Incluye:
 
-- Pantalla inicial de acceso / demostración.
-- Dashboard principal.
+- Inicio de sesión real.
+- Registro de usuarios.
+- Confirmación de correo mediante Supabase Auth.
+- Dashboard protegido por sesión.
 - Cursos.
 - Tareas semanales.
 - Calificaciones.
 - Perfil y futura zona de insignias.
-- Panel de administración.
+- Panel de administración visible solo para roles autorizados.
 - Navegación compartida entre las principales secciones.
-- Diseño adaptable básico para escritorio y pantallas pequeñas.
-- Modo claro y modo oscuro con preferencia guardada en el navegador.
+- Diseño adaptable básico.
+- Modo oscuro por defecto y modo claro opcional.
+- Preferencia de tema guardada localmente y sincronizada con el perfil cuando hay sesión.
 
 ## 🧭 Menú principal
 
@@ -31,7 +34,7 @@ Actualmente incluye:
 - **Tareas** — tareas activas de todas las materias según su fecha y hora de apertura/cierre.
 - **Calificaciones** — notas por materia, bloque y promedio general.
 - **Perfil** — progreso, etapa, año, logros e insignias.
-- **Administración** — disponible únicamente para usuarios con permisos administrativos.
+- **Administración** — disponible únicamente para usuarios con rol de profesor o administrador.
 
 ## 📚 Estructura de cada curso
 
@@ -91,17 +94,37 @@ Las reglas importantes, como el máximo de 100 puntos por bloque, serán control
 
 ## 👥 Usuarios y permisos
 
-La plataforma requerirá iniciar sesión para guardar el progreso individual.
+Academia Nexora usa **Supabase Auth** para las cuentas.
+
+Al registrarse un usuario:
+
+1. Supabase guarda su identidad y credenciales de forma segura.
+2. Se crea automáticamente un registro en `profiles`.
+3. Se asigna automáticamente el rol `student` en `user_roles`.
+4. Empieza en **Fundamentos · Año 1**.
+5. Su tema inicial es **dark**.
 
 ### Estudiante
 
 Puede realizar actividades, consultar cursos, calificaciones, progreso y logros.
 
-### Administrador / Profesor
+### Profesor
 
-Puede crear materias, tareas de cuaderno, tareas virtuales, ejercicios, calendarios, PMA y asignar actividades a otros usuarios.
+Puede gestionar actividades de los estudiantes cuando se habilite el módulo correspondiente.
 
-La cuenta principal tendrá permisos de **estudiante + profesor + administrador**.
+### Administrador
+
+Puede gestionar materias, usuarios, tareas, ejercicios, calendarios, PMA y configuración académica.
+
+Una misma cuenta puede tener varios roles.
+
+## 🔐 Seguridad
+
+- Las tablas `profiles` y `user_roles` tienen **Row Level Security (RLS)**.
+- Cada estudiante solo puede consultar y modificar su propio perfil.
+- Los usuarios pueden consultar sus propios roles, pero no asignarse roles elevados.
+- La clave utilizada por el frontend es únicamente la **publishable key** de Supabase.
+- Las claves privadas y `service_role` no se almacenan en el frontend.
 
 ## 🏆 Logros e insignias
 
@@ -121,15 +144,15 @@ La progresión se divide en etapas con varios años escolares.
 
 La cantidad de etapas y años podrá ampliarse en el futuro.
 
-## 🛠️ Tecnología propuesta
+## 🛠️ Tecnología
 
 - **Frontend:** Next.js + TypeScript + CSS.
 - **Hosting del frontend:** GitHub Pages mediante exportación estática y GitHub Actions.
 - **Base de datos / Auth / Storage:** Supabase.
 - **Backend y automatizaciones:** Supabase Edge Functions y servicios asociados.
-- **IA:** OpenAI API, llamada únicamente desde backend seguro.
+- **IA:** OpenAI API desde backend seguro.
 
-GitHub Pages alojará la interfaz pública. Las funciones que requieran servidor, autenticación sensible o claves privadas no se ejecutarán en Pages; se delegarán a Supabase.
+GitHub Pages aloja la interfaz pública. Las funciones que requieran servidor, autenticación sensible o claves privadas se delegarán a Supabase.
 
 ## 🚀 Despliegue web
 
@@ -137,20 +160,16 @@ La aplicación está configurada para exportar Next.js como sitio estático y de
 
 Cuando los cambios llegan a `main`, GitHub Actions construye el directorio `out` y lo publica en GitHub Pages.
 
-## 🚧 Primera versión funcional
+## 🚧 Próximos objetivos
 
-La primera versión debe priorizar:
-
-1. Registro e inicio de sesión reales.
-2. Dashboard conectado a datos del usuario.
-3. Creación y asignación de cursos.
-4. Creación de tareas.
-5. Resolución de tareas virtuales.
-6. Entregas.
-7. Calificaciones.
-8. Panel básico de administración.
-
-Después se añadirán PMA, IA automática, ejercicios avanzados, imágenes de procedimientos, insignias y minijuegos.
+1. Probar el flujo completo de registro y confirmación de correo.
+2. Asignar permisos de profesor y administrador a la cuenta principal.
+3. Crear materias persistentes.
+4. Crear asignación de cursos por usuario.
+5. Crear tareas reales.
+6. Implementar entregas y calificaciones.
+7. Añadir recuperación de contraseña.
+8. Continuar con PMA, IA automática, imágenes de procedimiento, insignias y minijuegos.
 
 ---
 
@@ -160,33 +179,33 @@ Después se añadirán PMA, IA automática, ejercicios avanzados, imágenes de p
 
 - Se creó el repositorio de **Academia Nexora**.
 - Se definió la idea general de una plataforma educativa multiusuario.
-- Se estableció el menú principal: Cursos, Tareas y Calificaciones.
-- Se definieron tareas de cuaderno, tareas virtuales y ejercicios.
-- Se creó el sistema de PMA como segundo intento que conserva la nota más alta.
-- Se definió el sistema de 4 bloques de 100 puntos por materia.
-- Se establecieron etapas académicas progresivas.
-- Se decidió exigir cuentas de usuario para conservar el progreso.
-- Se definieron permisos de estudiante, profesor y administrador.
-- Se añadió la idea de un profesor IA automático para la cuenta principal.
-- Se añadieron logros, insignias y ejercicios opcionales en formato de minijuego.
-- Se creó la rama `feat/base-interface`.
-- Se inició el proyecto con Next.js y TypeScript.
-- Se creó la primera identidad visual de Academia Nexora.
-- Se implementó una pantalla inicial de acceso de demostración.
-- Se implementó el dashboard de Fundamentos · Año 1.
-- Se añadieron las pantallas de Cursos, Tareas, Calificaciones, Perfil y Administración.
-- Se añadió navegación compartida y diseño adaptable básico.
-- Se eligió **GitHub Pages** como hosting del frontend público.
-- Se configuró Next.js para exportación estática.
-- Se añadió un workflow de GitHub Actions para construir y desplegar la web en Pages desde `main`.
-- Se decidió mantener las funciones de servidor, autenticación sensible e IA fuera de GitHub Pages mediante Supabase.
-- Se corrigió el despliegue inicial de GitHub Pages para publicar la interfaz en lugar del README.
-- Se añadió **modo oscuro y modo claro**.
-- Se añadió persistencia local del tema mediante `localStorage`, por lo que cada navegador recuerda el modo elegido.
+- Se estableció el menú principal y el sistema académico.
+- Se definieron tareas de cuaderno, tareas virtuales, ejercicios y PMA.
+- Se definieron 4 bloques de 100 puntos por materia y etapas académicas progresivas.
+- Se establecieron roles de estudiante, profesor y administrador.
+- Se añadieron ideas de profesor IA, logros, insignias y minijuegos educativos.
+- Se creó la primera interfaz con Next.js y TypeScript.
+- Se publicaron Dashboard, Cursos, Tareas, Calificaciones, Perfil y Administración.
+- Se eligió GitHub Pages como hosting del frontend.
+- Se configuró el despliegue automático mediante GitHub Actions.
+- Se añadió modo oscuro y claro con persistencia.
+- Se creó el proyecto **Academia Nexora** en Supabase.
+- Se configuró Supabase Auth con correo y contraseña y confirmación por email.
+- Se configuraron las URLs de producción y desarrollo local.
+- Se crearon las tablas `profiles` y `user_roles` con RLS.
+- Se añadió un trigger que crea automáticamente perfil y rol `student` al registrarse.
+- Se estableció `dark` como tema inicial de nuevas cuentas.
+- Se revisó la configuración con Supabase Security Advisor y se corrigieron los avisos detectados.
+- Se creó la rama `feat/auth`.
+- Se conectó el frontend con la publishable key de Supabase.
+- Se sustituyó el acceso de demostración por registro e inicio de sesión reales.
+- Se añadió confirmación de correo, sesión persistente y cierre de sesión.
+- Se restringió el panel de administración según roles.
+- El modo visual elegido ahora también puede sincronizarse con el perfil del usuario.
 
 ### Siguiente objetivo
 
-Revisar y mejorar la interfaz publicada y después conectar **Supabase Auth** para habilitar cuentas reales y usuarios persistentes. Cuando existan perfiles reales, la preferencia de tema podrá sincronizarse también con la cuenta del usuario.
+Probar una primera cuenta real de principio a fin y convertir la cuenta principal en **estudiante + profesor + administrador**.
 
 ---
 
