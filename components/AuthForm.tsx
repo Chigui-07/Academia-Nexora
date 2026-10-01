@@ -12,7 +12,8 @@ export default function AuthForm({ mode }: { mode: AuthMode }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [displayName, setDisplayName] = useState("");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
   const [username, setUsername] = useState("");
   const [rulesAccepted, setRulesAccepted] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -60,8 +61,17 @@ export default function AuthForm({ mode }: { mode: AuthMode }) {
 
     try {
       if (isRegister) {
-        if (!displayName.trim() || !username.trim()) {
-          setError("Completa tu nombre y nombre de usuario.");
+        const cleanFirstName = firstName.trim();
+        const cleanLastName = lastName.trim();
+        const cleanUsername = username.trim().toLowerCase();
+
+        if (!cleanFirstName || !cleanLastName || !cleanUsername) {
+          setError("Completa tu nombre, apellido y nombre de usuario.");
+          return;
+        }
+
+        if (cleanFirstName.length < 2 || cleanLastName.length < 2) {
+          setError("Escribe un nombre y un apellido válidos.");
           return;
         }
 
@@ -71,8 +81,10 @@ export default function AuthForm({ mode }: { mode: AuthMode }) {
           options: {
             emailRedirectTo: `${getAppBaseUrl()}/auth/callback/`,
             data: {
-              display_name: displayName.trim(),
-              username: username.trim().toLowerCase(),
+              first_name: cleanFirstName,
+              last_name: cleanLastName,
+              display_name: `${cleanFirstName} ${cleanLastName}`,
+              username: cleanUsername,
               rules_accepted_at: new Date().toISOString(),
             },
           },
@@ -115,11 +127,14 @@ export default function AuthForm({ mode }: { mode: AuthMode }) {
     } catch (caughtError) {
       const authError = caughtError as { message?: string };
       const rawMessage = authError.message ?? "No fue posible completar la operación.";
+      const normalized = rawMessage.toLowerCase();
 
-      if (rawMessage.toLowerCase().includes("invalid login credentials")) {
+      if (normalized.includes("invalid login credentials")) {
         setError("Correo o contraseña incorrectos.");
-      } else if (rawMessage.toLowerCase().includes("already registered")) {
+      } else if (normalized.includes("already registered")) {
         setError("Ya existe una cuenta con ese correo.");
+      } else if (normalized.includes("first_name_and_last_name_required")) {
+        setError("Debes escribir tu nombre y apellido para crear la cuenta.");
       } else {
         setError(rawMessage);
       }
@@ -132,17 +147,38 @@ export default function AuthForm({ mode }: { mode: AuthMode }) {
     <form className="auth-form" onSubmit={handleSubmit}>
       {isRegister && (
         <>
-          <div className="form-group">
-            <label htmlFor="display-name">Nombre para mostrar</label>
-            <input
-              id="display-name"
-              value={displayName}
-              onChange={(event) => setDisplayName(event.target.value)}
-              placeholder="Tu nombre"
-              autoComplete="name"
-              maxLength={60}
-              required
-            />
+          <div className="name-fields">
+            <div className="form-group">
+              <label htmlFor="first-name">Nombre</label>
+              <input
+                id="first-name"
+                value={firstName}
+                onChange={(event) => setFirstName(event.target.value)}
+                placeholder="Tu nombre"
+                autoComplete="given-name"
+                minLength={2}
+                maxLength={60}
+                required
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="last-name">Apellido</label>
+              <input
+                id="last-name"
+                value={lastName}
+                onChange={(event) => setLastName(event.target.value)}
+                placeholder="Tu apellido"
+                autoComplete="family-name"
+                minLength={2}
+                maxLength={80}
+                required
+              />
+            </div>
+          </div>
+
+          <div className="identity-note">
+            👤 Usa tu nombre y apellido reales, no apodos ni sobrenombres. Esto ayuda a mantener un ambiente académico más claro y profesional.
           </div>
 
           <div className="form-group">
@@ -151,7 +187,7 @@ export default function AuthForm({ mode }: { mode: AuthMode }) {
               id="username"
               value={username}
               onChange={(event) => setUsername(event.target.value.replace(/\s/g, ""))}
-              placeholder="chigui"
+              placeholder="usuario"
               autoComplete="username"
               minLength={3}
               maxLength={30}
@@ -220,6 +256,7 @@ export default function AuthForm({ mode }: { mode: AuthMode }) {
               <li><strong>Respeta las fechas de entrega.</strong> Una tarea puede dejar de aceptar respuestas al llegar a su fecha de cierre.</li>
               <li><strong>El PMA es una segunda oportunidad.</strong> Solo estará disponible en algunas tareas y la plataforma conservará tu mejor nota.</li>
               <li><strong>Respeta a los demás usuarios.</strong> Academia Nexora es un espacio para aprender, practicar y ayudarnos.</li>
+              <li><strong>Usa tu identidad académica.</strong> Regístrate con tu nombre y apellido reales; evita apodos o sobrenombres.</li>
               <li><strong>Protege tu cuenta.</strong> No compartas tu contraseña y cierra sesión cuando termines, especialmente en una computadora compartida.</li>
               <li><strong>Equivocarse también es aprender.</strong> Los ejercicios pueden repetirse y corregirse; las tareas evaluadas siguen sus propias reglas.</li>
             </ol>
