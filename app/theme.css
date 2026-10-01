@@ -1,0 +1,132 @@
+html {
+  transition: background-color 0.2s ease;
+}
+
+body,
+.sidebar,
+.topbar,
+.stat-card,
+.panel,
+.course-card,
+.task-card,
+.grade-row,
+.action-card,
+.login-page,
+.login-form-wrap,
+.form-group input,
+.sidebar-note,
+.empty-state {
+  transition: background-color 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+}
+
+[data-theme="dark"] {
+  --bg: #0d1220;
+  --surface: #151b2c;
+  --surface-soft: #202946;
+  --text: #eef2ff;
+  --muted: #a4aec4;
+  --primary: #8b8df5;
+  --primary-dark: #7375e7;
+  --border: #29334b;
+  --success: #73d2a6;
+  --warning: #f1b55f;
+  --danger: #ef8090;
+  --shadow: 0 18px 50px rgba(0, 0, 0, 0.25);
+}
+
+[data-theme="dark"] .form-group input {
+  color: var(--text);
+  background: #111827;
+}
+
+[data-theme="dark"] .form-group input::placeholder {
+  color: #6f7b94;
+}
+
+[data-theme="dark"] .sidebar-note {
+  background: #111827;
+}
+
+[data-theme="dark"] .topbar {
+  background: rgba(21, 27, 44, 0.9);
+}
+
+[data-theme="dark"] .empty-state {
+  border-color: #3a4662;
+  background: #111827;
+}
+
+[data-theme="dark"] .status-open {
+  color: #87e0b9;
+  background: #17382d;
+}
+
+[data-theme="dark"] .status-soon {
+  color: #f4c071;
+  background: #3b2c16;
+}
+
+.theme-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text);
+  background: var(--surface);
+  font-weight: 800;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(30, 41, 59, 0.06);
+  transition: 0.2s ease;
+}
+
+.theme-toggle:hover {
+  color: var(--primary);
+  border-color: var(--primary);
+  background: var(--surface-soft);
+  transform: translateY(-1px);
+}
+
+.topbar-actions {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.login-theme-toggle {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 20;
+}
+
+[data-theme="dark"] .login-theme-toggle .theme-toggle {
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.22);
+}
+
+@media (max-width: 580px) {
+  .theme-toggle-label {
+    display: none;
+  }
+
+  .theme-toggle {
+    width: 42px;
+    padding: 8px;
+  }
+
+  .topbar-actions {
+    gap: 8px;
+  }
+
+  .user-chip > span:first-child {
+    display: none;
+  }
+
+  .login-theme-toggle {
+    top: 14px;
+    right: 14px;
+  }
+}

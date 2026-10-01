@@ -1,4 +1,5 @@
 import Link from "next/link";
+import ThemeToggle from "./ThemeToggle";
 
 const navItems = [
   ["🏠", "Inicio", "/dashboard"],
@@ -37,9 +38,12 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       <main className="main-area">
         <header className="topbar">
           <strong>Academia Nexora</strong>
-          <div className="user-chip">
-            <span>Cuenta de demostración</span>
-            <span className="avatar">C</span>
+          <div className="topbar-actions">
+            <ThemeToggle />
+            <div className="user-chip">
+              <span>Cuenta de demostración</span>
+              <span className="avatar">C</span>
+            </div>
           </div>
         </header>
         <div className="page-content">{children}</div>
