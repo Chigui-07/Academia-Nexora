@@ -29,6 +29,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [email, setEmail] = useState("");
   const [roles, setRoles] = useState<string[]>([]);
+  const [adminUnread, setAdminUnread] = useState(0);
 
   useEffect(() => {
     let mounted = true;
@@ -67,6 +68,15 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       setEmail(session.user.email ?? "");
       setProfile(loadedProfile);
       setRoles(loadedRoles);
+
+      if (loadedRoles.includes("admin")) {
+        const { count } = await supabase
+          .from("admin_notifications")
+          .select("id", { count: "exact", head: true })
+          .is("read_at", null);
+
+        if (mounted) setAdminUnread(count ?? 0);
+      }
 
       if (loadedProfile?.theme) {
         localStorage.setItem("nexora-theme", loadedProfile.theme);
@@ -131,6 +141,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <Link className="nav-link" href={href} key={href}>
               <span>{icon}</span>
               <span>{label}</span>
+              {href === "/admin" && roles.includes("admin") && adminUnread > 0 && (
+                <span className="nav-notification-badge" aria-label={`${adminUnread} avisos nuevos`}>{adminUnread}</span>
+              )}
             </Link>
           ))}
         </nav>
