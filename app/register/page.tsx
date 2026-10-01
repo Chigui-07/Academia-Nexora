@@ -29,7 +29,7 @@ export default function RegisterPage() {
         <div className="login-card">
           <p className="eyebrow">Nueva cuenta</p>
           <h2>Regístrate</h2>
-          <p>Tu progreso quedará guardado en Academia Nexora.</p>
+          <p>Usa tu nombre y apellido reales. Tu perfil académico será más claro y profesional.</p>
           <AuthForm mode="register" />
         </div>
       </section>
