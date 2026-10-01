@@ -6,9 +6,23 @@ La plataforma tendrá un sistema académico propio. Las materias se mantienen a 
 
 ## 📌 Estado del proyecto
 
-**Fase actual:** diseño inicial e interfaz.
+**Fase actual:** interfaz inicial v0.1.
 
-La base funcional y académica ya está definida. El siguiente objetivo es construir la primera interfaz y, posteriormente, conectar autenticación, base de datos, entregas, calificaciones e IA.
+Ya existe una primera interfaz navegable en la rama `feat/base-interface`. Esta versión utiliza datos de demostración y todavía no incluye autenticación real, base de datos ni IA.
+
+## 🖥️ Interfaz v0.1
+
+Actualmente incluye:
+
+- Pantalla inicial de acceso / demostración.
+- Dashboard principal.
+- Cursos.
+- Tareas semanales.
+- Calificaciones.
+- Perfil y futura zona de insignias.
+- Panel de administración.
+- Navegación compartida entre las principales secciones.
+- Diseño adaptable básico para escritorio y pantallas pequeñas.
 
 ## 🧭 Menú principal
 
@@ -108,21 +122,21 @@ La cantidad de etapas y años podrá ampliarse en el futuro.
 
 ## 🛠️ Tecnología propuesta
 
-- **Frontend:** Next.js
-- **Base de datos / Auth / Storage:** Supabase
-- **IA:** OpenAI API
-- **Despliegue:** Vercel
+- **Frontend:** Next.js + TypeScript + CSS.
+- **Base de datos / Auth / Storage:** Supabase.
+- **IA:** OpenAI API.
+- **Despliegue:** Vercel.
 
 La arquitectura definitiva podrá ajustarse durante el desarrollo.
 
-## 🚧 Primera versión
+## 🚧 Primera versión funcional
 
-La primera versión funcional debe priorizar:
+La primera versión debe priorizar:
 
-1. Registro e inicio de sesión.
-2. Inicio / Dashboard.
-3. Cursos.
-4. Tareas.
+1. Registro e inicio de sesión reales.
+2. Dashboard conectado a datos del usuario.
+3. Creación y asignación de cursos.
+4. Creación de tareas.
 5. Resolución de tareas virtuales.
 6. Entregas.
 7. Calificaciones.
@@ -147,7 +161,17 @@ Después se añadirán PMA, IA automática, ejercicios avanzados, imágenes de p
 - Se definieron permisos de estudiante, profesor y administrador.
 - Se añadió la idea de un profesor IA automático para la cuenta principal.
 - Se añadieron logros, insignias y ejercicios opcionales en formato de minijuego.
-- Comienza la fase de diseño de interfaz.
+- Se creó la rama `feat/base-interface`.
+- Se inició el proyecto con Next.js y TypeScript.
+- Se creó la primera identidad visual de Academia Nexora.
+- Se implementó una pantalla inicial de acceso de demostración.
+- Se implementó el dashboard de Fundamentos · Año 1.
+- Se añadieron las pantallas de Cursos, Tareas, Calificaciones, Perfil y Administración.
+- Se añadió navegación compartida y diseño adaptable básico.
+
+### Siguiente objetivo
+
+Conectar la interfaz con **Supabase** para habilitar cuentas reales, usuarios persistentes y los primeros datos de cursos.
 
 ---
 
