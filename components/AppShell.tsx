@@ -142,7 +142,26 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
               <span>{icon}</span>
               <span>{label}</span>
               {href === "/admin" && roles.includes("admin") && adminUnread > 0 && (
-                <span className="nav-notification-badge" aria-label={`${adminUnread} avisos nuevos`}>{adminUnread}</span>
+                <span
+                  className="nav-notification-badge"
+                  aria-label={`${adminUnread} avisos nuevos`}
+                  style={{
+                    marginLeft: "auto",
+                    minWidth: 24,
+                    height: 24,
+                    padding: "0 7px",
+                    borderRadius: 999,
+                    display: "inline-flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    background: "var(--primary)",
+                    color: "white",
+                    fontSize: "0.75rem",
+                    fontWeight: 900,
+                  }}
+                >
+                  {adminUnread}
+                </span>
               )}
             </Link>
           ))}
