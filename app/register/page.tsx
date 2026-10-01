@@ -1,7 +1,7 @@
 import AuthForm from "@/components/AuthForm";
 import ThemeToggle from "@/components/ThemeToggle";
 
-export default function LoginPage() {
+export default function RegisterPage() {
   return (
     <main className="login-page">
       <div className="login-theme-toggle">
@@ -16,21 +16,21 @@ export default function LoginPage() {
 
         <div className="login-brand-copy">
           <p className="eyebrow" style={{ color: "rgba(255,255,255,.72)" }}>Tu espacio de aprendizaje</p>
-          <h1>Aprende. Avanza. Supera.</h1>
+          <h1>Empieza tu recorrido.</h1>
           <p>
-            Cursos, tareas, ejercicios, calificaciones, logros y una experiencia que crece contigo año tras año.
+            Crea tu cuenta para guardar cursos, tareas, calificaciones, progreso e insignias.
           </p>
         </div>
 
-        <small>Academia Nexora · Fundamentos Año 1</small>
+        <small>Fundamentos · Año 1</small>
       </section>
 
       <section className="login-form-wrap">
         <div className="login-card">
-          <p className="eyebrow">Bienvenido</p>
-          <h2>Inicia sesión</h2>
-          <p>Accede a tus cursos y continúa tu progreso en Academia Nexora.</p>
-          <AuthForm mode="login" />
+          <p className="eyebrow">Nueva cuenta</p>
+          <h2>Regístrate</h2>
+          <p>Tu progreso quedará guardado en Academia Nexora.</p>
+          <AuthForm mode="register" />
         </div>
       </section>
     </main>

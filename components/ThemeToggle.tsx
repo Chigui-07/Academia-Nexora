@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { supabase } from "@/lib/supabase";
 
 type Theme = "light" | "dark";
 
@@ -12,21 +13,29 @@ function applyTheme(theme: Theme) {
 }
 
 export default function ThemeToggle() {
-  const [theme, setTheme] = useState<Theme>("light");
+  const [theme, setTheme] = useState<Theme>("dark");
 
   useEffect(() => {
     const savedTheme = localStorage.getItem(STORAGE_KEY) as Theme | null;
-    const preferredTheme: Theme = savedTheme ?? (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    const preferredTheme: Theme = savedTheme ?? "dark";
 
     setTheme(preferredTheme);
     applyTheme(preferredTheme);
   }, []);
 
-  function toggleTheme() {
+  async function toggleTheme() {
     const nextTheme: Theme = theme === "dark" ? "light" : "dark";
     setTheme(nextTheme);
     localStorage.setItem(STORAGE_KEY, nextTheme);
     applyTheme(nextTheme);
+
+    const { data } = await supabase.auth.getSession();
+    if (data.session) {
+      await supabase
+        .from("profiles")
+        .update({ theme: nextTheme })
+        .eq("id", data.session.user.id);
+    }
   }
 
   return (
