@@ -1,5 +1,5 @@
-import Link from "next/link";
-import ThemeToggle from "../components/ThemeToggle";
+import AuthForm from "@/components/AuthForm";
+import ThemeToggle from "@/components/ThemeToggle";
 
 export default function LoginPage() {
   return (
@@ -22,7 +22,7 @@ export default function LoginPage() {
           </p>
         </div>
 
-        <small>Versión inicial · Fundamentos Año 1</small>
+        <small>Academia Nexora · Fundamentos Año 1</small>
       </section>
 
       <section className="login-form-wrap">
@@ -30,24 +30,7 @@ export default function LoginPage() {
           <p className="eyebrow">Bienvenido</p>
           <h2>Inicia sesión</h2>
           <p>Accede a tus cursos y continúa tu progreso en Academia Nexora.</p>
-
-          <div className="form-group">
-            <label htmlFor="email">Correo electrónico</label>
-            <input id="email" type="email" placeholder="tu@correo.com" disabled />
-          </div>
-
-          <div className="form-group">
-            <label htmlFor="password">Contraseña</label>
-            <input id="password" type="password" placeholder="••••••••" disabled />
-          </div>
-
-          <Link className="primary-button" href="/dashboard">
-            Entrar a la demostración
-          </Link>
-
-          <div className="login-footnote">
-            El registro real se habilitará cuando conectemos <strong>Supabase Auth</strong>.
-          </div>
+          <AuthForm mode="login" />
         </div>
       </section>
     </main>
