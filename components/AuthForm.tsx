@@ -97,7 +97,7 @@ export default function AuthForm({ mode }: { mode: AuthMode }) {
           return;
         }
 
-        setMessage("Cuenta creada. Revisa tu correo, confirma la cuenta y volverás a Academia Nexora para elegir tus primeros cursos.");
+        setMessage("Cuenta creada. Revisa tu correo y confirma la cuenta. Guarda y recuerda tu contraseña: la necesitarás para volver a iniciar sesión en Academia Nexora.");
         setPassword("");
         setConfirmPassword("");
       } else {
@@ -241,6 +241,10 @@ export default function AuthForm({ mode }: { mode: AuthMode }) {
               minLength={8}
               required
             />
+          </div>
+
+          <div className="security-note">
+            🔑 <strong>Guarda y recuerda tu contraseña.</strong> La necesitarás para volver a entrar a Academia Nexora. No la compartas; si usas un gestor de contraseñas, puedes guardarla allí de forma segura.
           </div>
 
           <section className="academy-rules">
