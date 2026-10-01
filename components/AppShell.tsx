@@ -21,6 +21,7 @@ type Profile = {
   stage: string;
   school_year: number;
   theme: "light" | "dark";
+  onboarding_completed_at: string | null;
 };
 
 export default function AppShell({ children }: { children: React.ReactNode }) {
@@ -28,6 +29,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [email, setEmail] = useState("");
   const [roles, setRoles] = useState<string[]>([]);
+  const [adminUnread, setAdminUnread] = useState(0);
 
   useEffect(() => {
     let mounted = true;
@@ -44,7 +46,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       const [{ data: profileData }, { data: roleData }] = await Promise.all([
         supabase
           .from("profiles")
-          .select("display_name, stage, school_year, theme")
+          .select("display_name, stage, school_year, theme, onboarding_completed_at")
           .eq("id", session.user.id)
           .single(),
         supabase
@@ -58,9 +60,23 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       const loadedRoles = (roleData ?? []).map((item) => item.role as string);
       const loadedProfile = profileData as Profile | null;
 
+      if (!loadedProfile?.onboarding_completed_at) {
+        replaceWith("/welcome/");
+        return;
+      }
+
       setEmail(session.user.email ?? "");
       setProfile(loadedProfile);
       setRoles(loadedRoles);
+
+      if (loadedRoles.includes("admin")) {
+        const { count } = await supabase
+          .from("admin_notifications")
+          .select("id", { count: "exact", head: true })
+          .is("read_at", null);
+
+        if (mounted) setAdminUnread(count ?? 0);
+      }
 
       if (loadedProfile?.theme) {
         localStorage.setItem("nexora-theme", loadedProfile.theme);
@@ -125,6 +141,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
             <Link className="nav-link" href={href} key={href}>
               <span>{icon}</span>
               <span>{label}</span>
+              {href === "/admin" && roles.includes("admin") && adminUnread > 0 && (
+                <span className="nav-notification-badge" aria-label={`${adminUnread} avisos nuevos`}>{adminUnread}</span>
+              )}
             </Link>
           ))}
         </nav>

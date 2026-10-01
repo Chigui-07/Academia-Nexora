@@ -1,3 +1,4 @@
+import AdminCourseRequests from "@/components/AdminCourseRequests";
 import AppShell from "@/components/AppShell";
 
 const actions = [
@@ -16,11 +17,13 @@ export default function AdminPage() {
         <div>
           <p className="eyebrow">Administración</p>
           <h1>Panel de control</h1>
-          <p>Estas acciones se conectarán a la base de datos en una siguiente fase.</p>
+          <p>Gestiona solicitudes, estudiantes, cursos y las próximas herramientas académicas.</p>
         </div>
       </div>
 
-      <section className="admin-actions">
+      <AdminCourseRequests />
+
+      <section className="admin-actions" style={{ marginTop: 18 }}>
         {actions.map(([title, description]) => (
           <article className="action-card" key={title}>
             <strong>{title}</strong>

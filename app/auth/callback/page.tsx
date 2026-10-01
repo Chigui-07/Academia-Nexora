@@ -25,20 +25,32 @@ export default function AuthCallbackPage() {
           if (error) throw error;
         }
 
-        const { data, error } = await supabase.auth.getSession();
+        let { data, error } = await supabase.auth.getSession();
         if (error) throw error;
 
         if (!data.session) {
           await new Promise((resolve) => setTimeout(resolve, 800));
           const retry = await supabase.auth.getSession();
-          if (!retry.data.session) {
+          data = retry.data;
+          if (!data.session) {
             throw new Error("No se pudo iniciar la sesión después de confirmar el correo.");
           }
         }
 
+        const { data: profile } = await supabase
+          .from("profiles")
+          .select("onboarding_completed_at")
+          .eq("id", data.session.user.id)
+          .single();
+
         if (mounted) {
-          setStatus("Cuenta confirmada. Entrando a Academia Nexora...");
-          goTo("/dashboard/");
+          if (profile?.onboarding_completed_at) {
+            setStatus("Cuenta confirmada. Entrando a Academia Nexora...");
+            goTo("/dashboard/");
+          } else {
+            setStatus("Cuenta confirmada. Preparando tu bienvenida...");
+            goTo("/welcome/");
+          }
         }
       } catch (caughtError) {
         const message = caughtError instanceof Error ? caughtError.message : "No se pudo confirmar la cuenta.";
