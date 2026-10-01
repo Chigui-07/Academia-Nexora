@@ -123,11 +123,18 @@ La cantidad de etapas y años podrá ampliarse en el futuro.
 ## 🛠️ Tecnología propuesta
 
 - **Frontend:** Next.js + TypeScript + CSS.
+- **Hosting del frontend:** GitHub Pages mediante exportación estática y GitHub Actions.
 - **Base de datos / Auth / Storage:** Supabase.
-- **IA:** OpenAI API.
-- **Despliegue:** Vercel.
+- **Backend y automatizaciones:** Supabase Edge Functions y servicios asociados.
+- **IA:** OpenAI API, llamada únicamente desde backend seguro.
 
-La arquitectura definitiva podrá ajustarse durante el desarrollo.
+GitHub Pages alojará la interfaz pública. Las funciones que requieran servidor, autenticación sensible o claves privadas no se ejecutarán en Pages; se delegarán a Supabase.
+
+## 🚀 Despliegue web
+
+La rama incluye configuración para exportar Next.js como sitio estático y un workflow en `.github/workflows/deploy-pages.yml`.
+
+Cuando los cambios lleguen a `main`, GitHub Actions podrá construir el directorio `out` y publicarlo en GitHub Pages.
 
 ## 🚧 Primera versión funcional
 
@@ -168,10 +175,14 @@ Después se añadirán PMA, IA automática, ejercicios avanzados, imágenes de p
 - Se implementó el dashboard de Fundamentos · Año 1.
 - Se añadieron las pantallas de Cursos, Tareas, Calificaciones, Perfil y Administración.
 - Se añadió navegación compartida y diseño adaptable básico.
+- Se eligió **GitHub Pages** como hosting del frontend público.
+- Se configuró Next.js para exportación estática.
+- Se añadió un workflow de GitHub Actions para construir y desplegar la web en Pages desde `main`.
+- Se decidió mantener las funciones de servidor, autenticación sensible e IA fuera de GitHub Pages mediante Supabase.
 
 ### Siguiente objetivo
 
-Conectar la interfaz con **Supabase** para habilitar cuentas reales, usuarios persistentes y los primeros datos de cursos.
+Revisar la interfaz publicada y después conectar **Supabase Auth** para habilitar cuentas reales y usuarios persistentes.
 
 ---
 
