@@ -8,7 +8,7 @@ La plataforma tendrá un sistema académico propio. Las materias se mantienen a 
 
 **Fase actual:** interfaz inicial v0.1.
 
-Ya existe una primera interfaz navegable en la rama `feat/base-interface`. Esta versión utiliza datos de demostración y todavía no incluye autenticación real, base de datos ni IA.
+Ya existe una primera interfaz navegable y publicada. Esta versión utiliza datos de demostración y todavía no incluye autenticación real, base de datos ni IA.
 
 ## 🖥️ Interfaz v0.1
 
@@ -23,6 +23,7 @@ Actualmente incluye:
 - Panel de administración.
 - Navegación compartida entre las principales secciones.
 - Diseño adaptable básico para escritorio y pantallas pequeñas.
+- Modo claro y modo oscuro con preferencia guardada en el navegador.
 
 ## 🧭 Menú principal
 
@@ -132,9 +133,9 @@ GitHub Pages alojará la interfaz pública. Las funciones que requieran servidor
 
 ## 🚀 Despliegue web
 
-La rama incluye configuración para exportar Next.js como sitio estático y un workflow en `.github/workflows/deploy-pages.yml`.
+La aplicación está configurada para exportar Next.js como sitio estático y desplegarlo mediante `.github/workflows/deploy-pages.yml`.
 
-Cuando los cambios lleguen a `main`, GitHub Actions podrá construir el directorio `out` y publicarlo en GitHub Pages.
+Cuando los cambios llegan a `main`, GitHub Actions construye el directorio `out` y lo publica en GitHub Pages.
 
 ## 🚧 Primera versión funcional
 
@@ -179,10 +180,13 @@ Después se añadirán PMA, IA automática, ejercicios avanzados, imágenes de p
 - Se configuró Next.js para exportación estática.
 - Se añadió un workflow de GitHub Actions para construir y desplegar la web en Pages desde `main`.
 - Se decidió mantener las funciones de servidor, autenticación sensible e IA fuera de GitHub Pages mediante Supabase.
+- Se corrigió el despliegue inicial de GitHub Pages para publicar la interfaz en lugar del README.
+- Se añadió **modo oscuro y modo claro**.
+- Se añadió persistencia local del tema mediante `localStorage`, por lo que cada navegador recuerda el modo elegido.
 
 ### Siguiente objetivo
 
-Revisar la interfaz publicada y después conectar **Supabase Auth** para habilitar cuentas reales y usuarios persistentes.
+Revisar y mejorar la interfaz publicada y después conectar **Supabase Auth** para habilitar cuentas reales y usuarios persistentes. Cuando existan perfiles reales, la preferencia de tema podrá sincronizarse también con la cuenta del usuario.
 
 ---
 
