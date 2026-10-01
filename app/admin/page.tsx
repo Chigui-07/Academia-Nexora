@@ -1,13 +1,11 @@
 import AdminCourseRequests from "@/components/AdminCourseRequests";
 import AppShell from "@/components/AppShell";
+import TeacherActivityManager from "@/components/TeacherActivityManager";
 
-const actions = [
-  ["📚 Crear materia", "Añade una materia y asígnala a uno o varios usuarios."],
-  ["📝 Crear tarea", "Crea tareas de cuaderno con punteo, fechas e instrucciones."],
-  ["💻 Crear tarea virtual", "Prepara actividades que se resuelven y califican dentro de la plataforma."],
-  ["✏️ Crear ejercicio", "Añade práctica sin punteo ni fecha límite."],
-  ["👥 Gestionar usuarios", "Administra estudiantes, cursos y asignaciones."],
-  ["🏅 Gestionar logros", "Crea insignias y condiciones para desbloquearlas."],
+const adminActions = [
+  ["📚 Gestionar cursos", "Administra el catálogo de materias de Academia Nexora."],
+  ["👥 Inscripciones", "Agrega o retira cursos de los usuarios y revisa sus asignaciones."],
+  ["📩 Solicitudes", "Revisa las solicitudes de cursos enviadas por los estudiantes."],
 ] as const;
 
 export default function AdminPage() {
@@ -15,22 +13,36 @@ export default function AdminPage() {
     <AppShell>
       <div className="page-header">
         <div>
-          <p className="eyebrow">Administración</p>
-          <h1>Panel de control</h1>
-          <p>Gestiona solicitudes, estudiantes, cursos y las próximas herramientas académicas.</p>
+          <p className="eyebrow">Administración y Profesor</p>
+          <h1>Panel de gestión</h1>
+          <p>Administración organiza cursos e inscripciones; Profesor prepara el contenido académico.</p>
         </div>
       </div>
 
-      <AdminCourseRequests />
+      <section className="panel">
+        <div className="section-heading">
+          <div>
+            <p className="eyebrow">Administración</p>
+            <h2>⚙️ Cursos y usuarios</h2>
+            <p className="muted-copy">Esta parte se encarga del catálogo, las solicitudes y de asignar cursos a los estudiantes.</p>
+          </div>
+        </div>
 
-      <section className="admin-actions" style={{ marginTop: 18 }}>
-        {actions.map(([title, description]) => (
-          <article className="action-card" key={title}>
-            <strong>{title}</strong>
-            <span>{description}</span>
-          </article>
-        ))}
+        <section className="admin-actions">
+          {adminActions.map(([title, description]) => (
+            <article className="action-card" key={title}>
+              <strong>{title}</strong>
+              <span>{description}</span>
+            </article>
+          ))}
+        </section>
       </section>
+
+      <div style={{ marginTop: 18 }}>
+        <AdminCourseRequests />
+      </div>
+
+      <TeacherActivityManager />
     </AppShell>
   );
 }
