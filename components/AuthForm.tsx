@@ -14,14 +14,26 @@ export default function AuthForm({ mode }: { mode: AuthMode }) {
   const [confirmPassword, setConfirmPassword] = useState("");
   const [displayName, setDisplayName] = useState("");
   const [username, setUsername] = useState("");
+  const [rulesAccepted, setRulesAccepted] = useState(false);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) goTo("/dashboard/");
-    });
+    async function redirectExistingSession() {
+      const { data } = await supabase.auth.getSession();
+      if (!data.session) return;
+
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("onboarding_completed_at")
+        .eq("id", data.session.user.id)
+        .single();
+
+      goTo(profile?.onboarding_completed_at ? "/dashboard/" : "/welcome/");
+    }
+
+    redirectExistingSession();
   }, []);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -36,6 +48,11 @@ export default function AuthForm({ mode }: { mode: AuthMode }) {
 
     if (password.length < 8) {
       setError("La contraseña debe tener al menos 8 caracteres.");
+      return;
+    }
+
+    if (isRegister && !rulesAccepted) {
+      setError("Debes leer y aceptar las reglas de Academia Nexora para crear tu cuenta.");
       return;
     }
 
@@ -56,6 +73,7 @@ export default function AuthForm({ mode }: { mode: AuthMode }) {
             data: {
               display_name: displayName.trim(),
               username: username.trim().toLowerCase(),
+              rules_accepted_at: new Date().toISOString(),
             },
           },
         });
@@ -63,11 +81,11 @@ export default function AuthForm({ mode }: { mode: AuthMode }) {
         if (signUpError) throw signUpError;
 
         if (data.session) {
-          goTo("/dashboard/");
+          goTo("/welcome/");
           return;
         }
 
-        setMessage("Cuenta creada. Revisa tu correo y confirma tu cuenta para poder iniciar sesión.");
+        setMessage("Cuenta creada. Revisa tu correo, confirma la cuenta y volverás a Academia Nexora para elegir tus primeros cursos.");
         setPassword("");
         setConfirmPassword("");
       } else {
@@ -77,6 +95,21 @@ export default function AuthForm({ mode }: { mode: AuthMode }) {
         });
 
         if (signInError) throw signInError;
+
+        const { data: sessionData } = await supabase.auth.getSession();
+        const userId = sessionData.session?.user.id;
+
+        if (userId) {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("onboarding_completed_at")
+            .eq("id", userId)
+            .single();
+
+          goTo(profile?.onboarding_completed_at ? "/dashboard/" : "/welcome/");
+          return;
+        }
+
         goTo("/dashboard/");
       }
     } catch (caughtError) {
@@ -156,26 +189,60 @@ export default function AuthForm({ mode }: { mode: AuthMode }) {
       </div>
 
       {isRegister && (
-        <div className="form-group">
-          <label htmlFor="confirm-password">Confirmar contraseña</label>
-          <input
-            id="confirm-password"
-            type="password"
-            value={confirmPassword}
-            onChange={(event) => setConfirmPassword(event.target.value)}
-            placeholder="Repite tu contraseña"
-            autoComplete="new-password"
-            minLength={8}
-            required
-          />
-        </div>
+        <>
+          <div className="form-group">
+            <label htmlFor="confirm-password">Confirmar contraseña</label>
+            <input
+              id="confirm-password"
+              type="password"
+              value={confirmPassword}
+              onChange={(event) => setConfirmPassword(event.target.value)}
+              placeholder="Repite tu contraseña"
+              autoComplete="new-password"
+              minLength={8}
+              required
+            />
+          </div>
+
+          <section className="academy-rules">
+            <div className="academy-rules-title">
+              <span>🎓</span>
+              <div>
+                <strong>Bienvenido a Academia Nexora</strong>
+                <small>Antes de comenzar, estas son nuestras reglas.</small>
+              </div>
+            </div>
+
+            <ol>
+              <li><strong>Haz tu propio trabajo.</strong> Las actividades están hechas para ayudarte a aprender, no solamente para conseguir puntos.</li>
+              <li><strong>Respeta las reglas sobre IA.</strong> Si una tarea indica que no se permite usar inteligencia artificial, debes resolverla por tu cuenta.</li>
+              <li><strong>Muestra tu procedimiento cuando se solicite.</strong> En las tareas de cuaderno, el procedimiento forma parte de la entrega.</li>
+              <li><strong>Respeta las fechas de entrega.</strong> Una tarea puede dejar de aceptar respuestas al llegar a su fecha de cierre.</li>
+              <li><strong>El PMA es una segunda oportunidad.</strong> Solo estará disponible en algunas tareas y la plataforma conservará tu mejor nota.</li>
+              <li><strong>Respeta a los demás usuarios.</strong> Academia Nexora es un espacio para aprender, practicar y ayudarnos.</li>
+              <li><strong>Protege tu cuenta.</strong> No compartas tu contraseña y cierra sesión cuando termines, especialmente en una computadora compartida.</li>
+              <li><strong>Equivocarse también es aprender.</strong> Los ejercicios pueden repetirse y corregirse; las tareas evaluadas siguen sus propias reglas.</li>
+            </ol>
+
+            <label className="rules-check">
+              <input type="checkbox" checked={rulesAccepted} onChange={(event) => setRulesAccepted(event.target.checked)} />
+              <span>He leído y acepto las reglas de Academia Nexora.</span>
+            </label>
+
+            <p className="academy-motto">Aprende. Avanza. Supera.</p>
+          </section>
+        </>
+      )}
+
+      {!isRegister && (
+        <div className="security-note">🔐 Tu progreso es personal. No compartas tus datos de acceso y recuerda cerrar sesión al terminar.</div>
       )}
 
       {error && <div className="auth-message auth-error">{error}</div>}
       {message && <div className="auth-message auth-success">{message}</div>}
 
       <button className="primary-button" type="submit" disabled={loading}>
-        {loading ? "Procesando..." : isRegister ? "Crear cuenta" : "Iniciar sesión"}
+        {loading ? "Procesando..." : isRegister ? "Crear mi cuenta" : "Iniciar sesión"}
       </button>
 
       <div className="login-footnote">
