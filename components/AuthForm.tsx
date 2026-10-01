@@ -187,12 +187,15 @@ export default function AuthForm({ mode }: { mode: AuthMode }) {
               id="username"
               value={username}
               onChange={(event) => setUsername(event.target.value.replace(/\s/g, ""))}
-              placeholder="usuario"
+              placeholder="chigui"
               autoComplete="username"
               minLength={3}
               maxLength={30}
               required
             />
+            <small className="muted-copy">
+              Aquí sí puedes usar un apodo o sobrenombre. Es una parte personal del perfil y no reemplaza tu nombre académico.
+            </small>
           </div>
         </>
       )}
@@ -256,7 +259,8 @@ export default function AuthForm({ mode }: { mode: AuthMode }) {
               <li><strong>Respeta las fechas de entrega.</strong> Una tarea puede dejar de aceptar respuestas al llegar a su fecha de cierre.</li>
               <li><strong>El PMA es una segunda oportunidad.</strong> Solo estará disponible en algunas tareas y la plataforma conservará tu mejor nota.</li>
               <li><strong>Respeta a los demás usuarios.</strong> Academia Nexora es un espacio para aprender, practicar y ayudarnos.</li>
-              <li><strong>Usa tu identidad académica.</strong> Regístrate con tu nombre y apellido reales; evita apodos o sobrenombres.</li>
+              <li><strong>Usa tu identidad académica.</strong> Regístrate con tu nombre y apellido reales; evita apodos o sobrenombres en esos campos.</li>
+              <li><strong>Personaliza tu usuario.</strong> Tu nombre de usuario puede ser un apodo o sobrenombre y se usa como elemento personal del perfil.</li>
               <li><strong>Protege tu cuenta.</strong> No compartas tu contraseña y cierra sesión cuando termines, especialmente en una computadora compartida.</li>
               <li><strong>Equivocarse también es aprender.</strong> Los ejercicios pueden repetirse y corregirse; las tareas evaluadas siguen sus propias reglas.</li>
             </ol>

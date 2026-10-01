@@ -19,7 +19,7 @@ type RequestRow = {
 type Profile = {
   id: string;
   display_name: string;
-  username: string | null;
+  student_code: string;
 };
 
 const levelLabels: Record<string, string> = {
@@ -87,7 +87,7 @@ export default function AdminCourseRequests() {
     if (userIds.length > 0) {
       const { data: profileData, error: profileError } = await supabase
         .from("profiles")
-        .select("id, display_name, username")
+        .select("id, display_name, student_code")
         .in("id", userIds);
 
       if (profileError) throw profileError;
@@ -179,7 +179,9 @@ export default function AdminCourseRequests() {
               <article className="admin-request-card" key={request.id}>
                 <div className="admin-request-main">
                   <div>
-                    <span className="request-user">{profile?.display_name ?? "Estudiante"}{profile?.username ? ` · @${profile.username}` : ""}</span>
+                    <span className="request-user">
+                      {profile?.display_name ?? "Estudiante"}{profile?.student_code ? ` · ${profile.student_code}` : ""}
+                    </span>
                     <h3>{request.course_name}</h3>
                     <p>{request.grade_level} · Nivel declarado: {levelLabels[request.self_level] ?? request.self_level}</p>
                     {request.diagnostic_opt_in && <small>🧠 Quiere realizar el diagnóstico opcional.</small>}
