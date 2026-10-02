@@ -150,6 +150,11 @@
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 12%, transparent);
 }
 
+.writtenAnswer:disabled {
+  opacity: 0.72;
+  cursor: not-allowed;
+}
+
 .choiceList {
   display: grid;
   gap: 9px;
@@ -164,6 +169,20 @@
   border-radius: 11px;
   background: color-mix(in srgb, var(--surface) 92%, transparent);
   cursor: pointer;
+  transition: 0.16s ease;
+}
+
+.choiceList label:hover {
+  border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
+}
+
+.choiceList label.choiceSelected {
+  border-color: color-mix(in srgb, var(--primary) 62%, var(--border));
+  background: color-mix(in srgb, var(--primary) 10%, var(--surface));
+}
+
+.choiceList label:has(input:disabled) {
+  cursor: not-allowed;
 }
 
 .choiceList input {
