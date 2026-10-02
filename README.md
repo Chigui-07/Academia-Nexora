@@ -4,14 +4,14 @@
 
 ## 📌 Estado del proyecto
 
-**Fase actual: v0.28 — base académica pública con diagnósticos universales y clases enriquecidas.**
+**Fase actual: v0.29 — base académica pública con clases enriquecidas y marcadores personales.**
 
 - Frontend: Next.js + TypeScript + CSS.
 - Publicación: GitHub Pages.
 - Backend, Auth, Storage y datos: Supabase.
 - El proyecto no depende de APIs de IA de pago.
 
-La base incluye registro, perfiles, Carné Nexora, roles, cursos, solicitudes e inscripciones, diagnósticos, clases, tablas dentro de clases, tareas, ejercicios, preguntas configurables, archivos privados, intentos persistentes, revisión y calificación manual, presencia en línea, Formación esencial, PMA, etapas, niveles, bloques, historial académico y ascenso automático.
+La base incluye registro, perfiles, Carné Nexora, roles, cursos, solicitudes e inscripciones, diagnósticos, clases, tablas dentro de clases, clases guardadas por estudiante, tareas, ejercicios, preguntas configurables, archivos privados, intentos persistentes, revisión y calificación manual, presencia en línea, Formación esencial, PMA, etapas, niveles, bloques, historial académico y ascenso automático.
 
 ## 🧭 Navegación
 
@@ -62,6 +62,8 @@ Las clases admiten:
 - vista previa antes de publicar.
 
 Las tablas se guardan junto con el contenido de la clase sin romper las clases creadas anteriormente.
+
+Cada estudiante puede marcar una clase con **🔖 Guardar clase**. Los marcadores se almacenan por cuenta en Supabase y la pestaña Clases permite alternar entre **Todas** y **Guardadas**. Quitar el marcador no elimina ni modifica la clase original.
 
 Las actividades disponibles son:
 
@@ -194,8 +196,9 @@ Durante los primeros 365 días se asignan automáticamente:
 
 ## 🔐 Seguridad
 
-- RLS protege perfiles, cursos, solicitudes, inscripciones, clases, actividades, intentos, historial y archivos.
+- RLS protege perfiles, cursos, solicitudes, inscripciones, clases, marcadores personales, actividades, intentos, historial y archivos.
 - El estudiante solo recibe contenido publicado que le corresponde.
+- Cada usuario solo puede leer, crear y quitar sus propios marcadores de clases.
 - Las claves correctas no se exponen al navegador del estudiante.
 - Crear, guardar y entregar intentos pasa por funciones de servidor.
 - PMA valida servidor a servidor su relación con la tarea original.
@@ -212,6 +215,7 @@ Durante los primeros 365 días se asignan automáticamente:
 - `course_enrollments`
 - `course_lessons`
 - `course_lesson_assignments`
+- `lesson_bookmarks`
 - `course_activities`
 - `course_activity_assignments`
 - `activity_attempts`
