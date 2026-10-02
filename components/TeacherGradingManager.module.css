@@ -1,0 +1,249 @@
+.wrapper {
+  margin-top: 24px;
+  padding: 20px;
+  border: 1px solid var(--border, rgba(148, 163, 184, 0.18));
+  border-radius: 18px;
+  background: var(--surface, #111827);
+}
+
+.pendingBadge {
+  padding: 7px 10px;
+  border: 1px solid var(--border, rgba(148, 163, 184, 0.18));
+  border-radius: 999px;
+  color: var(--muted, #94a3b8);
+  font-size: 0.78rem;
+  font-weight: 850;
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(230px, 300px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.queue {
+  display: grid;
+  gap: 9px;
+  max-height: 760px;
+  overflow: auto;
+}
+
+.queueItem {
+  display: grid;
+  gap: 4px;
+  width: 100%;
+  padding: 13px 14px;
+  border: 1px solid var(--border, rgba(148, 163, 184, 0.18));
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.queueItem:hover,
+.queueItemActive {
+  border-color: color-mix(in srgb, var(--primary) 55%, var(--border));
+  background: color-mix(in srgb, var(--primary) 8%, var(--surface));
+}
+
+.queueItem span,
+.queueItem small,
+.queueItem em {
+  color: var(--muted, #94a3b8);
+}
+
+.queueItem span {
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.queueItem strong {
+  font-size: 0.95rem;
+}
+
+.queueItem small {
+  line-height: 1.35;
+}
+
+.queueItem em {
+  font-size: 0.75rem;
+  font-style: normal;
+  font-weight: 800;
+}
+
+.reviewPanel {
+  display: grid;
+  gap: 18px;
+}
+
+.reviewHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: flex-start;
+  padding: 16px;
+  border: 1px solid var(--border, rgba(148, 163, 184, 0.18));
+  border-radius: 14px;
+}
+
+.reviewHeader h3 {
+  margin: 2px 0 6px;
+}
+
+.signatureMini {
+  display: grid;
+  gap: 4px;
+  min-width: 180px;
+  text-align: right;
+}
+
+.signatureMini small {
+  color: var(--muted, #94a3b8);
+}
+
+.questions {
+  display: grid;
+  gap: 13px;
+}
+
+.questionCard {
+  padding: 16px;
+  border: 1px solid var(--border, rgba(148, 163, 184, 0.18));
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+}
+
+.questionTopline {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  color: var(--muted, #94a3b8);
+  font-size: 0.78rem;
+}
+
+.prompt {
+  margin: 12px 0;
+  font-weight: 800;
+  line-height: 1.55;
+}
+
+.answerBox,
+.expectedBox {
+  display: grid;
+  gap: 5px;
+  padding: 12px 13px;
+  border-radius: 11px;
+}
+
+.answerBox {
+  border: 1px solid var(--border, rgba(148, 163, 184, 0.18));
+  background: color-mix(in srgb, var(--surface-soft) 55%, transparent);
+}
+
+.expectedBox {
+  margin-top: 8px;
+  border: 1px dashed color-mix(in srgb, var(--primary) 35%, var(--border));
+  background: color-mix(in srgb, var(--primary) 5%, var(--surface));
+}
+
+.answerBox small,
+.expectedBox small {
+  color: var(--muted, #94a3b8);
+  font-weight: 750;
+}
+
+.reviewChoices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  margin-top: 13px;
+}
+
+.reviewButton,
+.correctActive,
+.incorrectActive {
+  padding: 9px 12px;
+  border-radius: 10px;
+  font: inherit;
+  font-weight: 850;
+  cursor: pointer;
+}
+
+.reviewButton {
+  border: 1px solid var(--border, rgba(148, 163, 184, 0.18));
+  background: transparent;
+  color: var(--text);
+}
+
+.correctActive {
+  border: 1px solid rgba(34, 197, 94, 0.55);
+  background: rgba(34, 197, 94, 0.12);
+  color: #86efac;
+}
+
+.incorrectActive {
+  border: 1px solid rgba(239, 68, 68, 0.55);
+  background: rgba(239, 68, 68, 0.12);
+  color: #fca5a5;
+}
+
+.finalSection {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--border, rgba(148, 163, 184, 0.18));
+  border-radius: 14px;
+}
+
+.finalSection label {
+  display: grid;
+  gap: 7px;
+  font-weight: 800;
+}
+
+.finalSection textarea,
+.finalSection input {
+  width: 100%;
+}
+
+.finalSection textarea {
+  resize: vertical;
+}
+
+.gradeInput {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.gradeInput input {
+  max-width: 170px;
+}
+
+.gradeInput span {
+  color: var(--muted, #94a3b8);
+  font-weight: 850;
+}
+
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .queue {
+    max-height: 330px;
+  }
+}
+
+@media (max-width: 620px) {
+  .reviewHeader,
+  .questionTopline {
+    flex-direction: column;
+  }
+
+  .signatureMini {
+    text-align: left;
+  }
+}

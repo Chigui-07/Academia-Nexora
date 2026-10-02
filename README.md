@@ -4,12 +4,12 @@
 
 ## 📌 Estado del proyecto
 
-**Fase actual: v0.12 — Asignación individual de actividades.**
+**Fase actual: v0.13 — Revisión y calificación manual.**
 
 Frontend: Next.js + TypeScript + CSS, publicado con GitHub Pages.  
 Backend, autenticación y datos: Supabase.
 
-Ya existen registro, confirmación por correo, perfiles, Carné Nexora, roles, onboarding, solicitudes e inscripciones, diagnóstico funcional de Matemática, historial de diagnósticos, creador de clases y actividades para Profesor, preguntas configurables, Formación esencial, intentos persistentes y asignación de actividades por curso o por estudiantes específicos.
+Ya existen registro, confirmación por correo, perfiles, Carné Nexora, roles, onboarding, solicitudes e inscripciones, diagnóstico funcional de Matemática, historial de diagnósticos, creador de clases y actividades para Profesor, preguntas configurables, Formación esencial, intentos persistentes, asignación individual y revisión manual firmada por Profesor.
 
 ## 🧭 Navegación principal
 
@@ -85,6 +85,21 @@ Profesor puede combinar **Respuesta escrita**, **Elección única**, **Selecció
 
 Las claves correctas se almacenan en `private.course_activity_answer_keys` y no se envían al estudiante.
 
+### Revisión y calificación manual
+
+Las entregas terminadas aparecen en **Profesor → Revisar y calificar entregas**.
+
+En cada pregunta, Profesor ve la respuesta del estudiante y puede marcarla como:
+
+- ✅ **Correcta**;
+- ❌ **Incorrecta**.
+
+Al finalizar la revisión se coloca una calificación y existe un campo de **retroalimentación final** para explicar qué hizo bien el estudiante, qué debe corregir o qué debería practicar después.
+
+Cada revisión guarda automáticamente el nombre académico del profesor que la realizó. El estudiante ve la marca correcta/incorrecta después de cada respuesta y, al final de la actividad, su nota, la retroalimentación y la firma **Revisado y calificado por [nombre del profesor]**.
+
+La firma se genera en servidor a partir del perfil del usuario que calificó; el nombre no lo escribe manualmente el navegador.
+
 ## ✍️ Intentos y entregas del estudiante
 
 Las actividades publicadas aparecen en **Tareas** o en las pestañas Tareas/Ejercicios de cada curso durante su ventana de disponibilidad y únicamente cuando fueron asignadas al estudiante.
@@ -93,7 +108,7 @@ El estudiante puede pulsar **Comenzar actividad**. Nexora crea un intento persis
 
 Durante un intento las respuestas se guardan automáticamente, recargar no reinicia el intento, el cronómetro continúa desde la hora original y **Entregar actividad** cierra el intento. Al llegar a cero se conserva lo respondido y el intento termina por tiempo. Las tareas normales quedan cerradas tras entregar y los ejercicios prácticos permiten nuevos intentos.
 
-La corrección automática, calificaciones y PMA se desarrollarán después de estabilizar la beta.
+Después de entregar, el intento queda pendiente de revisión. Cuando Profesor lo califica, la misma hoja muestra el resultado de cada respuesta y la retroalimentación final.
 
 ## 🌱 Formación esencial — primeros 365 días
 
@@ -116,6 +131,8 @@ La inscripción guarda `required_until`, calculado como 365 días desde la creac
 - Los intentos solo pueden ser leídos por su estudiante o por personal autorizado.
 - Las respuestas correctas del diagnóstico y de las actividades no se exponen al navegador.
 - Crear, guardar y entregar intentos pasa por funciones seguras del servidor.
+- La calificación manual también pasa por una RPC protegida y la firma del profesor se obtiene en servidor.
+- Las cuentas de estudiante no reciben permisos directos para modificar calificaciones ni revisiones.
 
 ## 🔁 PMA
 
@@ -158,10 +175,10 @@ Cada curso tendrá 4 bloques de hasta 100 puntos.
 
 1. Añadir **recuperación de contraseña** y cerrar la preparación mínima de la Beta para amigos.
 2. Convertir las tarjetas superiores de Administración en apartados funcionales para catálogo e inscripciones.
-3. Implementar corrección, calificaciones por bloques y PMA.
-4. Hacer que Tareas pendientes y Promedio actual del Dashboard provengan de datos reales.
-5. Añadir presencia opcional **Conectados ahora**, XP Nexora, ligas y ranking semanal opcional.
-6. Añadir mejoras de contenido, recursos y posteriormente IA educativa segura.
+3. Conectar las calificaciones manuales con **Calificaciones**, promedios por curso, bloques y Dashboard.
+4. Implementar PMA.
+5. Añadir el **Profesor IA únicamente para la cuenta principal**, usando el mismo sistema de cursos, clases, actividades y calificaciones.
+6. Añadir presencia opcional **Conectados ahora**, XP Nexora, ligas y ranking semanal opcional.
 
 ---
 
@@ -239,6 +256,15 @@ Cada curso tendrá 4 bloques de hasta 100 puntos.
 - RLS oculta una actividad individual a quienes no estén asignados.
 - La función de iniciar intentos comprueba también la asignación en servidor.
 - El flujo de guardado de asignaciones se probó dentro de una transacción y se revirtió después de la comprobación.
+
+## 1 de octubre de 2026 — v0.13: revisión y calificación manual
+
+- Profesor dispone de una cola de entregas terminadas.
+- Cada respuesta puede marcarse como correcta o incorrecta.
+- Se añadió calificación numérica y retroalimentación final.
+- Cada revisión queda firmada automáticamente con el nombre académico del profesor.
+- El estudiante ve la corrección después de cada respuesta y la retroalimentación al final de la hoja.
+- El flujo de calificación se probó en una transacción real y luego se revirtió.
 
 ---
 

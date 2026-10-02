@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import ActivitySheet, { ActivitySheetType } from "./ActivitySheet";
+import ActivitySheet, { ActivityQuestionReview, ActivitySheetType } from "./ActivitySheet";
 import { ActivityAnswerKey, ActivityAnswerValue, ActivityQuestionBlock } from "@/lib/activityQuestions";
 import { supabase } from "@/lib/supabase";
 import styles from "./ActivityRunner.module.css";
@@ -16,6 +16,12 @@ type Attempt = {
   started_at: string;
   expires_at: string | null;
   submitted_at: string | null;
+  question_reviews: Record<string, ActivityQuestionReview>;
+  grade_value: number | null;
+  grade_max: number | null;
+  feedback: string | null;
+  reviewer_name: string | null;
+  reviewed_at: string | null;
 };
 
 export type RunnableActivity = {
@@ -61,6 +67,7 @@ function friendlyError(message: string) {
   if (message.includes("Activity has not opened")) return "Esta actividad todavía no ha abierto.";
   if (message.includes("Activity is closed")) return "Esta actividad ya cerró.";
   if (message.includes("not enrolled")) return "Este curso no está asignado a tu cuenta.";
+  if (message.includes("not assigned")) return "Esta actividad no está asignada a tu cuenta.";
   if (message.includes("Activity not available")) return "Esta actividad ya no está disponible.";
   if (message.includes("Attempt not found")) return "No encontramos tu intento. Recarga la página e inténtalo de nuevo.";
   return message;
@@ -88,7 +95,7 @@ export default function ActivityRunner({ activity, courseName, courseIcon = "�
 
       const { data, error: loadError } = await supabase
         .from("activity_attempts")
-        .select("id, status, attempt_number, responses, started_at, expires_at, submitted_at")
+        .select("id, status, attempt_number, responses, started_at, expires_at, submitted_at, question_reviews, grade_value, grade_max, feedback, reviewer_name, reviewed_at")
         .eq("activity_id", activity.id)
         .eq("user_id", session.user.id)
         .order("attempt_number", { ascending: false })
@@ -100,6 +107,7 @@ export default function ActivityRunner({ activity, courseName, courseIcon = "�
       if (data) {
         const loaded = data as Attempt;
         const loadedAnswers = (loaded.responses ?? {}) as ActivityAnswerKey;
+        loaded.question_reviews = (loaded.question_reviews ?? {}) as Record<string, ActivityQuestionReview>;
 
         if (loaded.status === "in_progress" && loaded.expires_at && new Date(loaded.expires_at).getTime() <= Date.now()) {
           const { data: finalStatus, error: timeoutError } = await supabase.rpc("submit_course_activity_attempt", {
@@ -197,6 +205,12 @@ export default function ActivityRunner({ activity, courseName, courseIcon = "�
         started_at: row.started_at,
         expires_at: row.expires_at,
         submitted_at: row.submitted_at,
+        question_reviews: {},
+        grade_value: null,
+        grade_max: null,
+        feedback: null,
+        reviewer_name: null,
+        reviewed_at: null,
       };
 
       setAttempt(loaded);
@@ -237,7 +251,7 @@ export default function ActivityRunner({ activity, courseName, courseIcon = "�
         ? "⏱️ El tiempo terminó. Se registraron las respuestas que habías guardado."
         : activity.activity_type === "practice"
           ? "✅ Intento guardado. Puedes volver a practicar cuando quieras."
-          : "✅ Actividad entregada. Ya no puedes modificar este intento.");
+          : "✅ Actividad entregada. Quedó pendiente de revisión del profesor.");
     } catch (caughtError) {
       setError(caughtError instanceof Error ? friendlyError(caughtError.message) : "No se pudo entregar la actividad.");
     } finally {
@@ -255,7 +269,17 @@ export default function ActivityRunner({ activity, courseName, courseIcon = "�
 
   const active = attempt?.status === "in_progress";
   const finished = attempt?.status === "submitted" || attempt?.status === "timed_out";
+  const reviewed = Boolean(attempt?.reviewed_at && attempt.grade_value !== null && attempt.grade_max !== null);
   const canRepeat = activity.activity_type === "practice" && finished;
+  const reviewSummary = reviewed && attempt
+    ? {
+        reviewerName: attempt.reviewer_name || "Profesor",
+        gradeValue: Number(attempt.grade_value),
+        gradeMax: Number(attempt.grade_max),
+        feedback: attempt.feedback,
+        reviewedAt: attempt.reviewed_at,
+      }
+    : null;
 
   return (
     <section className={styles.runner}>
@@ -263,12 +287,13 @@ export default function ActivityRunner({ activity, courseName, courseIcon = "�
         <div>
           {!attempt && <strong>Lista para comenzar</strong>}
           {active && <strong>Intento {attempt.attempt_number} en curso</strong>}
-          {attempt?.status === "submitted" && <strong>✅ Entregada</strong>}
-          {attempt?.status === "timed_out" && <strong>⏱️ Tiempo finalizado</strong>}
+          {attempt?.status === "submitted" && <strong>{reviewed ? "✅ Revisada y calificada" : "📤 Entregada"}</strong>}
+          {attempt?.status === "timed_out" && <strong>{reviewed ? "✅ Revisada y calificada" : "⏱️ Tiempo finalizado"}</strong>}
           <small>
             {!attempt && (activity.time_limit_minutes ? `Tendrás ${activity.time_limit_minutes} minutos desde que pulses Comenzar.` : "Puedes comenzar cuando estés listo.")}
             {active && (saveState === "saving" ? "Guardando respuestas..." : saveState === "saved" ? "Respuestas guardadas automáticamente." : "Tus respuestas se guardan automáticamente.")}
-            {finished && (activity.activity_type === "practice" ? "Este intento quedó registrado." : "Este intento quedó cerrado.")}
+            {finished && !reviewed && "Tu entrega está pendiente de revisión del profesor."}
+            {finished && reviewed && `Revisada por ${attempt?.reviewer_name || "Profesor"}.`}
           </small>
         </div>
 
@@ -323,6 +348,8 @@ export default function ActivityRunner({ activity, courseName, courseIcon = "�
         answers={answers}
         responsesDisabled={!active}
         onAnswerChange={handleAnswerChange}
+        questionReviews={attempt?.question_reviews ?? {}}
+        reviewSummary={reviewSummary}
       />
     </section>
   );
