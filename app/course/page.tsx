@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import AppShell from "@/components/AppShell";
 import StudentActivityList from "@/components/StudentActivityList";
+import StudentLessonList from "@/components/StudentLessonList";
 import { goTo } from "@/lib/navigation";
 import { supabase } from "@/lib/supabase";
 
@@ -148,16 +149,17 @@ export default function CoursePage() {
           <article className="panel">
             <p className="eyebrow">Estructura</p>
             <h2>4 bloques académicos</h2>
-            <p className="muted-copy">Las clases, tareas, ejercicios y calificaciones de esta materia se organizarán aquí.</p>
+            <p className="muted-copy">Las clases, tareas, ejercicios y calificaciones de esta materia se organizan aquí.</p>
           </article>
         </section>
       )}
 
       {activeTab === "clases" && (
-        <article className="panel">
-          <h2>📖 Clases</h2>
-          <div className="empty-state">Todavía no hay clases publicadas en este curso.</div>
-        </article>
+        <StudentLessonList
+          courseId={course.id}
+          courseName={course.name}
+          courseIcon={course.icon}
+        />
       )}
 
       {activeTab === "tareas" && (
