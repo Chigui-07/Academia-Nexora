@@ -3,7 +3,14 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
-type Course = { id: string; course_key: string; name: string; icon: string; diagnostic_available: boolean };
+type Course = {
+  id: string;
+  course_key: string;
+  name: string;
+  icon: string;
+  category: string;
+  diagnostic_available: boolean;
+};
 type Question = { id: string; prompt: string; difficulty: string; active: boolean; accepted_answers: string[] };
 type Pool = { id: string; group_label: string; draw_count: number; questions: Question[] };
 type Level = { id: string; level_number: number; title: string; description: string; pools: Pool[] };
@@ -12,6 +19,7 @@ type Blueprint = { course_key: string; levels: Level[] };
 export default function AdminDiagnosticBuilder() {
   const [courses, setCourses] = useState<Course[]>([]);
   const [courseKey, setCourseKey] = useState("");
+  const [courseSearch, setCourseSearch] = useState("");
   const [blueprint, setBlueprint] = useState<Blueprint | null>(null);
   const [levelNumber, setLevelNumber] = useState("1");
   const [levelTitle, setLevelTitle] = useState("");
@@ -27,7 +35,10 @@ export default function AdminDiagnosticBuilder() {
   const [saving, setSaving] = useState(false);
 
   async function loadCourses() {
-    const { data, error: loadError } = await supabase.from("courses").select("id, course_key, name, icon, diagnostic_available").order("name");
+    const { data, error: loadError } = await supabase
+      .from("courses")
+      .select("id, course_key, name, icon, category, diagnostic_available")
+      .order("name");
     if (loadError) throw loadError;
     const loaded = (data ?? []) as Course[];
     setCourses(loaded);
@@ -41,50 +52,173 @@ export default function AdminDiagnosticBuilder() {
     setBlueprint((data ?? { course_key: key, levels: [] }) as Blueprint);
   }
 
-  useEffect(() => { loadCourses().catch((e) => setError(e instanceof Error ? e.message : "No se pudieron cargar los cursos.")); }, []);
-  useEffect(() => { if (courseKey) loadBlueprint(courseKey).catch((e) => setError(e instanceof Error ? e.message : "No se pudo cargar el diagnóstico.")); }, [courseKey]);
+  useEffect(() => {
+    loadCourses().catch((e) => setError(e instanceof Error ? e.message : "No se pudieron cargar los cursos."));
+  }, []);
 
-  const selectedCourse = useMemo(() => courses.find((course) => course.course_key === courseKey) ?? null, [courses, courseKey]);
+  useEffect(() => {
+    if (courseKey) {
+      loadBlueprint(courseKey).catch((e) => setError(e instanceof Error ? e.message : "No se pudo cargar el diagnóstico."));
+    }
+  }, [courseKey]);
+
+  const selectedCourse = useMemo(
+    () => courses.find((course) => course.course_key === courseKey) ?? null,
+    [courses, courseKey],
+  );
+
+  const filteredCourses = useMemo(() => {
+    const term = courseSearch.trim().toLocaleLowerCase("es");
+    if (!term) return courses;
+    return courses.filter((course) =>
+      `${course.name} ${course.course_key} ${course.category}`.toLocaleLowerCase("es").includes(term),
+    );
+  }, [courses, courseSearch]);
+
+  const courseOptions = useMemo(() => {
+    if (!selectedCourse || filteredCourses.some((course) => course.id === selectedCourse.id)) return filteredCourses;
+    return [selectedCourse, ...filteredCourses];
+  }, [filteredCourses, selectedCourse]);
 
   async function saveLevel(event: FormEvent) {
-    event.preventDefault(); setSaving(true); setError(null); setMessage(null);
+    event.preventDefault();
+    setSaving(true);
+    setError(null);
+    setMessage(null);
     try {
-      const n = Number(levelNumber); const draws = Number(drawCount);
+      const n = Number(levelNumber);
+      const draws = Number(drawCount);
       if (!Number.isInteger(n) || n < 1 || n > 20) throw new Error("El nivel debe estar entre 1 y 20.");
       if (!levelTitle.trim()) throw new Error("Escribe el nombre del nivel.");
-      const { error: saveError } = await supabase.rpc("admin_save_diagnostic_level", { p_course_key: courseKey, p_level_number: n, p_title: levelTitle.trim(), p_description: levelDescription.trim(), p_group_label: levelTitle.trim(), p_draw_count: Number.isInteger(draws) ? draws : 3 });
+      const { error: saveError } = await supabase.rpc("admin_save_diagnostic_level", {
+        p_course_key: courseKey,
+        p_level_number: n,
+        p_title: levelTitle.trim(),
+        p_description: levelDescription.trim(),
+        p_group_label: levelTitle.trim(),
+        p_draw_count: Number.isInteger(draws) ? draws : 3,
+      });
       if (saveError) throw saveError;
-      setMessage("✅ Nivel guardado."); setQuestionLevel(String(n)); setLevelTitle(""); setLevelDescription(""); await loadBlueprint(courseKey);
-    } catch (e) { setError(e instanceof Error ? e.message : "No se pudo guardar el nivel."); } finally { setSaving(false); }
+      setMessage("✅ Nivel guardado.");
+      setQuestionLevel(String(n));
+      setLevelTitle("");
+      setLevelDescription("");
+      await loadBlueprint(courseKey);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo guardar el nivel.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   async function saveQuestion(event: FormEvent) {
-    event.preventDefault(); setSaving(true); setError(null); setMessage(null);
+    event.preventDefault();
+    setSaving(true);
+    setError(null);
+    setMessage(null);
     try {
       const accepted = answers.split(",").map((item) => item.trim()).filter(Boolean);
       if (!prompt.trim()) throw new Error("Escribe la pregunta.");
       if (accepted.length === 0) throw new Error("Agrega al menos una respuesta aceptada.");
-      const { error: saveError } = await supabase.rpc("admin_save_diagnostic_question", { p_question_id: editingQuestionId, p_course_key: courseKey, p_level_number: Number(questionLevel), p_prompt: prompt.trim(), p_accepted_answers: accepted, p_difficulty: difficulty, p_explanation: "", p_active: true });
+      const { error: saveError } = await supabase.rpc("admin_save_diagnostic_question", {
+        p_question_id: editingQuestionId,
+        p_course_key: courseKey,
+        p_level_number: Number(questionLevel),
+        p_prompt: prompt.trim(),
+        p_accepted_answers: accepted,
+        p_difficulty: difficulty,
+        p_explanation: "",
+        p_active: true,
+      });
       if (saveError) throw saveError;
       setMessage(editingQuestionId ? "✅ Pregunta actualizada." : "✅ Pregunta añadida al diagnóstico.");
-      setPrompt(""); setAnswers(""); setDifficulty("medium"); setEditingQuestionId(null); await loadBlueprint(courseKey); await loadCourses();
-    } catch (e) { setError(e instanceof Error ? e.message : "No se pudo guardar la pregunta."); } finally { setSaving(false); }
+      setPrompt("");
+      setAnswers("");
+      setDifficulty("medium");
+      setEditingQuestionId(null);
+      await loadBlueprint(courseKey);
+      await loadCourses();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "No se pudo guardar la pregunta.");
+    } finally {
+      setSaving(false);
+    }
   }
 
   function editQuestion(level: number, question: Question) {
-    setQuestionLevel(String(level)); setPrompt(question.prompt); setAnswers((question.accepted_answers ?? []).join(", ")); setDifficulty(question.difficulty); setEditingQuestionId(question.id); setMessage("Editando pregunta existente.");
+    setQuestionLevel(String(level));
+    setPrompt(question.prompt);
+    setAnswers((question.accepted_answers ?? []).join(", "));
+    setDifficulty(question.difficulty);
+    setEditingQuestionId(question.id);
+    setMessage("Editando pregunta existente.");
   }
 
   async function toggleQuestion(question: Question) {
-    const { error: toggleError } = await supabase.rpc("admin_set_diagnostic_question_active", { p_question_id: question.id, p_active: !question.active });
-    if (toggleError) { setError(toggleError.message); return; }
+    const { error: toggleError } = await supabase.rpc("admin_set_diagnostic_question_active", {
+      p_question_id: question.id,
+      p_active: !question.active,
+    });
+    if (toggleError) {
+      setError(toggleError.message);
+      return;
+    }
     await loadBlueprint(courseKey);
   }
 
   return (
     <section className="panel" style={{ display: "grid", gap: 22 }}>
-      <div className="section-heading"><div><p className="eyebrow">Administración · Cursos</p><h2>🧠 Constructor de diagnósticos</h2><p className="muted-copy">Crea el examen inicial de cualquier curso. Cada nivel puede tener sus propias preguntas y varias respuestas aceptadas.</p></div></div>
-      <label style={{ display: "grid", gap: 8 }}><strong>Curso</strong><select value={courseKey} onChange={(e) => { setCourseKey(e.target.value); setMessage(null); setError(null); }}>{courses.map((course) => <option key={course.id} value={course.course_key}>{course.icon} {course.name}{course.diagnostic_available ? " · diagnóstico activo" : ""}</option>)}</select></label>
+      <div className="section-heading">
+        <div>
+          <p className="eyebrow">Administración · Cursos</p>
+          <h2>🧠 Constructor de diagnósticos</h2>
+          <p className="muted-copy">
+            Crea el examen inicial de cualquier curso. Cada nivel puede tener sus propias preguntas y varias respuestas aceptadas.
+          </p>
+        </div>
+      </div>
+
+      <div className="action-card" style={{ display: "grid", gap: 12 }}>
+        <label style={{ display: "grid", gap: 8 }}>
+          <strong>Buscar curso</strong>
+          <input
+            type="search"
+            value={courseSearch}
+            onChange={(e) => setCourseSearch(e.target.value)}
+            placeholder="Nombre, categoría o clave interna..."
+          />
+          <small className="muted-copy">
+            {courseSearch.trim()
+              ? `${filteredCourses.length} curso${filteredCourses.length === 1 ? "" : "s"} encontrado${filteredCourses.length === 1 ? "" : "s"}.`
+              : `${courses.length} curso${courses.length === 1 ? "" : "s"} disponible${courses.length === 1 ? "" : "s"}.`}
+          </small>
+        </label>
+
+        <label style={{ display: "grid", gap: 8 }}>
+          <strong>Curso para el diagnóstico</strong>
+          <select
+            value={courseKey}
+            onChange={(e) => {
+              setCourseKey(e.target.value);
+              setMessage(null);
+              setError(null);
+            }}
+          >
+            {courseOptions.map((course) => (
+              <option key={course.id} value={course.course_key}>
+                {course.icon} {course.name} · {course.category}
+                {course.diagnostic_available ? " · diagnóstico activo" : ""}
+              </option>
+            ))}
+          </select>
+        </label>
+
+        {courseSearch.trim() && filteredCourses.length === 0 && (
+          <div className="empty-state">
+            No se encontró ningún curso con “{courseSearch.trim()}”. Prueba con el nombre, la categoría o la clave interna.
+          </div>
+        )}
+      </div>
 
       <div className="admin-management-stack" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(280px,1fr))" }}>
         <form className="action-card" onSubmit={saveLevel} style={{ display: "grid", gap: 12 }}>
@@ -107,7 +241,8 @@ export default function AdminDiagnosticBuilder() {
         </form>
       </div>
 
-      {message && <div className="auth-message auth-success">{message}</div>}{error && <div className="auth-message auth-error">{error}</div>}
+      {message && <div className="auth-message auth-success">{message}</div>}
+      {error && <div className="auth-message auth-error">{error}</div>}
 
       <div style={{ display: "grid", gap: 14 }}>
         <h3>{selectedCourse?.icon} {selectedCourse?.name} · examen actual</h3>
