@@ -207,11 +207,11 @@ export default function AITeacherManager() {
 
       if (invokeError) throw invokeError;
       const response = data as GenerateResponse;
-      if (!response?.draft) throw new Error("La IA no devolvió un borrador válido.");
+      if (!response?.draft) throw new Error("La IA no devolvió una propuesta válida.");
 
       setDraft(response.draft);
       setModel(response.model || model);
-      setMessage("✨ Propuesta generada. Revísala antes de guardarla.");
+      setMessage("✨ Propuesta generada. Revísala; al aprobarla se publicará únicamente para tu cuenta.");
     } catch (caughtError) {
       setDraft(null);
       setError(friendlyError(caughtError, "No se pudo generar el contenido."));
@@ -237,11 +237,11 @@ export default function AITeacherManager() {
       setSaved(true);
       setMessage(
         kind === "lesson"
-          ? "✅ Clase guardada como borrador. Puedes revisarla y publicarla en Crear clases."
-          : "✅ Actividad guardada como borrador. Puedes editar asignación, fechas y publicación en Crear tareas y ejercicios.",
+          ? "✅ Clase publicada y asignada exclusivamente a tu cuenta. Ya aparece dentro del curso para que la estudies."
+          : "✅ Actividad publicada y asignada exclusivamente a tu cuenta. Ningún otro estudiante la recibirá.",
       );
     } catch (caughtError) {
-      setError(friendlyError(caughtError, "No se pudo guardar el borrador."));
+      setError(friendlyError(caughtError, "No se pudo publicar el contenido personal."));
     } finally {
       setSaving(false);
     }
@@ -254,14 +254,14 @@ export default function AITeacherManager() {
     <section className={`panel ${styles.wrapper}`}>
       <div className={styles.header}>
         <div>
-          <p className="eyebrow">Herramienta privada</p>
+          <p className="eyebrow">Herramienta privada · solo tu cuenta</p>
           <h2>🤖 Profesor IA</h2>
           <p className="muted-copy">
-            Genera una propuesta académica, revísala y guárdala como borrador. La IA nunca publica ni asigna automáticamente sin tu aprobación.
+            Prepara tus propias clases, tareas y ejercicios. Tú revisas la propuesta y, al aprobarla, Nexora la publica únicamente para tu cuenta; los demás estudiantes siguen recibiendo el contenido que tú publiques como profesor.
           </p>
         </div>
         <div className={configured ? styles.connectedBadge : styles.pendingBadge}>
-          {configured ? "● IA conectada" : "○ Conexión pendiente"}
+          {configured ? "● IA personal conectada" : "○ Conexión pendiente"}
         </div>
       </div>
 
@@ -278,8 +278,8 @@ export default function AITeacherManager() {
         <form className={styles.formPanel} onSubmit={generate}>
           <div className={styles.formHeading}>
             <div>
-              <p className="eyebrow">Nueva propuesta</p>
-              <h3>¿Qué debe preparar?</h3>
+              <p className="eyebrow">Nueva propuesta personal</p>
+              <h3>¿Qué quieres que tu profesor prepare?</h3>
             </div>
             {model && <span className={styles.modelBadge}>{model}</span>}
           </div>
@@ -376,16 +376,16 @@ export default function AITeacherManager() {
             <div className={styles.previewEmpty}>
               <span>🤖</span>
               <strong>Aquí aparecerá la propuesta</strong>
-              <p>El Profesor IA prepara el contenido, pero tú decides si guardarlo o volver a generarlo.</p>
+              <p>Tu Profesor IA prepara el contenido. Nada se añade a tus cursos hasta que tú pulses Publicar para mí.</p>
             </div>
           ) : (
             <>
               <div className={styles.previewHeading}>
                 <div>
-                  <p className="eyebrow">Vista previa</p>
+                  <p className="eyebrow">Vista previa personal</p>
                   <h3>{draft.title}</h3>
                 </div>
-                <span className={styles.draftBadge}>Borrador</span>
+                <span className={styles.draftBadge}>Solo para ti</span>
               </div>
 
               {isLesson ? (
@@ -431,13 +431,13 @@ export default function AITeacherManager() {
                     ))}
                   </div>
 
-                  <div className={styles.answerKeyNote}>🔐 La clave de respuestas se guardará en la zona privada de Supabase y no se mostrará al estudiante.</div>
+                  <div className={styles.answerKeyNote}>🔐 La clave de respuestas se guarda en la zona privada de Supabase y no se muestra durante el intento.</div>
                 </div>
               )}
 
               <div className={styles.previewActions}>
                 <button className="primary-button" type="button" onClick={saveDraft} disabled={saving || saved}>
-                  {saving ? "Guardando..." : saved ? "✓ Borrador guardado" : "Guardar como borrador"}
+                  {saving ? "Publicando..." : saved ? "✓ Publicado para mí" : "Publicar para mí"}
                 </button>
                 <button className="secondary-button" type="button" onClick={() => { setDraft(null); setSaved(false); setMessage(null); }}>
                   Descartar
