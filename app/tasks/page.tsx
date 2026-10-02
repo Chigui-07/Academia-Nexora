@@ -1,4 +1,5 @@
 import AppShell from "@/components/AppShell";
+import StudentActivityList from "@/components/StudentActivityList";
 
 export default function TasksPage() {
   return (
@@ -6,17 +7,15 @@ export default function TasksPage() {
       <div className="page-header">
         <div>
           <p className="eyebrow">Tareas</p>
-          <h1>Esta semana</h1>
-          <p>Solo se mostrarán las tareas disponibles y pendientes de todas tus materias.</p>
+          <h1>Actividades disponibles</h1>
+          <p>Aquí aparecen las tareas publicadas que ya están dentro de su fecha y hora de disponibilidad.</p>
         </div>
       </div>
 
-      <article className="panel">
-        <h2>🗓️ Actividades disponibles</h2>
-        <div className="empty-state">
-          No tienes tareas activas. Las tareas aparecerán aquí al llegar su fecha y hora de apertura.
-        </div>
-      </article>
+      <StudentActivityList
+        types={["notebook_task", "virtual_task"]}
+        emptyMessage="No tienes tareas activas. Las tareas aparecerán aquí al llegar su fecha y hora de apertura."
+      />
     </AppShell>
   );
 }
