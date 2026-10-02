@@ -7,6 +7,7 @@ import styles from "./TeacherGradingManager.module.css";
 
 type QuestionReview = "correct" | "incorrect";
 type QuestionReviews = Record<string, QuestionReview>;
+type QuestionFeedback = Record<string, string>;
 
 type GradingAttempt = {
   attempt_id: string;
@@ -25,6 +26,7 @@ type GradingAttempt = {
   attempt_status: string;
   submitted_at: string | null;
   question_reviews: QuestionReviews;
+  question_feedback: QuestionFeedback;
   grade_value: number | null;
   grade_max: number | null;
   feedback: string | null;
@@ -71,6 +73,7 @@ export default function TeacherGradingManager() {
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [answerKey, setAnswerKey] = useState<ActivityAnswerKey>({});
   const [reviews, setReviews] = useState<QuestionReviews>({});
+  const [questionFeedback, setQuestionFeedback] = useState<QuestionFeedback>({});
   const [grade, setGrade] = useState("");
   const [feedback, setFeedback] = useState("");
   const [saving, setSaving] = useState(false);
@@ -130,12 +133,14 @@ export default function TeacherGradingManager() {
     if (!selected) {
       setAnswerKey({});
       setReviews({});
+      setQuestionFeedback({});
       setGrade("");
       setFeedback("");
       return;
     }
 
     setReviews((selected.question_reviews ?? {}) as QuestionReviews);
+    setQuestionFeedback((selected.question_feedback ?? {}) as QuestionFeedback);
     setGrade(selected.grade_value === null ? "" : String(selected.grade_value));
     setFeedback(selected.feedback ?? "");
     setMessage(null);
@@ -174,9 +179,16 @@ export default function TeacherGradingManager() {
         throw new Error(`La calificación debe estar entre 0 y ${max}.`);
       }
 
+      const cleanedQuestionFeedback = Object.fromEntries(
+        Object.entries(questionFeedback)
+          .map(([questionId, text]) => [questionId, text.trim()])
+          .filter(([, text]) => Boolean(text)),
+      );
+
       const { data, error: gradeError } = await supabase.rpc("grade_course_activity_attempt", {
         p_attempt_id: selected.attempt_id,
         p_question_reviews: reviews,
+        p_question_feedback: cleanedQuestionFeedback,
         p_grade_value: numericGrade,
         p_feedback: feedback.trim() || null,
       });
@@ -203,7 +215,7 @@ export default function TeacherGradingManager() {
         <div>
           <p className="eyebrow">Profesor</p>
           <h2>✅ Revisar y calificar entregas</h2>
-          <p className="muted-copy">Marca cada respuesta como correcta o incorrecta, coloca la nota y deja retroalimentación general al final.</p>
+          <p className="muted-copy">Marca cada respuesta como correcta o incorrecta, deja un comentario por pregunta y escribe la retroalimentación general al final.</p>
         </div>
         <div className={styles.headerActions}>
           <span className={styles.pendingBadge}>{pending} pendientes</span>
@@ -267,17 +279,38 @@ export default function TeacherGradingManager() {
                       </div>
                       <p className={styles.prompt}>{question.prompt}</p>
 
-                      <div className={styles.answerBox}>
-                        <small>Respuesta del estudiante</small>
-                        <strong>{answerText(question, studentAnswer)}</strong>
-                      </div>
+                      <div className={styles.answerReviewGrid}>
+                        <div className={styles.answerColumn}>
+                          <div className={styles.answerBox}>
+                            <small>Respuesta del estudiante</small>
+                            <strong>{answerText(question, studentAnswer)}</strong>
+                          </div>
 
-                      {expectedAnswer !== undefined && expectedAnswer !== null && expectedAnswer !== "" && (
-                        <div className={styles.expectedBox}>
-                          <small>Respuesta esperada</small>
-                          <span>{answerText(question, expectedAnswer)}</span>
+                          {expectedAnswer !== undefined && expectedAnswer !== null && expectedAnswer !== "" && (
+                            <div className={styles.expectedBox}>
+                              <small>Respuesta esperada</small>
+                              <span>{answerText(question, expectedAnswer)}</span>
+                            </div>
+                          )}
                         </div>
-                      )}
+
+                        <label className={styles.questionCommentBox}>
+                          <span>🟡 Comentario para esta respuesta</span>
+                          <textarea
+                            rows={5}
+                            maxLength={1500}
+                            value={questionFeedback[question.id] ?? ""}
+                            onChange={(event) => setQuestionFeedback((current) => ({
+                              ...current,
+                              [question.id]: event.target.value,
+                            }))}
+                            placeholder={review === "incorrect"
+                              ? "Explícale qué se equivocó y, si ayuda, indícale la respuesta correcta..."
+                              : "Puedes felicitar la respuesta o aclarar un detalle específico..."}
+                          />
+                          <small>Este comentario aparecerá en amarillo junto a esta pregunta.</small>
+                        </label>
+                      </div>
 
                       <div className={styles.reviewChoices}>
                         <button
@@ -315,6 +348,7 @@ export default function TeacherGradingManager() {
                     />
                     <span>/ {selected.activity_points ?? 100}</span>
                   </div>
+                  {selected.activity_type === "practice" && <small>Los ejercicios prácticos siempre se califican sobre 100.</small>}
                 </label>
 
                 <label>
@@ -323,7 +357,7 @@ export default function TeacherGradingManager() {
                     rows={5}
                     value={feedback}
                     onChange={(event) => setFeedback(event.target.value)}
-                    placeholder="Escribe aquí qué hizo bien, qué debe corregir o qué debería practicar después..."
+                    placeholder="Comentario general sobre toda la actividad: qué hizo bien, qué debe mejorar y qué debería practicar después..."
                   />
                 </label>
 
