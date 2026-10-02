@@ -1,15 +1,15 @@
 # 🎓 Academia Nexora
 
-**Academia Nexora** es una plataforma educativa multiusuario para aprender desde cero, avanzar por etapas y organizar cursos, clases, tareas, ejercicios, calificaciones y diagnósticos.
+**Academia Nexora** es una plataforma educativa multiusuario para aprender desde cero, avanzar por etapas y niveles y organizar cursos, clases, tareas, ejercicios, calificaciones y diagnósticos.
 
 ## 📌 Estado del proyecto
 
-**Fase actual: v0.21 — Profesor IA exclusivo y borradores inteligentes.**
+**Fase actual: v0.22 — Profesor IA personal, adjuntos privados y relacionar parejas.**
 
 Frontend: Next.js + TypeScript + CSS, publicado con GitHub Pages.  
-Backend, autenticación y datos: Supabase.
+Backend, autenticación, Storage y datos: Supabase.
 
-Ya existen registro, confirmación por correo, recuperación de contraseña, perfiles, Carné Nexora, roles, onboarding, solicitudes e inscripciones, diagnóstico funcional de Matemática, historial de diagnósticos, creador de clases y actividades, preguntas configurables, Formación esencial, intentos persistentes, asignación individual, revisión firmada con comentarios por pregunta, biblioteca de tareas/ejercicios, administración centrada en el alumno, calificaciones reales por curso, tablero de tareas en Inicio, gestión administrativa del catálogo y Profesor IA privado para generar borradores académicos.
+Ya existen registro, confirmación por correo, recuperación de contraseña, perfiles, Carné Nexora, roles, onboarding, solicitudes e inscripciones, diagnóstico funcional de Matemática, historial de diagnósticos, creador de clases y actividades, preguntas configurables, Formación esencial, intentos persistentes, asignación individual, revisión firmada con comentarios por pregunta, biblioteca de tareas/ejercicios, administración centrada en el alumno, calificaciones reales por curso, tablero de tareas en Inicio, gestión administrativa del catálogo, Profesor IA privado para la cuenta principal, archivos privados por intento y preguntas de relacionar parejas.
 
 ## 🧭 Navegación principal
 
@@ -72,6 +72,8 @@ Al finalizar se genera `diagnostic_results` con ubicación estimada, temas domin
 
 Profesor puede crear clases vinculadas a cualquier curso. Cada clase puede guardar unidad o tema, título, explicación, ejemplos guiados, recursos o notas, posición para ordenar y estado Borrador/Publicada.
 
+Desde v0.22 una clase también dispone en base de datos de `assignment_mode`, por lo que puede pertenecer al curso completo o a estudiantes concretos mediante `course_lesson_assignments`. Esto permite que las clases creadas por el Profesor IA sean privadas para la cuenta principal.
+
 ### Actividades
 
 Profesor puede crear y editar **Tareas de cuaderno**, **Tareas virtuales** y **Ejercicios prácticos**.
@@ -84,9 +86,32 @@ Cada actividad puede enviarse a **todo el curso** o a **estudiantes específicos
 
 ### Constructor de preguntas
 
-Profesor puede combinar **Respuesta escrita**, **Elección única**, **Selección múltiple** y **Verdadero o falso**.
+Profesor puede combinar:
+
+- **Respuesta escrita**;
+- **Elección única**;
+- **Selección múltiple**;
+- **Verdadero o falso**;
+- **Relacionar parejas**.
+
+Relacionar parejas guarda cada relación como `{id, left, right}` y al estudiante le muestra las opciones de la derecha mezcladas. La estructura se valida también en servidor antes de guardar una actividad publicada.
 
 Las claves correctas se almacenan en `private.course_activity_answer_keys` y no se envían al estudiante.
+
+### Archivos y fotografías de una entrega
+
+Cada intento puede recibir hasta **5 archivos** desde la interfaz. El límite actual de Storage es **20 MB por archivo**.
+
+El estudiante puede adjuntar, por ejemplo:
+
+- fotografías del procedimiento de Física o Matemática;
+- documentos PDF;
+- archivos de Word u otros documentos;
+- proyectos comprimidos u otros archivos solicitados por el profesor.
+
+Los archivos viven en el bucket privado `activity-submissions`. El estudiante puede añadir o retirar sus archivos únicamente mientras el intento continúa abierto. Después de entregar, quedan bloqueados junto con ese intento.
+
+Al revisar una entrega, Profesor puede abrir sus imágenes y archivos directamente desde el panel de calificación.
 
 ### Revisión y calificación
 
@@ -99,9 +124,13 @@ Cada respuesta puede marcarse como:
 
 También existe un **comentario amarillo independiente por pregunta**, además de la retroalimentación general final. Cada revisión queda firmada automáticamente con el nombre académico del profesor.
 
-### 🤖 Profesor IA exclusivo
+La nota final sigue siendo **manual y personalizada**: Nexora puede mostrar la respuesta esperada como referencia, pero Profesor decide cuánto punteo recibe cada alumno.
 
-La cuenta autorizada dispone de un panel privado **Profesor IA** dentro de Administración.
+### 🤖 Profesor IA personal
+
+La cuenta principal autorizada dispone de un panel privado **Profesor IA** dentro de Administración.
+
+Su función no es dar IA a todos los estudiantes. Es actuar como profesor personal de la cuenta autorizada mientras esa misma cuenta continúa siendo el profesor humano de los demás usuarios.
 
 Flujo actual:
 
@@ -110,8 +139,17 @@ Flujo actual:
 - indicar tema y dificultad;
 - configurar preguntas, punteo, bloque, intentos y cronómetro cuando corresponda;
 - generar una propuesta estructurada;
-- revisar la propuesta antes de guardarla;
-- guardar únicamente como **Borrador** para terminar fechas, asignación y publicación con las herramientas manuales.
+- revisar la propuesta;
+- pulsar **Publicar para mí**.
+
+Al aprobarla, Nexora:
+
+- activa la inscripción de la cuenta principal en esa materia si todavía no estaba activa;
+- publica el contenido;
+- usa asignación individual;
+- asigna como único destinatario a la cuenta autorizada.
+
+Por tanto, ningún otro alumno recibe las clases, tareas o ejercicios creados por el Profesor IA.
 
 El acceso está protegido también en Supabase mediante un único registro en `ai_teacher_access`; ocultar el panel en el frontend no es la única barrera. La Edge Function `nexora-ai-teacher` requiere sesión válida y vuelve a comprobar ese permiso antes de generar contenido.
 
@@ -127,9 +165,11 @@ Al comenzar un intento:
 - existe navegación lateral numerada inspirada en el diagnóstico;
 - las respuestas se guardan automáticamente;
 - el cronómetro es persistente y se controla en servidor;
+- se pueden adjuntar imágenes y archivos mientras el intento esté abierto;
+- los adjuntos se bloquean al entregar;
 - el botón de finalizar aparece al llegar al final del ejercicio o tarea.
 
-Los ejercicios cerrados permanecen accesibles dentro del curso para consultar respuestas, revisión y calificación.
+Los ejercicios cerrados permanecen accesibles dentro del curso para consultar respuestas, archivos, revisión y calificación.
 
 ### Tareas en Inicio
 
@@ -159,19 +199,13 @@ El cierre definitivo de bloques y el promedio final de los cuatro bloques todav�
 
 ## 🖥️ Interfaz
 
-La interfaz principal usa una distribución más amplia para mejorar la lectura en escritorio:
+La interfaz principal usa una distribución amplia en escritorio y vuelve automáticamente a una sola columna en pantallas pequeñas.
 
-- barra lateral más ancha;
-- mayor separación entre secciones;
-- paneles y tarjetas con más espacio interno;
-- formularios y botones más cómodos de leer y pulsar;
-- ficha de alumnos y gestor de cursos con columnas más grandes.
-
-En pantallas pequeñas la interfaz vuelve automáticamente a una distribución de una sola columna.
+El objetivo es que formularios, tarjetas, actividades, archivos y fichas de alumnos puedan utilizarse cómodamente tanto desde computadora como desde dispositivos móviles.
 
 ## 🌱 Formación esencial — primeros 365 días
 
-Cada usuario queda inscrito automáticamente durante su primer año en:
+Cada usuario queda inscrito automáticamente durante sus primeros 365 días en:
 
 - ✍️ Caligrafía y escritura clara
 - 📖 Comprensión y expresión lectora
@@ -185,15 +219,19 @@ La inscripción guarda `required_until`, calculado como 365 días desde la creac
 ## 🔐 Seguridad
 
 - Supabase Auth gestiona las cuentas y recuperación de contraseña.
-- RLS limita perfiles, solicitudes, inscripciones, clases, diagnósticos, actividades, asignaciones e intentos.
+- RLS limita perfiles, solicitudes, inscripciones, clases, diagnósticos, actividades, asignaciones, intentos y adjuntos.
 - El estudiante solo puede leer contenido publicado que le corresponda.
+- Las clases individuales solo son visibles para sus destinatarios, Profesor o Administración.
 - Las respuestas correctas del diagnóstico y de actividades no se exponen al estudiante.
 - Crear, guardar y entregar intentos pasa por funciones seguras del servidor.
 - El límite de intentos se comprueba también en servidor.
 - La calificación manual pasa por RPC protegida y la firma del profesor se obtiene en servidor.
+- Los archivos de actividades viven en un bucket **privado** y se descargan mediante sesión/RLS o URL firmada temporal.
+- Un alumno solo puede subir archivos dentro de sus propios intentos abiertos.
+- Profesor solo puede leer archivos de entregas que le corresponde revisar; Administración puede revisarlos por su rol.
 - La creación y edición del catálogo usa `admin_save_course`, que vuelve a comprobar el rol `admin` en Supabase.
 - Profesor IA usa un acceso dedicado de un solo usuario, una Edge Function con JWT obligatorio y un RPC de guardado que vuelve a validar el permiso.
-- La IA solo guarda contenido como borrador; no publica automáticamente.
+- El contenido aprobado del Profesor IA se asigna únicamente a la cuenta autorizada.
 - Las cuentas de estudiante no reciben permisos directos para modificar calificaciones, revisiones, el catálogo ni el Profesor IA.
 
 Pendiente de seguridad antes de una beta más amplia: activar **Leaked Password Protection** en Supabase Auth.
@@ -202,17 +240,29 @@ Pendiente de seguridad antes de una beta más amplia: activar **Leaked Password 
 
 PMA será una modalidad especial basada sobre el sistema actual de múltiples intentos. Más adelante añadirá reglas, ventana y etiqueta propias sin duplicar el almacenamiento de intentos.
 
-## 🏆 Sistema académico
+## 🏆 Sistema académico — Etapas y Niveles
 
-| Etapa | Años | Nota mínima |
-|---|---|---:|
-| 🌱 Fundamentos | 1–2 | 60/100 |
-| 📘 Intermedio | 3–4 | 65/100 |
-| 🧠 Avanzado | 5–6 | 70/100 |
-| 🎓 Superior | 7–8 | 75/100 |
-| 🏆 Dominio | 9–10 | 80/100 |
+Nexora **no usa años escolares** como medida de progreso. El avance se organiza mediante:
 
-Cada curso tendrá 4 bloques de hasta 100 puntos.
+**Etapa → Nivel → Bloques → Materias**
+
+Las materias se mantienen durante la progresión. Todas comienzan desde nivel básico y añaden nuevos temas, profundidad y dificultad en niveles posteriores.
+
+Las etapas base actuales son:
+
+| Etapa base | Nota mínima de referencia |
+|---|---:|
+| 🌱 Fundamentos | 60/100 |
+| 📘 Intermedio | 65/100 |
+| 🧠 Avanzado | 70/100 |
+| 🎓 Superior | 75/100 |
+| 🏆 Dominio | 80/100 |
+
+Estas etapas **no están limitadas a dos niveles** ni representan años reales. Cada etapa podrá contener tantos niveles como necesite el plan académico y en el futuro se pueden añadir nuevas etapas.
+
+Cada materia mantiene **4 bloques de hasta 100 puntos por nivel**.
+
+El ascenso de nivel no ocurrirá por tiempo. Se implementará un motor de promoción con condiciones académicas. Como base se evaluarán los cuatro bloques, las materias obligatorias y la nota mínima correspondiente a la etapa. Las condiciones definitivas de promoción todavía deben cerrarse antes de activar el ascenso automático.
 
 ## 🗄️ Tablas principales actuales
 
@@ -222,9 +272,11 @@ Cada curso tendrá 4 bloques de hasta 100 puntos.
 - `course_requests`
 - `course_enrollments`
 - `course_lessons`
+- `course_lesson_assignments`
 - `course_activities`
 - `course_activity_assignments`
 - `activity_attempts`
+- `activity_attempt_attachments`
 - `admin_notifications`
 - `ai_teacher_access`
 - `diagnostic_levels`
@@ -236,15 +288,23 @@ Cada curso tendrá 4 bloques de hasta 100 puntos.
 - `diagnostic_results`
 - `private.course_activity_answer_keys`
 
-Las funciones de gestión del catálogo y Profesor IA se documentan en `supabase-notes/admin-course-management.sql` y `supabase-notes/ai-teacher.sql`.
+Storage privado usado por las entregas:
+
+- `activity-submissions`
+
+Las funciones y migraciones administrativas se documentan en `supabase-notes/`.
 
 ## 🚧 Próximos objetivos
 
-1. Completar reglas de cierre de los 4 bloques y PMA.
-2. Activar **Leaked Password Protection** y cerrar la revisión final de seguridad para la Beta de amigos.
-3. Conectar el secreto `OPENAI_API_KEY` en Supabase si el panel Profesor IA indica **Conexión pendiente**.
-4. Más adelante: ampliar Profesor IA con revisión asistida de entregas.
-5. Después de la Beta: presencia opcional, XP Nexora, ligas, ranking, logros y minijuegos.
+1. Añadir **presencia en línea**: conectado, inactivo, desconectado y última conexión, con panel para Administración.
+2. Definir e implementar las condiciones definitivas para subir de **Nivel** y luego de **Etapa**.
+3. Completar reglas de cierre de los 4 bloques y PMA.
+4. Hacer dinámicos en toda la interfaz la etapa y el nivel del perfil, eliminando textos fijos como `Fundamentos · Año 1`.
+5. Activar **Leaked Password Protection** y cerrar la revisión final de seguridad para la Beta de amigos.
+6. Conectar el secreto `OPENAI_API_KEY` en Supabase si el panel Profesor IA indica **Conexión pendiente**.
+7. Más adelante: mejorar el Profesor IA para utilizar historial, calificaciones y progreso antes de decidir la siguiente clase o práctica personal.
+
+Los minijuegos no forman parte actualmente del plan de desarrollo.
 
 ---
 
@@ -253,7 +313,7 @@ Las funciones de gestión del catálogo y Profesor IA se documentan en `supabase
 ## 30 de septiembre de 2026 — Inicio
 
 - Se creó Academia Nexora y su repositorio.
-- Se definieron cursos, tareas, ejercicios, calificaciones, PMA y etapas académicas.
+- Se definieron cursos, tareas, ejercicios, calificaciones, PMA y progresión académica.
 - Se configuraron GitHub Pages y Supabase.
 
 ## 1 de octubre de 2026 — v0.3 a v0.7
@@ -268,7 +328,7 @@ Las funciones de gestión del catálogo y Profesor IA se documentan en `supabase
 - Panel Profesor y creador de tareas/ejercicios.
 - Vista previa y hoja publicada.
 - Constructor de preguntas.
-- Formación esencial automática durante el primer año.
+- Formación esencial automática durante los primeros 365 días.
 
 ## 1 de octubre de 2026 — v0.11 a v0.14
 
@@ -324,7 +384,7 @@ Las funciones de gestión del catálogo y Profesor IA se documentan en `supabase
 - Formación esencial aparece protegida contra cambios accidentales.
 - La edición se guarda mediante un RPC que comprueba el rol administrador en Supabase.
 - Se documentó la migración del gestor en `supabase-notes/admin-course-management.sql`.
-- Se amplió la barra lateral, el contenido, los paneles, formularios, tarjetas y la ficha de alumnos para mejorar la legibilidad.
+- Se amplió la interfaz para mejorar la legibilidad.
 
 ## 2 de octubre de 2026 — v0.21: Profesor IA exclusivo
 
@@ -333,10 +393,22 @@ Las funciones de gestión del catálogo y Profesor IA se documentan en `supabase
 - El panel puede preparar clases, tareas de cuaderno, tareas virtuales y ejercicios prácticos.
 - La generación usa salida estructurada para convertir la propuesta en el formato real de Nexora.
 - Las claves de respuestas permanecen en almacenamiento privado.
-- El profesor revisa la propuesta antes de guardarla.
-- El guardado siempre crea un **borrador**; publicación, fechas y asignación siguen bajo control manual.
-- Se probó el RPC de guardado dentro de una transacción y se revirtió la información temporal.
-- Si falta `OPENAI_API_KEY`, el panel queda visible únicamente para la cuenta autorizada pero muestra **Conexión pendiente**.
+- En v0.21 la generación se guardaba primero como borrador para revisión manual.
+
+## 2 de octubre de 2026 — v0.22: Profesor IA personal, archivos y parejas
+
+- El Profesor IA pasó de generador de borradores generales a **profesor personal de la cuenta autorizada**.
+- Después de revisar una propuesta, **Publicar para mí** la publica y asigna únicamente a esa cuenta.
+- Si la materia no estaba inscrita, el guardado personal activa su inscripción automáticamente.
+- Se añadieron clases individuales mediante `course_lesson_assignments`.
+- Se creó el bucket privado `activity-submissions` con límite de 20 MB por archivo.
+- Cada intento puede adjuntar hasta 5 imágenes o archivos desde la interfaz.
+- Los archivos solo pueden modificarse mientras el intento está abierto y Profesor puede consultarlos al calificar.
+- Se añadió **Relacionar parejas** como quinto tipo de pregunta.
+- Las parejas incompletas se bloquean también mediante validación de Supabase al publicar.
+- Se retiraron los minijuegos de la hoja de ruta actual.
+- El sistema académico se redefinió como **Etapas + Niveles**, sin usar años escolares como progreso.
+- Presencia en línea pasó a ser el siguiente objetivo funcional.
 
 ---
 
