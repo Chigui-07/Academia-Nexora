@@ -1,6 +1,7 @@
 import AcademicContentManager from "@/components/AcademicContentManager";
 import AdminCourseManager from "@/components/AdminCourseManager";
 import AdminCourseRequests from "@/components/AdminCourseRequests";
+import AdminDiagnosticBuilder from "@/components/AdminDiagnosticBuilder";
 import AdminEnrollmentManager from "@/components/AdminEnrollmentManager";
 import AppShell from "@/components/AppShell";
 import TeacherActivityManager from "@/components/TeacherActivityManager";
@@ -9,6 +10,7 @@ import TeacherLessonManager from "@/components/TeacherLessonManager";
 const adminActions = [
   ["🎓 Progresión académica", "Organiza clases y actividades por etapa y nivel, controla bloques y crea PMA."],
   ["📚 Gestionar cursos", "Crea, edita, activa o desactiva materias del catálogo."],
+  ["🧠 Diagnósticos", "Crea niveles, preguntas y respuestas aceptadas para cualquier materia."],
   ["👥 Alumnos", "Selecciona un alumno para ver sus cursos, asignaciones y entregas."],
   ["📩 Solicitudes", "Revisa las solicitudes de cursos enviadas por los estudiantes."],
 ] as const;
@@ -46,6 +48,7 @@ export default function AdminPage() {
       <div className="admin-management-stack">
         <AcademicContentManager />
         <AdminCourseManager />
+        <AdminDiagnosticBuilder />
         <AdminEnrollmentManager />
         <AdminCourseRequests />
         <TeacherLessonManager />
