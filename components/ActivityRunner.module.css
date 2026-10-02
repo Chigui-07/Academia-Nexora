@@ -53,6 +53,12 @@
   white-space: nowrap;
 }
 
+.closedBadge {
+  border-color: color-mix(in srgb, var(--muted) 45%, var(--border));
+  background: color-mix(in srgb, var(--muted) 8%, var(--surface));
+  color: var(--muted) !important;
+}
+
 .startMeta {
   display: flex;
   flex-wrap: wrap;
