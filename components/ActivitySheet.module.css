@@ -196,6 +196,76 @@
   font-size: 0.78rem;
 }
 
+.reviewMark {
+  margin-top: 13px;
+  padding: 10px 12px;
+  border-radius: 10px;
+  font-size: 0.86rem;
+  font-weight: 900;
+}
+
+.reviewCorrect {
+  border: 1px solid rgba(34, 197, 94, 0.5);
+  background: rgba(34, 197, 94, 0.11);
+  color: #86efac;
+}
+
+.reviewIncorrect {
+  border: 1px solid rgba(239, 68, 68, 0.5);
+  background: rgba(239, 68, 68, 0.11);
+  color: #fca5a5;
+}
+
+.reviewSummary {
+  display: grid;
+  gap: 14px;
+  margin-top: 28px;
+  padding: 18px;
+  border: 1px solid color-mix(in srgb, var(--primary) 35%, var(--border));
+  border-radius: 15px;
+  background: color-mix(in srgb, var(--primary) 6%, var(--surface));
+}
+
+.reviewSummaryTop {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: flex-start;
+}
+
+.reviewSummaryTop > div:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.reviewSummaryTop small,
+.reviewSignature span,
+.reviewSignature small,
+.feedbackBox small {
+  color: var(--muted);
+}
+
+.reviewSummaryTop > div:first-child strong {
+  font-size: 1.45rem;
+}
+
+.reviewSignature {
+  display: grid;
+  gap: 3px;
+  text-align: right;
+}
+
+.feedbackBox {
+  padding-top: 13px;
+  border-top: 1px solid var(--border);
+}
+
+.feedbackBox p {
+  margin: 7px 0 0;
+  white-space: pre-wrap;
+  line-height: 1.55;
+}
+
 .timerNote,
 .draftAnswerNote {
   margin-top: 24px;
@@ -233,7 +303,8 @@
 
   .topline,
   .heading,
-  .questionHeading {
+  .questionHeading,
+  .reviewSummaryTop {
     flex-direction: column;
   }
 
@@ -243,5 +314,9 @@
 
   .body {
     line-height: 2.5rem;
+  }
+
+  .reviewSignature {
+    text-align: left;
   }
 }
