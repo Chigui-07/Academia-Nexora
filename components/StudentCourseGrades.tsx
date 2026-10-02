@@ -66,10 +66,19 @@ export default function StudentCourseGrades({ courseId, courseName, courseIcon =
       const session = sessionData.session;
       if (!session) { if (!cancelled) setReady(true); return; }
 
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("stage, level")
+        .eq("id", session.user.id)
+        .single();
+      if (profileError) throw profileError;
+
       const { data: activityData, error: activityError } = await supabase
         .from("course_activities")
         .select("id, title, activity_type, points, block_number, pma_source_activity_id")
         .eq("course_id", courseId)
+        .eq("academic_stage", profile.stage)
+        .eq("academic_level", profile.level)
         .neq("activity_type", "practice")
         .not("points", "is", null);
       if (activityError) throw activityError;
@@ -82,6 +91,8 @@ export default function StudentCourseGrades({ courseId, courseName, courseIcon =
         .from("activity_attempts")
         .select("id, activity_id, attempt_number, grade_value, grade_max, reviewer_name, reviewed_at")
         .eq("user_id", session.user.id)
+        .eq("stage_snapshot", profile.stage)
+        .eq("level_snapshot", profile.level)
         .in("activity_id", activityIds)
         .not("reviewed_at", "is", null);
       if (attemptError) throw attemptError;
@@ -155,7 +166,7 @@ export default function StudentCourseGrades({ courseId, courseName, courseIcon =
 
       <section className={styles.detailPanel}>
         <div className="section-heading"><div><p className="eyebrow">Detalle del curso</p><h2>📝 Tareas calificadas</h2><p className="muted-copy">Los ejercicios prácticos no modifican el promedio académico.</p></div></div>
-        {sortedGrades.length === 0 ? <div className="empty-state">Todavía no tienes tareas calificadas en este curso.</div> : (
+        {sortedGrades.length === 0 ? <div className="empty-state">Todavía no tienes tareas calificadas en este curso y nivel.</div> : (
           <div className={styles.gradeList}>
             {sortedGrades.map((grade) => {
               const usedPma = Boolean(grade.attemptActivity.pma_source_activity_id);
