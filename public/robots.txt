@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://chigui-07.github.io/Academia-Nexora/sitemap.xml
