@@ -4,12 +4,12 @@
 
 ## 📌 Estado del proyecto
 
-**Fase actual: v0.19 — Tareas organizadas en Inicio.**
+**Fase actual: v0.20 — Gestión de cursos e interfaz ampliada.**
 
 Frontend: Next.js + TypeScript + CSS, publicado con GitHub Pages.  
 Backend, autenticación y datos: Supabase.
 
-Ya existen registro, confirmación por correo, recuperación de contraseña, perfiles, Carné Nexora, roles, onboarding, solicitudes e inscripciones, diagnóstico funcional de Matemática, historial de diagnósticos, creador de clases y actividades, preguntas configurables, Formación esencial, intentos persistentes, asignación individual, revisión firmada con comentarios por pregunta, biblioteca de tareas/ejercicios, administración centrada en el alumno, calificaciones reales por curso y un tablero de tareas en Inicio.
+Ya existen registro, confirmación por correo, recuperación de contraseña, perfiles, Carné Nexora, roles, onboarding, solicitudes e inscripciones, diagnóstico funcional de Matemática, historial de diagnósticos, creador de clases y actividades, preguntas configurables, Formación esencial, intentos persistentes, asignación individual, revisión firmada con comentarios por pregunta, biblioteca de tareas/ejercicios, administración centrada en el alumno, calificaciones reales por curso, tablero de tareas en Inicio y gestión administrativa del catálogo.
 
 ## 🧭 Navegación principal
 
@@ -34,13 +34,25 @@ El catálogo persistente vive en `courses`. Una solicitud aceptada crea una insc
 
 Los cursos normales pueden solicitarse desde **Solicitar curso**. Además, Administración puede seleccionar un alumno y asignarle o retirarle materias directamente. Retirar un curso lo pausa y conserva su historial.
 
+**Administración → Gestionar cursos** permite:
+
+- crear una materia nueva;
+- editar nombre, icono, categoría y descripción;
+- activar o desactivar el curso sin borrar su historial;
+- consultar cursos activos, inactivos y de Formación esencial;
+- configurar el diagnóstico cuando existe un motor compatible.
+
+La clave interna (`course_key`) queda fija después de crear el curso para no romper rutas, historial o diagnósticos. Los cursos de **Formación esencial** aparecen como protegidos y no pueden modificarse desde este gestor.
+
 Cada curso dispone de **Resumen, Clases, Tareas, Ejercicios y Calificaciones**.
 
 ## 🧠 Diagnósticos
 
 El diagnóstico inicial es opcional, no da puntos y se realiza una sola vez por materia.
 
-Actualmente Matemática dispone de **194 preguntas permanentes** distribuidas en 6 niveles:
+Actualmente el motor funcional de diagnóstico está disponible para **Matemática**. Por eso el gestor de cursos permite activar o desactivar esa opción en Matemática, mientras que otras materias quedan preparadas para recibir su propio motor más adelante.
+
+Matemática dispone de **194 preguntas permanentes** distribuidas en 6 niveles:
 
 | Nivel | Contenido | Banco | Selección |
 |---|---|---:|---:|
@@ -127,6 +139,18 @@ La sección global **Calificaciones** y la pestaña **Calificaciones de cada cur
 
 El cierre definitivo de bloques y el promedio final de los cuatro bloques todavía se implementarán como reglas académicas separadas.
 
+## 🖥️ Interfaz
+
+La interfaz principal usa una distribución más amplia para mejorar la lectura en escritorio:
+
+- barra lateral más ancha;
+- mayor separación entre secciones;
+- paneles y tarjetas con más espacio interno;
+- formularios y botones más cómodos de leer y pulsar;
+- ficha de alumnos y gestor de cursos con columnas más grandes.
+
+En pantallas pequeñas la interfaz vuelve automáticamente a una distribución de una sola columna.
+
 ## 🌱 Formación esencial — primeros 365 días
 
 Cada usuario queda inscrito automáticamente durante su primer año en:
@@ -149,7 +173,8 @@ La inscripción guarda `required_until`, calculado como 365 días desde la creac
 - Crear, guardar y entregar intentos pasa por funciones seguras del servidor.
 - El límite de intentos se comprueba también en servidor.
 - La calificación manual pasa por RPC protegida y la firma del profesor se obtiene en servidor.
-- Las cuentas de estudiante no reciben permisos directos para modificar calificaciones ni revisiones.
+- La creación y edición del catálogo usa `admin_save_course`, que vuelve a comprobar el rol `admin` en Supabase.
+- Las cuentas de estudiante no reciben permisos directos para modificar calificaciones, revisiones ni el catálogo.
 
 Pendiente de seguridad antes de una beta más amplia: activar **Leaked Password Protection** en Supabase Auth.
 
@@ -190,13 +215,14 @@ Cada curso tendrá 4 bloques de hasta 100 puntos.
 - `diagnostic_results`
 - `private.course_activity_answer_keys`
 
+La definición del RPC de gestión del catálogo también queda documentada en `supabase-notes/admin-course-management.sql`.
+
 ## 🚧 Próximos objetivos
 
-1. Hacer funcional **Gestionar cursos** para crear, editar, activar/desactivar y configurar diagnóstico.
-2. Completar reglas de cierre de los 4 bloques y PMA.
-3. Terminar la revisión de seguridad para la Beta de amigos.
-4. Añadir el **Profesor IA únicamente para la cuenta principal**.
-5. Después de la Beta: presencia opcional, XP Nexora, ligas, ranking, logros y minijuegos.
+1. Completar reglas de cierre de los 4 bloques y PMA.
+2. Terminar la revisión de seguridad para la Beta de amigos.
+3. Añadir el **Profesor IA únicamente para la cuenta principal**.
+4. Después de la Beta: presencia opcional, XP Nexora, ligas, ranking, logros y minijuegos.
 
 ---
 
@@ -267,6 +293,16 @@ Cada curso tendrá 4 bloques de hasta 100 puntos.
 - Las tarjetas muestran materia, bloque, puntos, intentos, cronómetro y fechas.
 - Las tareas entregadas dejan de aparecer como pendientes.
 - Desde Inicio se puede saltar directamente a la pestaña Tareas del curso correspondiente.
+
+## 2 de octubre de 2026 — v0.20: gestión de cursos e interfaz ampliada
+
+- Administración permite crear y editar cursos normales desde la web.
+- Los cursos pueden activarse o desactivarse sin borrar historial.
+- La clave interna queda bloqueada después de crear el curso.
+- Formación esencial aparece protegida contra cambios accidentales.
+- La edición se guarda mediante un RPC que comprueba el rol administrador en Supabase.
+- Se documentó la migración del gestor en `supabase-notes/admin-course-management.sql`.
+- Se amplió la barra lateral, el contenido, los paneles, formularios, tarjetas y la ficha de alumnos para mejorar la legibilidad.
 
 ---
 
