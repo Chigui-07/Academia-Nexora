@@ -1,4 +1,4 @@
-import { ActivityAnswerKey, ActivityAnswerValue, ActivityQuestionBlock, activityQuestionTypeLabels } from "@/lib/activityQuestions";
+import { ActivityAnswerKey, ActivityAnswerValue, ActivityMatchingAnswer, ActivityQuestionBlock, activityQuestionTypeLabels } from "@/lib/activityQuestions";
 import styles from "./ActivitySheet.module.css";
 
 export type ActivitySheetType = "notebook_task" | "virtual_task" | "practice";
@@ -49,6 +49,13 @@ function formatDate(value?: string | null) {
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date(value));
+}
+
+function matchingValue(value: ActivityAnswerValue | undefined): ActivityMatchingAnswer {
+  if (typeof value === "object" && value !== null && !Array.isArray(value)) {
+    return value as ActivityMatchingAnswer;
+  }
+  return {};
 }
 
 export default function ActivitySheet({
@@ -114,6 +121,7 @@ export default function ActivitySheet({
             {visibleQuestions.map(({ question, index }) => {
               const current = answers[question.id];
               const selectedMultiple = Array.isArray(current) ? current : [];
+              const selectedMatching = matchingValue(current);
               const questionReview = questionReviews[question.id];
               const teacherComment = questionFeedback[question.id]?.trim();
 
@@ -200,6 +208,33 @@ export default function ActivitySheet({
                         />
                         <span>Falso</span>
                       </label>
+                    </div>
+                  )}
+
+                  {question.type === "matching_pairs" && (
+                    <div className={styles.choiceList}>
+                      {(question.pairs ?? []).map((pair) => {
+                        const rightOptions = [...(question.pairs ?? [])].reverse();
+                        return (
+                          <label key={pair.id} className={selectedMatching[pair.id] ? styles.choiceSelected : undefined}>
+                            <span>{pair.left || "Elemento sin texto"}</span>
+                            <select
+                              value={selectedMatching[pair.id] ?? ""}
+                              disabled={inputDisabled}
+                              onChange={(event) => onAnswerChange?.(question.id, {
+                                ...selectedMatching,
+                                [pair.id]: event.target.value,
+                              })}
+                            >
+                              <option value="">Selecciona la pareja...</option>
+                              {rightOptions.map((rightPair) => (
+                                <option key={rightPair.id} value={rightPair.id}>{rightPair.right || "Pareja sin texto"}</option>
+                              ))}
+                            </select>
+                          </label>
+                        );
+                      })}
+                      <small className={styles.choiceHint}>Relaciona cada elemento de la izquierda con una sola opción de la derecha.</small>
                     </div>
                   )}
 

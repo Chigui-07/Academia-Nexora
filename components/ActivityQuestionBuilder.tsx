@@ -17,6 +17,10 @@ type Props = {
   onAnswerKeyChange: (answerKey: ActivityAnswerKey) => void;
 };
 
+function matchingAnswer(question: ActivityQuestionBlock) {
+  return Object.fromEntries((question.pairs ?? []).map((pair) => [pair.id, pair.id]));
+}
+
 export default function ActivityQuestionBuilder({
   questions,
   answerKey,
@@ -30,7 +34,12 @@ export default function ActivityQuestionBuilder({
   function addQuestion(type: ActivityQuestionType) {
     const question = createQuestionBlock(type);
     onQuestionsChange([...questions, question]);
-    onAnswerKeyChange({ ...answerKey, [question.id]: type === "multiple_choice" ? [] : null });
+    const initialAnswer = type === "multiple_choice"
+      ? []
+      : type === "matching_pairs"
+        ? matchingAnswer(question)
+        : null;
+    onAnswerKeyChange({ ...answerKey, [question.id]: initialAnswer });
   }
 
   function removeQuestion(id: string) {
@@ -71,6 +80,30 @@ export default function ActivityQuestionBuilder({
     onAnswerKeyChange({ ...answerKey, [questionId]: next });
   }
 
+  function setPairs(question: ActivityQuestionBlock, pairs: NonNullable<ActivityQuestionBlock["pairs"]>) {
+    const nextQuestion = { ...question, pairs };
+    updateQuestion(question.id, { pairs });
+    onAnswerKeyChange({ ...answerKey, [question.id]: matchingAnswer(nextQuestion) });
+  }
+
+  function addPair(question: ActivityQuestionBlock) {
+    setPairs(question, [
+      ...(question.pairs ?? []),
+      { id: createQuestionId("p"), left: "", right: "" },
+    ]);
+  }
+
+  function updatePair(question: ActivityQuestionBlock, pairId: string, side: "left" | "right", value: string) {
+    setPairs(
+      question,
+      (question.pairs ?? []).map((pair) => pair.id === pairId ? { ...pair, [side]: value } : pair),
+    );
+  }
+
+  function removePair(question: ActivityQuestionBlock, pairId: string) {
+    setPairs(question, (question.pairs ?? []).filter((pair) => pair.id !== pairId));
+  }
+
   return (
     <section className={styles.wrapper}>
       <div className={styles.heading}>
@@ -108,7 +141,7 @@ export default function ActivityQuestionBuilder({
                 <textarea
                   value={question.prompt}
                   onChange={(event) => updateQuestion(question.id, { prompt: event.target.value })}
-                  placeholder="Escribe la pregunta..."
+                  placeholder={question.type === "matching_pairs" ? "Ej. Relaciona cada concepto con su definición." : "Escribe la pregunta..."}
                   rows={3}
                 />
               </label>
@@ -199,6 +232,31 @@ export default function ActivityQuestionBuilder({
                     Falso
                   </label>
                 </fieldset>
+              )}
+
+              {question.type === "matching_pairs" && (
+                <div className={styles.optionsBox}>
+                  <span className={styles.optionHelp}>Escribe las parejas correctas. Al estudiante se le mostrarán las opciones de la derecha mezcladas.</span>
+                  {(question.pairs ?? []).map((pair, pairIndex) => (
+                    <div className={styles.optionRow} key={pair.id}>
+                      <input
+                        value={pair.left}
+                        onChange={(event) => updatePair(question, pair.id, "left", event.target.value)}
+                        placeholder={`Elemento ${pairIndex + 1}`}
+                      />
+                      <span aria-hidden="true">↔</span>
+                      <input
+                        value={pair.right}
+                        onChange={(event) => updatePair(question, pair.id, "right", event.target.value)}
+                        placeholder={`Pareja ${pairIndex + 1}`}
+                      />
+                      {(question.pairs?.length ?? 0) > 2 && (
+                        <button type="button" className={styles.optionDelete} onClick={() => removePair(question, pair.id)}>×</button>
+                      )}
+                    </div>
+                  ))}
+                  <button className="secondary-button" type="button" onClick={() => addPair(question)}>+ Agregar pareja</button>
+                </div>
               )}
             </article>
           ))}

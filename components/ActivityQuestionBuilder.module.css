@@ -101,6 +101,20 @@
   height: 18px;
 }
 
+.optionRow:has(> span[aria-hidden="true"]) {
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto;
+}
+
+.optionRow:has(> span[aria-hidden="true"]) > input:first-child {
+  width: 100%;
+  height: auto;
+}
+
+.optionRow:has(> span[aria-hidden="true"]) > span {
+  color: var(--muted);
+  font-weight: 900;
+}
+
 .optionDelete {
   width: 34px;
   height: 34px;
@@ -140,5 +154,13 @@
   .questionTop {
     align-items: stretch;
     flex-direction: column;
+  }
+
+  .optionRow:has(> span[aria-hidden="true"]) {
+    grid-template-columns: 1fr;
+  }
+
+  .optionRow:has(> span[aria-hidden="true"]) > span {
+    text-align: center;
   }
 }

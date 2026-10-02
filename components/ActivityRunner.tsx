@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
+import ActivityAttachments from "./ActivityAttachments";
 import ActivitySheet, { ActivityQuestionReview, ActivitySheetType } from "./ActivitySheet";
 import { ActivityAnswerKey, ActivityAnswerValue, ActivityQuestionBlock } from "@/lib/activityQuestions";
 import { supabase } from "@/lib/supabase";
@@ -86,6 +87,7 @@ function friendlyError(message: string) {
 
 function hasAnswer(value: ActivityAnswerValue | undefined) {
   if (Array.isArray(value)) return value.length > 0;
+  if (typeof value === "object" && value !== null) return Object.keys(value).length > 0;
   return value !== undefined && value !== null && value !== "";
 }
 
@@ -449,6 +451,8 @@ export default function ActivityRunner({
             activeQuestionIndex={questionCount > 0 ? safeQuestion : null}
           />
 
+          <ActivityAttachments attemptId={attempt.id} editable={active} />
+
           {questionCount > 1 && (
             <div className={styles.questionPager}>
               <button
@@ -502,7 +506,7 @@ export default function ActivityRunner({
                 <>
                   <div>
                     <strong>Puedes realizar otro intento</strong>
-                    <small>El intento anterior queda guardado. El nuevo tendrá sus propias respuestas y cronómetro.</small>
+                    <small>El intento anterior queda guardado. El nuevo tendrá sus propias respuestas, archivos y cronómetro.</small>
                   </div>
                   <button className="primary-button" type="button" onClick={startAttempt} disabled={working}>
                     {working ? "Preparando..." : `Nuevo intento (${attempt.attempt_number + 1}/${activity.max_attempts})`}
