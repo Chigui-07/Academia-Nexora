@@ -83,6 +83,7 @@ export default function CourseRequestForm({ onboarding = false }: { onboarding?:
         .from("courses")
         .select("id, course_key, name, description, icon, category, diagnostic_available")
         .eq("active", true)
+        .neq("category", "Formación esencial")
         .order("name"),
       supabase
         .from("course_requests")
@@ -243,7 +244,7 @@ export default function CourseRequestForm({ onboarding = false }: { onboarding?:
         </div>
 
         <p className="muted-copy">
-          Elige una materia del catálogo. Los diagnósticos, cuando existan, son opcionales y se administran por separado.
+          Elige una materia del catálogo. Los cursos de Formación esencial ya se asignan automáticamente durante el primer año.
         </p>
 
         <div className="form-group">

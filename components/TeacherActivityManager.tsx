@@ -1,7 +1,9 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import ActivityQuestionBuilder from "./ActivityQuestionBuilder";
 import ActivitySheet from "./ActivitySheet";
+import { ActivityAnswerKey, ActivityQuestionBlock } from "@/lib/activityQuestions";
 import { supabase } from "@/lib/supabase";
 import styles from "./TeacherActivityManager.module.css";
 
@@ -21,6 +23,7 @@ type Activity = {
   activity_type: ActivityType;
   title: string;
   worksheet_content: string;
+  question_blocks: ActivityQuestionBlock[];
   points: number | null;
   opens_at: string | null;
   closes_at: string | null;
@@ -56,6 +59,8 @@ export default function TeacherActivityManager() {
   const [closesAt, setClosesAt] = useState("");
   const [timeLimit, setTimeLimit] = useState("");
   const [worksheet, setWorksheet] = useState("");
+  const [questions, setQuestions] = useState<ActivityQuestionBlock[]>([]);
+  const [answerKey, setAnswerKey] = useState<ActivityAnswerKey>({});
   const [status, setStatus] = useState<ActivityStatus>("draft");
   const [previewOpen, setPreviewOpen] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -90,7 +95,7 @@ export default function TeacherActivityManager() {
         .order("name"),
       supabase
         .from("course_activities")
-        .select("id, course_id, created_by, activity_type, title, worksheet_content, points, opens_at, closes_at, time_limit_minutes, status, created_at")
+        .select("id, course_id, created_by, activity_type, title, worksheet_content, question_blocks, points, opens_at, closes_at, time_limit_minutes, status, created_at")
         .order("created_at", { ascending: false }),
     ]);
 
@@ -120,13 +125,15 @@ export default function TeacherActivityManager() {
     setClosesAt("");
     setTimeLimit("");
     setWorksheet("");
+    setQuestions([]);
+    setAnswerKey({});
     setStatus("draft");
     setPreviewOpen(false);
     setMessage(null);
     setError(null);
   }
 
-  function editActivity(activity: Activity) {
+  async function editActivity(activity: Activity) {
     setEditingId(activity.id);
     setCourseId(activity.course_id);
     setActivityType(activity.activity_type);
@@ -136,11 +143,53 @@ export default function TeacherActivityManager() {
     setClosesAt(toLocalInput(activity.closes_at));
     setTimeLimit(activity.time_limit_minutes === null ? "" : String(activity.time_limit_minutes));
     setWorksheet(activity.worksheet_content);
+    setQuestions(activity.question_blocks ?? []);
     setStatus(activity.status);
     setPreviewOpen(false);
     setMessage("Editando actividad existente.");
     setError(null);
+
+    const { data, error: keyError } = await supabase.rpc("get_course_activity_answer_key", {
+      p_activity_id: activity.id,
+    });
+
+    if (keyError) {
+      setAnswerKey({});
+      setError("La actividad abrió, pero no se pudo cargar su clave de respuestas.");
+    } else {
+      setAnswerKey((data ?? {}) as ActivityAnswerKey);
+    }
+
     window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  function validatePublishedQuestions() {
+    if (status !== "published") return;
+
+    for (const [index, question] of questions.entries()) {
+      if (!question.prompt.trim()) {
+        throw new Error(`Escribe el enunciado de la pregunta ${index + 1}.`);
+      }
+
+      if (question.type === "single_choice" || question.type === "multiple_choice") {
+        const options = question.options ?? [];
+        if (options.length < 2 || options.some((option) => !option.label.trim())) {
+          throw new Error(`Completa al menos dos opciones en la pregunta ${index + 1}.`);
+        }
+      }
+
+      if (question.type === "single_choice" && typeof answerKey[question.id] !== "string") {
+        throw new Error(`Marca la respuesta correcta de la pregunta ${index + 1}.`);
+      }
+
+      if (question.type === "multiple_choice" && (!Array.isArray(answerKey[question.id]) || (answerKey[question.id] as string[]).length === 0)) {
+        throw new Error(`Marca al menos una respuesta correcta en la pregunta ${index + 1}.`);
+      }
+
+      if (question.type === "true_false" && typeof answerKey[question.id] !== "boolean") {
+        throw new Error(`Selecciona Verdadero o Falso como respuesta correcta en la pregunta ${index + 1}.`);
+      }
+    }
   }
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
@@ -155,6 +204,9 @@ export default function TeacherActivityManager() {
       if (!session) throw new Error("Tu sesión terminó. Inicia sesión nuevamente.");
       if (!courseId) throw new Error("Selecciona un curso.");
       if (!title.trim()) throw new Error("Escribe un título para la actividad.");
+      if (!worksheet.trim() && questions.length === 0) throw new Error("Agrega instrucciones o al menos una pregunta a la actividad.");
+
+      validatePublishedQuestions();
 
       const pointsValue = activityType === "practice" ? null : Number(points);
       if (activityType !== "practice" && (!Number.isFinite(pointsValue) || pointsValue === null || pointsValue < 0 || pointsValue > 100)) {
@@ -175,6 +227,7 @@ export default function TeacherActivityManager() {
         activity_type: activityType,
         title: title.trim(),
         worksheet_content: worksheet,
+        question_blocks: questions,
         points: pointsValue,
         opens_at: opensAt ? new Date(opensAt).toISOString() : null,
         closes_at: closesAt ? new Date(closesAt).toISOString() : null,
@@ -182,24 +235,44 @@ export default function TeacherActivityManager() {
         status,
       };
 
+      let activityId = editingId;
+
       if (editingId) {
         const { error: updateError } = await supabase
           .from("course_activities")
           .update(payload)
           .eq("id", editingId);
         if (updateError) throw updateError;
-        setMessage("Actividad actualizada correctamente.");
       } else {
-        const { error: insertError } = await supabase
+        const { data: inserted, error: insertError } = await supabase
           .from("course_activities")
-          .insert({ ...payload, created_by: session.user.id });
+          .insert({ ...payload, created_by: session.user.id })
+          .select("id")
+          .single();
         if (insertError) throw insertError;
-        setMessage(status === "published" ? "Actividad publicada correctamente." : "Borrador guardado correctamente.");
+        activityId = inserted.id;
       }
+
+      if (!activityId) throw new Error("No se pudo identificar la actividad guardada.");
+
+      const { error: questionsError } = await supabase.rpc("save_course_activity_questions", {
+        p_activity_id: activityId,
+        p_question_blocks: questions,
+        p_answer_key: answerKey,
+      });
+      if (questionsError) throw questionsError;
+
+      setMessage(editingId
+        ? "Actividad actualizada correctamente."
+        : status === "published"
+          ? "Actividad publicada correctamente."
+          : "Borrador guardado correctamente.");
 
       setEditingId(null);
       setTitle("");
       setWorksheet("");
+      setQuestions([]);
+      setAnswerKey({});
       setPoints(activityType === "practice" ? "" : "10");
       setOpensAt("");
       setClosesAt("");
@@ -227,7 +300,7 @@ export default function TeacherActivityManager() {
         <div>
           <p className="eyebrow">Profesor</p>
           <h2>👨‍🏫 Crear y gestionar actividades</h2>
-          <p className="muted-copy">Prepara tareas y ejercicios, controla cuándo se habilitan y decide si tendrán cronómetro.</p>
+          <p className="muted-copy">Combina instrucciones, preguntas, fechas, punteo y cronómetro en una misma actividad.</p>
         </div>
       </div>
 
@@ -324,8 +397,8 @@ export default function TeacherActivityManager() {
         <div className={styles.sheetArea}>
           <div className={styles.sheetHeader}>
             <div>
-              <span>Hoja de actividad</span>
-              <small>Escribe aquí el ejercicio, instrucciones, problemas o preguntas.</small>
+              <span>Hoja de instrucciones</span>
+              <small>Escribe contexto, reglas, teoría breve o indicaciones generales.</small>
             </div>
             <span className={styles.sheetBadge}>Editor</span>
           </div>
@@ -333,7 +406,16 @@ export default function TeacherActivityManager() {
             className={styles.paper}
             value={worksheet}
             onChange={(event) => setWorksheet(event.target.value)}
-            placeholder={"Escribe aquí el contenido de la actividad...\n\nEjemplo:\n1. Resuelve los siguientes ejercicios.\n2. Muestra tu procedimiento cuando se solicite."}
+            placeholder={"Escribe aquí las instrucciones generales...\n\nDespués puedes agregar preguntas interactivas debajo."}
+          />
+        </div>
+
+        <div className={styles.questionsPanel}>
+          <ActivityQuestionBuilder
+            questions={questions}
+            answerKey={answerKey}
+            onQuestionsChange={setQuestions}
+            onAnswerKeyChange={setAnswerKey}
           />
         </div>
       </form>
@@ -353,6 +435,7 @@ export default function TeacherActivityManager() {
             activityType={activityType}
             title={title}
             content={worksheet}
+            questionBlocks={questions}
             points={Number.isFinite(previewPoints) ? previewPoints : null}
             opensAt={opensAt || null}
             closesAt={closesAt || null}
@@ -383,11 +466,12 @@ export default function TeacherActivityManager() {
                     <strong>{activity.title}</strong>
                     <small>
                       {activity.points !== null ? `${activity.points} pts · ` : ""}
+                      {activity.question_blocks?.length ? `${activity.question_blocks.length} preguntas · ` : ""}
                       {activity.time_limit_minutes ? `⏱️ ${activity.time_limit_minutes} min · ` : "Sin cronómetro · "}
                       {activity.status === "published" ? "Publicada" : "Borrador"}
                     </small>
                   </div>
-                  <button className="secondary-button" type="button" onClick={() => editActivity(activity)}>Editar</button>
+                  <button className="secondary-button" type="button" onClick={() => void editActivity(activity)}>Editar</button>
                 </article>
               );
             })}
