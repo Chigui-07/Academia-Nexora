@@ -3,6 +3,81 @@
   gap: 14px;
 }
 
+.startCard {
+  display: grid;
+  gap: 16px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.startCardHeading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 18px;
+}
+
+.startCardHeading > div {
+  display: grid;
+  gap: 5px;
+}
+
+.startCardHeading h3 {
+  margin: 0;
+  font-size: 1.22rem;
+}
+
+.startCardHeading p,
+.startHint,
+.startCardHeading span {
+  margin: 0;
+  color: var(--muted);
+}
+
+.courseLabel {
+  font-size: 0.82rem;
+  font-weight: 850;
+}
+
+.readyBadge {
+  padding: 7px 10px;
+  border: 1px solid color-mix(in srgb, var(--primary) 35%, var(--border));
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary) 8%, var(--surface));
+  color: var(--primary) !important;
+  font-size: 0.76rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.startMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+}
+
+.startMeta span {
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-soft) 72%, transparent);
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.startHint {
+  line-height: 1.55;
+}
+
+.startAction {
+  display: flex;
+  justify-content: flex-end;
+}
+
 .controlBar {
   display: flex;
   justify-content: space-between;
@@ -55,18 +130,48 @@
   background: color-mix(in srgb, var(--warning) 9%, var(--surface));
 }
 
+.bottomActions {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+}
+
+.bottomActions > div {
+  display: grid;
+  gap: 4px;
+}
+
+.bottomActions small {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
 @media (max-width: 720px) {
-  .controlBar {
+  .startCardHeading,
+  .controlBar,
+  .bottomActions {
     align-items: stretch;
     flex-direction: column;
   }
 
+  .startAction,
   .controlActions {
     justify-content: stretch;
   }
 
+  .startAction button,
   .controlActions button,
+  .bottomActions button,
   .timer {
     width: 100%;
+  }
+
+  .readyBadge {
+    align-self: flex-start;
   }
 }
