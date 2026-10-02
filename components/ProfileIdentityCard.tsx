@@ -8,7 +8,15 @@ type IdentityProfile = {
   username: string | null;
   student_code: string;
   stage: string;
-  school_year: number;
+  level: number;
+};
+
+const stageIcons: Record<string, string> = {
+  fundamentos: "🌱",
+  intermedio: "📘",
+  avanzado: "🧠",
+  superior: "🎓",
+  dominio: "🏆",
 };
 
 export default function ProfileIdentityCard() {
@@ -30,7 +38,7 @@ export default function ProfileIdentityCard() {
 
       const { data, error: profileError } = await supabase
         .from("profiles")
-        .select("display_name, username, student_code, stage, school_year")
+        .select("display_name, username, student_code, stage, level")
         .eq("id", userId)
         .single();
 
@@ -60,6 +68,9 @@ export default function ProfileIdentityCard() {
     return <div className="auth-message auth-error">{error ?? "No se encontró tu perfil."}</div>;
   }
 
+  const stageKey = profile.stage.trim().toLocaleLowerCase();
+  const icon = stageIcons[stageKey] ?? "📚";
+
   return (
     <article className="panel" style={{ marginBottom: 18 }}>
       <p className="eyebrow">Identidad académica</p>
@@ -82,6 +93,13 @@ export default function ProfileIdentityCard() {
         <article className="stat-card">
           <div className="stat-label">Nombre de usuario</div>
           <div className="stat-value" style={{ fontSize: "1.2rem" }}>@{profile.username ?? "usuario"}</div>
+        </article>
+
+        <article className="stat-card">
+          <div className="stat-label">Progreso académico</div>
+          <div className="stat-value" style={{ fontSize: "1.2rem" }}>
+            {icon} {profile.stage} · Nivel {Math.max(1, Number(profile.level) || 1)}
+          </div>
         </article>
       </section>
 
