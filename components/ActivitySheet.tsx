@@ -100,13 +100,18 @@ export default function ActivitySheet({
     : questionBlocks[activeQuestionIndex]
       ? [{ question: questionBlocks[activeQuestionIndex], index: activeQuestionIndex }]
       : [];
+  const sheetLabel = !preview && activeQuestionIndex !== null && questionBlocks.length > 0
+    ? `Hoja ${activeQuestionIndex + 1} de ${questionBlocks.length}`
+    : preview
+      ? "Vista previa"
+      : typeLabels[activityType];
 
   return (
     <article className={styles.paper}>
       <div className={styles.paperContent}>
         <div className={styles.topline}>
           <span>{courseIcon} {courseName}</span>
-          <span>{preview ? "Vista previa" : typeLabels[activityType]}</span>
+          <span>{sheetLabel}</span>
         </div>
 
         <div className={styles.heading}>
