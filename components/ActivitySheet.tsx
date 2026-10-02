@@ -1,8 +1,14 @@
-import { ActivityAnswerKey, ActivityAnswerValue, ActivityMatchingAnswer, ActivityQuestionBlock, activityQuestionTypeLabels } from "@/lib/activityQuestions";
+import {
+  ActivityAnswerKey,
+  ActivityAnswerValue,
+  ActivityMatchingAnswer,
+  ActivityQuestionBlock,
+  activityQuestionTypeLabels,
+} from "@/lib/activityQuestions";
 import styles from "./ActivitySheet.module.css";
 
 export type ActivitySheetType = "notebook_task" | "virtual_task" | "practice";
-export type ActivityQuestionReview = "correct" | "incorrect";
+export type ActivityQuestionReview = "correct" | "neutral" | "incorrect";
 
 export type ActivityReviewSummary = {
   reviewerName: string;
@@ -57,6 +63,12 @@ function matchingValue(value: ActivityAnswerValue | undefined): ActivityMatching
   }
   return {};
 }
+
+const neutralReviewStyle = {
+  border: "1px solid rgba(148, 163, 184, 0.5)",
+  background: "rgba(148, 163, 184, 0.11)",
+  color: "#cbd5e1",
+};
 
 export default function ActivitySheet({
   courseName,
@@ -228,19 +240,36 @@ export default function ActivitySheet({
                             >
                               <option value="">Selecciona la pareja...</option>
                               {rightOptions.map((rightPair) => (
-                                <option key={rightPair.id} value={rightPair.id}>{rightPair.right || "Pareja sin texto"}</option>
+                                <option key={rightPair.id} value={rightPair.id}>
+                                  {rightPair.right || "Pareja sin texto"}
+                                </option>
                               ))}
                             </select>
                           </label>
                         );
                       })}
-                      <small className={styles.choiceHint}>Relaciona cada elemento de la izquierda con una sola opción de la derecha.</small>
+                      <small className={styles.choiceHint}>
+                        Relaciona cada elemento de la izquierda con una sola opción de la derecha.
+                      </small>
                     </div>
                   )}
 
                   {questionReview && (
-                    <div className={`${styles.reviewMark} ${questionReview === "correct" ? styles.reviewCorrect : styles.reviewIncorrect}`}>
-                      {questionReview === "correct" ? "✅ Respuesta correcta" : "❌ Respuesta incorrecta"}
+                    <div
+                      className={`${styles.reviewMark} ${
+                        questionReview === "correct"
+                          ? styles.reviewCorrect
+                          : questionReview === "incorrect"
+                            ? styles.reviewIncorrect
+                            : ""
+                      }`}
+                      style={questionReview === "neutral" ? neutralReviewStyle : undefined}
+                    >
+                      {questionReview === "correct"
+                        ? "✅ Respuesta correcta"
+                        : questionReview === "neutral"
+                          ? "— Revisión neutral"
+                          : "❌ Respuesta incorrecta"}
                     </div>
                   )}
 
