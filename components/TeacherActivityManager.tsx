@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import ActivitySheet from "./ActivitySheet";
 import { supabase } from "@/lib/supabase";
 import styles from "./TeacherActivityManager.module.css";
 
@@ -56,6 +57,7 @@ export default function TeacherActivityManager() {
   const [timeLimit, setTimeLimit] = useState("");
   const [worksheet, setWorksheet] = useState("");
   const [status, setStatus] = useState<ActivityStatus>("draft");
+  const [previewOpen, setPreviewOpen] = useState(false);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -119,6 +121,7 @@ export default function TeacherActivityManager() {
     setTimeLimit("");
     setWorksheet("");
     setStatus("draft");
+    setPreviewOpen(false);
     setMessage(null);
     setError(null);
   }
@@ -134,6 +137,7 @@ export default function TeacherActivityManager() {
     setTimeLimit(activity.time_limit_minutes === null ? "" : String(activity.time_limit_minutes));
     setWorksheet(activity.worksheet_content);
     setStatus(activity.status);
+    setPreviewOpen(false);
     setMessage("Editando actividad existente.");
     setError(null);
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -153,7 +157,7 @@ export default function TeacherActivityManager() {
       if (!title.trim()) throw new Error("Escribe un título para la actividad.");
 
       const pointsValue = activityType === "practice" ? null : Number(points);
-      if (activityType !== "practice" && (!Number.isFinite(pointsValue) || pointsValue! < 0 || pointsValue! > 100)) {
+      if (activityType !== "practice" && (!Number.isFinite(pointsValue) || pointsValue === null || pointsValue < 0 || pointsValue > 100)) {
         throw new Error("El punteo debe estar entre 0 y 100.");
       }
 
@@ -201,6 +205,7 @@ export default function TeacherActivityManager() {
       setClosesAt("");
       setTimeLimit("");
       setStatus("draft");
+      setPreviewOpen(false);
       await loadData();
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : "No se pudo guardar la actividad.");
@@ -211,6 +216,10 @@ export default function TeacherActivityManager() {
 
   if (!ready) return <div className="empty-state">Cargando herramientas del profesor...</div>;
   if (!isTeacher) return null;
+
+  const previewCourse = courseMap.get(courseId);
+  const previewPoints = activityType === "practice" || points.trim() === "" ? null : Number(points);
+  const previewTimer = timeLimit.trim() === "" ? null : Number(timeLimit);
 
   return (
     <section className={styles.wrapper}>
@@ -303,6 +312,9 @@ export default function TeacherActivityManager() {
             <button className="primary-button" type="submit" disabled={saving}>
               {saving ? "Guardando..." : editingId ? "Guardar cambios" : status === "published" ? "Publicar actividad" : "Guardar borrador"}
             </button>
+            <button className="secondary-button" type="button" onClick={() => setPreviewOpen((value) => !value)}>
+              {previewOpen ? "Ocultar vista previa" : "👁️ Vista previa"}
+            </button>
             {editingId && (
               <button className="secondary-button" type="button" onClick={resetForm}>Cancelar edición</button>
             )}
@@ -315,7 +327,7 @@ export default function TeacherActivityManager() {
               <span>Hoja de actividad</span>
               <small>Escribe aquí el ejercicio, instrucciones, problemas o preguntas.</small>
             </div>
-            <span className={styles.sheetBadge}>Hoja en blanco</span>
+            <span className={styles.sheetBadge}>Editor</span>
           </div>
           <textarea
             className={styles.paper}
@@ -325,6 +337,30 @@ export default function TeacherActivityManager() {
           />
         </div>
       </form>
+
+      {previewOpen && (
+        <div className={styles.previewSection}>
+          <div className={styles.previewHeading}>
+            <div>
+              <p className="eyebrow">Vista del estudiante</p>
+              <h3>Así se verá la actividad publicada</h3>
+            </div>
+            <span className={styles.sheetBadge}>No está publicada por previsualizar</span>
+          </div>
+          <ActivitySheet
+            courseName={previewCourse?.name ?? "Curso"}
+            courseIcon={previewCourse?.icon ?? "📚"}
+            activityType={activityType}
+            title={title}
+            content={worksheet}
+            points={Number.isFinite(previewPoints) ? previewPoints : null}
+            opensAt={opensAt || null}
+            closesAt={closesAt || null}
+            timeLimitMinutes={Number.isFinite(previewTimer) ? previewTimer : null}
+            preview
+          />
+        </div>
+      )}
 
       <div className={styles.savedSection}>
         <div className="section-heading">
