@@ -17,6 +17,7 @@ type Attempt = {
   expires_at: string | null;
   submitted_at: string | null;
   question_reviews: Record<string, ActivityQuestionReview>;
+  question_feedback: Record<string, string>;
   grade_value: number | null;
   grade_max: number | null;
   feedback: string | null;
@@ -83,6 +84,11 @@ function friendlyError(message: string) {
   return message;
 }
 
+function hasAnswer(value: ActivityAnswerValue | undefined) {
+  if (Array.isArray(value)) return value.length > 0;
+  return value !== undefined && value !== null && value !== "";
+}
+
 export default function ActivityRunner({
   activity,
   courseName,
@@ -91,6 +97,7 @@ export default function ActivityRunner({
 }: ActivityRunnerProps) {
   const [attempt, setAttempt] = useState<Attempt | null>(null);
   const [answers, setAnswers] = useState<ActivityAnswerKey>({});
+  const [currentQuestion, setCurrentQuestion] = useState(0);
   const [ready, setReady] = useState(false);
   const [working, setWorking] = useState(false);
   const [saveState, setSaveState] = useState<"idle" | "saving" | "saved">("idle");
@@ -100,6 +107,8 @@ export default function ActivityRunner({
   const timeoutSubmitting = useRef(false);
 
   useEffect(() => {
+    setCurrentQuestion(0);
+
     async function loadAttempt() {
       const { data: sessionData } = await supabase.auth.getSession();
       const session = sessionData.session;
@@ -110,7 +119,7 @@ export default function ActivityRunner({
 
       const { data, error: loadError } = await supabase
         .from("activity_attempts")
-        .select("id, status, attempt_number, responses, started_at, expires_at, submitted_at, question_reviews, grade_value, grade_max, feedback, reviewer_name, reviewed_at")
+        .select("id, status, attempt_number, responses, started_at, expires_at, submitted_at, question_reviews, question_feedback, grade_value, grade_max, feedback, reviewer_name, reviewed_at")
         .eq("activity_id", activity.id)
         .eq("user_id", session.user.id)
         .order("attempt_number", { ascending: false })
@@ -123,6 +132,7 @@ export default function ActivityRunner({
         const loaded = data as Attempt;
         const loadedAnswers = (loaded.responses ?? {}) as ActivityAnswerKey;
         loaded.question_reviews = (loaded.question_reviews ?? {}) as Record<string, ActivityQuestionReview>;
+        loaded.question_feedback = (loaded.question_feedback ?? {}) as Record<string, string>;
 
         if (loaded.status === "in_progress" && loaded.expires_at && new Date(loaded.expires_at).getTime() <= Date.now()) {
           const { data: finalStatus, error: timeoutError } = await supabase.rpc("submit_course_activity_attempt", {
@@ -200,7 +210,7 @@ export default function ActivityRunner({
 
   async function startAttempt() {
     if (!allowNewAttempts) {
-      setError("Este ejercicio ya cerró. Puedes consultar tus intentos anteriores, pero no iniciar uno nuevo.");
+      setError("Esta actividad ya cerró. Puedes consultar tus intentos anteriores, pero no iniciar uno nuevo.");
       return;
     }
 
@@ -226,6 +236,7 @@ export default function ActivityRunner({
         expires_at: row.expires_at,
         submitted_at: row.submitted_at,
         question_reviews: {},
+        question_feedback: {},
         grade_value: null,
         grade_max: null,
         feedback: null,
@@ -235,6 +246,7 @@ export default function ActivityRunner({
 
       setAttempt(loaded);
       setAnswers(loaded.responses);
+      setCurrentQuestion(0);
 
       if (loaded.status === "timed_out") {
         setMessage("Este intento ya terminó por tiempo.");
@@ -305,6 +317,7 @@ export default function ActivityRunner({
           <div className={styles.startMeta}>
             <span>🧩 {questionCount} {questionCount === 1 ? "pregunta" : "preguntas"}</span>
             {activity.points !== null && <span>🎯 {activity.points} pts</span>}
+            {activity.activity_type === "practice" && <span>🎯 Calificación sobre 100</span>}
             <span>🔁 {activity.max_attempts} {activity.max_attempts === 1 ? "intento" : "intentos"}</span>
             <span>{activity.time_limit_minutes ? `⏱️ ${activity.time_limit_minutes} min por intento` : "⏱️ Sin límite de tiempo"}</span>
             <span>📊 Bloque {activity.block_number}</span>
@@ -317,7 +330,7 @@ export default function ActivityRunner({
                 {activity.time_limit_minutes ? " El cronómetro empezará en ese momento." : ""}
               </>
             ) : (
-              <>Este ejercicio ya cerró y no se puede iniciar un intento nuevo.</>
+              <>Esta actividad ya cerró y no se puede iniciar un intento nuevo.</>
             )}
           </p>
 
@@ -340,6 +353,10 @@ export default function ActivityRunner({
   const finished = attempt.status === "submitted" || attempt.status === "timed_out";
   const reviewed = Boolean(attempt.reviewed_at && attempt.grade_value !== null && attempt.grade_max !== null);
   const canRepeat = Boolean(allowNewAttempts && finished && attempt.attempt_number < activity.max_attempts);
+  const questionCount = activity.question_blocks?.length ?? 0;
+  const safeQuestion = questionCount > 0 ? Math.min(currentQuestion, questionCount - 1) : 0;
+  const atLastQuestion = questionCount === 0 || safeQuestion === questionCount - 1;
+  const unanswered = activity.question_blocks.filter((question) => !hasAnswer(answers[question.id])).length;
   const reviewSummary = reviewed
     ? {
         reviewerName: attempt.reviewer_name || "Profesor",
@@ -374,61 +391,128 @@ export default function ActivityRunner({
       {error && <div className="auth-message auth-error">{error}</div>}
       {message && <div className="auth-message auth-success">{message}</div>}
 
-      <ActivitySheet
-        courseName={courseName}
-        courseIcon={courseIcon}
-        activityType={activity.activity_type}
-        title={activity.title}
-        content={activity.worksheet_content}
-        questionBlocks={activity.question_blocks ?? []}
-        points={activity.points}
-        opensAt={activity.opens_at}
-        closesAt={activity.closes_at}
-        timeLimitMinutes={activity.time_limit_minutes}
-        maxAttempts={activity.max_attempts}
-        answers={answers}
-        responsesDisabled={!active}
-        onAnswerChange={handleAnswerChange}
-        questionReviews={attempt.question_reviews ?? {}}
-        reviewSummary={reviewSummary}
-      />
+      <div className={questionCount > 0 ? styles.workspace : undefined}>
+        {questionCount > 0 && (
+          <aside className={styles.questionNav}>
+            <div>
+              <strong>Preguntas</strong>
+              <small>{safeQuestion + 1} de {questionCount}</small>
+            </div>
+            <div className={styles.questionGrid}>
+              {activity.question_blocks.map((question, index) => {
+                const review = attempt.question_reviews?.[question.id];
+                const answered = hasAnswer(answers[question.id]);
+                const classes = [styles.questionNumber];
+                if (index === safeQuestion) classes.push(styles.questionNumberActive);
+                if (review === "correct") classes.push(styles.questionNumberCorrect);
+                else if (review === "incorrect") classes.push(styles.questionNumberIncorrect);
+                else if (answered) classes.push(styles.questionNumberAnswered);
 
-      {(active || canRepeat) && (
-        <div className={styles.bottomActions}>
-          {active && (
-            <>
-              <div>
-                <strong>¿Terminaste todas las preguntas?</strong>
-                <small>Revisa tus respuestas antes de finalizar. Después de entregar este intento ya no podrás modificarlo.</small>
-              </div>
+                return (
+                  <button
+                    key={question.id}
+                    type="button"
+                    className={classes.join(" ")}
+                    onClick={() => setCurrentQuestion(index)}
+                    aria-label={`Ir a la pregunta ${index + 1}`}
+                  >
+                    {index + 1}
+                  </button>
+                );
+              })}
+            </div>
+            <small className={styles.navHint}>
+              {reviewed ? "Los colores muestran la revisión del profesor." : "Los números marcados ya tienen respuesta."}
+            </small>
+          </aside>
+        )}
+
+        <div className={styles.activityMain}>
+          <ActivitySheet
+            courseName={courseName}
+            courseIcon={courseIcon}
+            activityType={activity.activity_type}
+            title={activity.title}
+            content={activity.worksheet_content}
+            questionBlocks={activity.question_blocks ?? []}
+            points={activity.points}
+            opensAt={activity.opens_at}
+            closesAt={activity.closes_at}
+            timeLimitMinutes={activity.time_limit_minutes}
+            maxAttempts={activity.max_attempts}
+            answers={answers}
+            responsesDisabled={!active}
+            onAnswerChange={handleAnswerChange}
+            questionReviews={attempt.question_reviews ?? {}}
+            questionFeedback={attempt.question_feedback ?? {}}
+            reviewSummary={atLastQuestion ? reviewSummary : null}
+            activeQuestionIndex={questionCount > 0 ? safeQuestion : null}
+          />
+
+          {questionCount > 1 && (
+            <div className={styles.questionPager}>
               <button
-                className="primary-button"
+                className="secondary-button"
                 type="button"
-                disabled={working}
-                onClick={() => {
-                  if (window.confirm("¿Quieres entregar este intento? Después de entregarlo ya no se podrá modificar.")) {
-                    void submitAttempt(false);
-                  }
-                }}
+                disabled={safeQuestion === 0}
+                onClick={() => setCurrentQuestion((current) => Math.max(0, current - 1))}
               >
-                {working ? "Entregando..." : activity.activity_type === "practice" ? "Finalizar intento" : "Entregar intento"}
+                ← Anterior
               </button>
-            </>
+              <strong>Pregunta {safeQuestion + 1} de {questionCount}</strong>
+              <button
+                className="secondary-button"
+                type="button"
+                disabled={safeQuestion === questionCount - 1}
+                onClick={() => setCurrentQuestion((current) => Math.min(questionCount - 1, current + 1))}
+              >
+                Siguiente →
+              </button>
+            </div>
           )}
 
-          {canRepeat && (
-            <>
-              <div>
-                <strong>Puedes realizar otro intento</strong>
-                <small>El intento anterior queda guardado. El nuevo tendrá sus propias respuestas y cronómetro.</small>
-              </div>
-              <button className="primary-button" type="button" onClick={startAttempt} disabled={working}>
-                {working ? "Preparando..." : `Nuevo intento (${attempt.attempt_number + 1}/${activity.max_attempts})`}
-              </button>
-            </>
+          {(active || canRepeat) && atLastQuestion && (
+            <div className={styles.bottomActions}>
+              {active && (
+                <>
+                  <div>
+                    <strong>¿Terminaste todas las preguntas?</strong>
+                    <small>
+                      {unanswered > 0
+                        ? `Todavía tienes ${unanswered} ${unanswered === 1 ? "pregunta sin responder" : "preguntas sin responder"}. Puedes volver desde la tabla de la izquierda.`
+                        : "Todas las preguntas tienen respuesta. Revisa antes de finalizar; después no podrás modificar este intento."}
+                    </small>
+                  </div>
+                  <button
+                    className="primary-button"
+                    type="button"
+                    disabled={working}
+                    onClick={() => {
+                      if (window.confirm("¿Quieres entregar este intento? Después de entregarlo ya no se podrá modificar.")) {
+                        void submitAttempt(false);
+                      }
+                    }}
+                  >
+                    {working ? "Entregando..." : activity.activity_type === "practice" ? "Finalizar intento" : "Entregar intento"}
+                  </button>
+                </>
+              )}
+
+              {canRepeat && (
+                <>
+                  <div>
+                    <strong>Puedes realizar otro intento</strong>
+                    <small>El intento anterior queda guardado. El nuevo tendrá sus propias respuestas y cronómetro.</small>
+                  </div>
+                  <button className="primary-button" type="button" onClick={startAttempt} disabled={working}>
+                    {working ? "Preparando..." : `Nuevo intento (${attempt.attempt_number + 1}/${activity.max_attempts})`}
+                  </button>
+                </>
+              )}
+            </div>
           )}
         </div>
-      )}
+      </div>
     </section>
   );
 }
