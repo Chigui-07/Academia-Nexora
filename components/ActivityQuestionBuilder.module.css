@@ -1,0 +1,144 @@
+.wrapper {
+  display: grid;
+  gap: 16px;
+  margin-top: 22px;
+}
+
+.heading h3 {
+  margin: 4px 0 6px;
+}
+
+.addGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.questionList {
+  display: grid;
+  gap: 14px;
+}
+
+.questionCard {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--surface) 94%, var(--surface-soft));
+}
+
+.questionTop {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  align-items: flex-start;
+}
+
+.questionTop > div {
+  display: grid;
+  gap: 3px;
+}
+
+.questionTop span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.questionCard label {
+  display: grid;
+  gap: 7px;
+  font-weight: 700;
+}
+
+.questionCard label small {
+  color: var(--muted);
+  font-weight: 500;
+}
+
+.questionCard textarea,
+.questionCard input[type="text"],
+.questionCard input:not([type]) {
+  width: 100%;
+}
+
+.removeButton,
+.optionDelete {
+  border: 1px solid color-mix(in srgb, var(--danger) 38%, var(--border));
+  color: var(--danger);
+  background: color-mix(in srgb, var(--danger) 7%, var(--surface));
+  cursor: pointer;
+}
+
+.removeButton {
+  padding: 7px 10px;
+  border-radius: 9px;
+  font-weight: 800;
+}
+
+.optionsBox {
+  display: grid;
+  gap: 10px;
+}
+
+.optionHelp {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+.optionRow {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 9px;
+  align-items: center;
+}
+
+.optionRow > input:first-child {
+  width: 18px;
+  height: 18px;
+}
+
+.optionDelete {
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  font-size: 1.1rem;
+  font-weight: 900;
+}
+
+.trueFalse {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.trueFalse legend {
+  padding: 0 6px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.trueFalse label {
+  display: flex;
+  grid-template-columns: unset;
+  align-items: center;
+  gap: 7px;
+}
+
+@media (max-width: 680px) {
+  .addGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .questionTop {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
