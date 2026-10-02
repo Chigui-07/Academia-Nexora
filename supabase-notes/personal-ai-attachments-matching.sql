@@ -1,0 +1,11 @@
+-- Academia Nexora — IA personal, entregas con archivos y clases individuales
+-- Esta migración se aplica en Supabase y documenta la versión usada por el frontend.
+
+-- El contenido completo se mantiene sincronizado con la migración aplicada en Supabase.
+-- Incluye:
+-- 1) course_lessons.assignment_mode + course_lesson_assignments
+-- 2) archivos privados por intento en activity_attempt_attachments
+-- 3) bucket privado activity-submissions con RLS
+-- 4) configuración de archivos en course_activities
+-- 5) Profesor IA guardando clases/actividades solo para la cuenta autorizada
+-- 6) políticas para que estudiantes solo vean clases individuales que les correspondan
