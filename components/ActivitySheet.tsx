@@ -1,3 +1,4 @@
+import { ActivityQuestionBlock, activityQuestionTypeLabels } from "@/lib/activityQuestions";
 import styles from "./ActivitySheet.module.css";
 
 export type ActivitySheetType = "notebook_task" | "virtual_task" | "practice";
@@ -12,6 +13,7 @@ type ActivitySheetProps = {
   opensAt?: string | null;
   closesAt?: string | null;
   timeLimitMinutes?: number | null;
+  questionBlocks?: ActivityQuestionBlock[];
   preview?: boolean;
 };
 
@@ -42,6 +44,7 @@ export default function ActivitySheet({
   opensAt = null,
   closesAt = null,
   timeLimitMinutes = null,
+  questionBlocks = [],
   preview = false,
 }: ActivitySheetProps) {
   const opensLabel = formatDate(opensAt);
@@ -70,12 +73,77 @@ export default function ActivitySheet({
         </div>
 
         <div className={styles.body}>
-          {content.trim() ? content : "El contenido de la actividad aparecerá aquí."}
+          {content.trim() ? content : questionBlocks.length === 0 ? "El contenido de la actividad aparecerá aquí." : ""}
         </div>
+
+        {questionBlocks.length > 0 && (
+          <section className={styles.questions}>
+            {questionBlocks.map((question, index) => (
+              <div className={styles.question} key={question.id}>
+                <div className={styles.questionHeading}>
+                  <span>Pregunta {index + 1}</span>
+                  <small>{activityQuestionTypeLabels[question.type]}</small>
+                </div>
+                <p>{question.prompt || "Pregunta sin enunciado"}</p>
+
+                {question.type === "written" && (
+                  <textarea
+                    className={styles.writtenAnswer}
+                    placeholder={question.placeholder || "Escribe tu respuesta..."}
+                    rows={4}
+                    disabled={preview}
+                  />
+                )}
+
+                {question.type === "single_choice" && (
+                  <div className={styles.choiceList}>
+                    {(question.options ?? []).map((option) => (
+                      <label key={option.id}>
+                        <input type="radio" name={`activity-${question.id}`} disabled={preview} />
+                        <span>{option.label || "Opción sin texto"}</span>
+                      </label>
+                    ))}
+                  </div>
+                )}
+
+                {question.type === "multiple_choice" && (
+                  <div className={styles.choiceList}>
+                    {(question.options ?? []).map((option) => (
+                      <label key={option.id}>
+                        <input type="checkbox" disabled={preview} />
+                        <span>{option.label || "Opción sin texto"}</span>
+                      </label>
+                    ))}
+                    <small className={styles.choiceHint}>Puedes marcar más de una respuesta.</small>
+                  </div>
+                )}
+
+                {question.type === "true_false" && (
+                  <div className={styles.choiceList}>
+                    <label>
+                      <input type="radio" name={`activity-${question.id}`} disabled={preview} />
+                      <span>Verdadero</span>
+                    </label>
+                    <label>
+                      <input type="radio" name={`activity-${question.id}`} disabled={preview} />
+                      <span>Falso</span>
+                    </label>
+                  </div>
+                )}
+              </div>
+            ))}
+          </section>
+        )}
 
         {timeLimitMinutes && (
           <div className={styles.timerNote}>
             ⏱️ El cronómetro comenzará cuando el estudiante inicie la actividad.
+          </div>
+        )}
+
+        {!preview && questionBlocks.length > 0 && (
+          <div className={styles.draftAnswerNote}>
+            Las cajas de respuesta ya forman parte de la actividad. El guardado y la entrega persistente se habilitarán con el sistema de intentos.
           </div>
         )}
       </div>
