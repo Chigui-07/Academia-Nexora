@@ -1,8 +1,14 @@
-export type ActivityQuestionType = "written" | "single_choice" | "multiple_choice" | "true_false";
+export type ActivityQuestionType = "written" | "single_choice" | "multiple_choice" | "true_false" | "matching_pairs";
 
 export type ActivityQuestionOption = {
   id: string;
   label: string;
+};
+
+export type ActivityMatchingPair = {
+  id: string;
+  left: string;
+  right: string;
 };
 
 export type ActivityQuestionBlock = {
@@ -10,10 +16,12 @@ export type ActivityQuestionBlock = {
   type: ActivityQuestionType;
   prompt: string;
   options?: ActivityQuestionOption[];
+  pairs?: ActivityMatchingPair[];
   placeholder?: string;
 };
 
-export type ActivityAnswerValue = string | string[] | boolean | null;
+export type ActivityMatchingAnswer = Record<string, string>;
+export type ActivityAnswerValue = string | string[] | boolean | ActivityMatchingAnswer | null;
 export type ActivityAnswerKey = Record<string, ActivityAnswerValue>;
 
 export const activityQuestionTypeLabels: Record<ActivityQuestionType, string> = {
@@ -21,6 +29,7 @@ export const activityQuestionTypeLabels: Record<ActivityQuestionType, string> = 
   single_choice: "Elección única",
   multiple_choice: "Selección múltiple",
   true_false: "Verdadero o falso",
+  matching_pairs: "Relacionar parejas",
 };
 
 export function createQuestionId(prefix = "q") {
@@ -41,6 +50,18 @@ export function createQuestionBlock(type: ActivityQuestionType): ActivityQuestio
       options: [
         { id: createQuestionId("o"), label: "" },
         { id: createQuestionId("o"), label: "" },
+      ],
+    };
+  }
+
+  if (type === "matching_pairs") {
+    return {
+      id,
+      type,
+      prompt: "",
+      pairs: [
+        { id: createQuestionId("p"), left: "", right: "" },
+        { id: createQuestionId("p"), left: "", right: "" },
       ],
     };
   }
