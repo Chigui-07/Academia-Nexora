@@ -1,19 +1,19 @@
 # 🎓 Academia Nexora
 
-**Academia Nexora** es una plataforma educativa multiusuario para aprender desde cero, avanzar por etapas y niveles y organizar cursos, clases, tareas, ejercicios, calificaciones y diagnósticos.
+**Academia Nexora** es una plataforma educativa multiusuario para estudiar, organizar cursos y avanzar mediante un sistema propio de etapas y niveles.
 
 ## 📌 Estado del proyecto
 
-**Fase actual: v0.25 — retiro del Profesor IA y consolidación del sistema académico.**
+**Fase actual: v0.26 — núcleo académico automático.**
 
-Frontend: Next.js + TypeScript + CSS, publicado con GitHub Pages.  
-Backend, autenticación, Storage y datos: Supabase.
+- Frontend: Next.js + TypeScript + CSS.
+- Publicación: GitHub Pages.
+- Backend, Auth, Storage y datos: Supabase.
+- El proyecto no depende de APIs de IA de pago.
 
-Ya existen registro, confirmación por correo, recuperación de contraseña, perfiles, Carné Nexora, roles, onboarding, solicitudes e inscripciones, diagnóstico funcional de Matemática, historial de diagnósticos, creador manual de clases y actividades, preguntas configurables, Formación esencial, intentos persistentes, asignación individual, revisión firmada, calificaciones reales, tablero de tareas, archivos privados ligados a preguntas, relacionar parejas y presencia en línea para usuarios autenticados.
+La base incluye registro, perfiles, Carné Nexora, roles, cursos, solicitudes e inscripciones, diagnósticos, clases, tareas, ejercicios, preguntas configurables, archivos privados, intentos persistentes, revisión y calificación manual, presencia en línea, Formación esencial, PMA, etapas, niveles, bloques, historial académico y ascenso automático.
 
-**Decisión de v0.25:** Nexora no dependerá de una API de IA de pago. El Profesor IA se retira del producto y las funciones académicas principales deben poder funcionar sin servicios de pago obligatorios.
-
-## 🧭 Navegación principal
+## 🧭 Navegación
 
 - 🏠 Inicio
 - 📚 Cursos
@@ -23,160 +23,159 @@ Ya existen registro, confirmación por correo, recuperación de contraseña, per
 - 📊 Calificaciones
 - 🟢 En línea
 - 🏅 Perfil
-- ⚙️ Administración, cuando la cuenta tiene permisos
+- ⚙️ Administración, según permisos
 
-## 👤 Identidad y roles
+## 👤 Cuentas y roles
 
-Cada cuenta usa nombre y apellido reales para espacios académicos, Carné Nexora único y permanente y nombre de usuario personal/decorativo.
+Cada usuario dispone de nombre académico, nombre de usuario y Carné Nexora único. Los roles son `student`, `teacher` y `admin`; una misma cuenta puede tener más de un rol.
 
-Los roles disponibles son `student`, `teacher` y `admin`. Una cuenta puede tener varios roles al mismo tiempo.
+Supabase Auth gestiona registro, confirmación por correo, inicio de sesión y recuperación de contraseña.
 
-## 📚 Catálogo, solicitudes e inscripciones
+## 📚 Cursos
 
-El catálogo persistente vive en `courses`. Una solicitud aceptada crea una inscripción real en `course_enrollments`.
+Los cursos viven en `courses`. Una inscripción activa vive en `course_enrollments`.
 
-Los cursos normales pueden solicitarse desde **Solicitar curso**. Administración también puede seleccionar un alumno y asignarle o retirarle materias directamente. Retirar un curso lo pausa y conserva su historial.
-
-**Administración → Gestionar cursos** permite crear, editar, activar o desactivar materias normales. La clave interna (`course_key`) queda fija después de crear el curso para no romper rutas, historial o diagnósticos. Formación esencial permanece protegida.
+Administración puede crear, editar, activar o desactivar materias, aceptar solicitudes y asignar o retirar cursos directamente. Retirar una materia conserva su historial.
 
 Cada curso dispone de **Resumen, Clases, Tareas, Ejercicios y Calificaciones**.
 
 ## 🧠 Diagnósticos
 
-El diagnóstico inicial es opcional, no da puntos y se realiza una sola vez por materia.
+El diagnóstico inicial es opcional y no da puntos académicos. Actualmente Matemática dispone de un motor funcional con **194 preguntas permanentes distribuidas en 6 niveles**, con resultados, temas dominados y temas a reforzar.
 
-Actualmente Matemática dispone de un motor funcional con **194 preguntas permanentes** distribuidas en 6 niveles. Al finalizar se genera `diagnostic_results` con ubicación estimada, temas dominados y temas a reforzar. Las respuestas correctas permanecen protegidas del navegador.
+## 👨‍🏫 Clases y actividades
 
-## 👨‍🏫 Profesor y Administración
+Profesor puede crear clases y decidir si se publican para todo el curso o para estudiantes específicos.
 
-### Clases
+Las actividades disponibles son:
 
-Profesor puede crear clases vinculadas a cualquier curso y configurar unidad o tema, título, explicación, ejemplos guiados, recursos, orden y estado Borrador/Publicada.
+- 📝 Tarea de cuaderno
+- 💻 Tarea virtual
+- ✏️ Ejercicio práctico
 
-Desde v0.24 el formulario **Crear y gestionar clases** también incluye **👥 Dar clase a**:
+Una actividad puede configurar curso, destinatarios, título, bloque, punteo, intentos, apertura, cierre, cronómetro, instrucciones, preguntas y estado Borrador/Publicada.
 
-- **Todo el curso**;
-- **Estudiantes específicos**.
+Los ejercicios prácticos se califican sobre 100 como retroalimentación, pero no afectan el promedio académico.
 
-Al elegir estudiantes específicos se muestran los alumnos activos del curso y se pueden marcar individualmente. La asignación se guarda en `course_lesson_assignments` y se valida también en servidor mediante `save_course_lesson`.
+### Tipos de pregunta
 
-Al editar una clase, Nexora vuelve a cargar sus destinatarios anteriores.
+- Respuesta escrita
+- Elección única
+- Selección múltiple
+- Verdadero o falso
+- Relacionar parejas
+- Subir archivo
 
-### Actividades
+Los archivos viven en el bucket privado `activity-submissions`, con hasta **20 MB por archivo** y entre **1 y 5 archivos** configurables por pregunta de subida.
 
-Profesor puede crear y editar **Tareas de cuaderno**, **Tareas virtuales** y **Ejercicios prácticos**.
+Las respuestas correctas objetivas permanecen protegidas en `private.course_activity_answer_keys`.
 
-Cada actividad puede configurar curso, destinatarios, título, punteo cuando corresponda, **Bloque 1–4**, **1–20 intentos**, apertura, cierre, cronómetro opcional, estado Borrador/Publicada e instrucciones generales.
+## ✍️ Intentos y revisión
 
-Cada actividad puede enviarse a **todo el curso** o a **estudiantes específicos** mediante `course_activity_assignments`.
+Los intentos son persistentes, guardan automáticamente las respuestas y pueden tener cronómetro. Al entregar, respuestas y archivos quedan bloqueados.
 
-Las tareas calificables alimentan el bloque y el promedio académico. Los ejercicios prácticos se califican sobre **100 puntos** como retroalimentación, pero no afectan el promedio académico.
+Profesor revisa cada pregunta como correcta o incorrecta, puede escribir comentarios individuales y retroalimentación general, y decide manualmente la nota final del intento. Cada revisión queda firmada.
 
-### Constructor de preguntas
+Si una actividad permite varios intentos, Nexora conserva para el promedio el mejor resultado válido.
 
-Profesor puede añadir manualmente cualquiera de estos tipos de respuesta:
+## 🏆 Sistema académico
 
-- **Respuesta escrita**;
-- **Elección única**;
-- **Selección múltiple**;
-- **Verdadero o falso**;
-- **Relacionar parejas**;
-- **Subir archivo**.
+Nexora no usa años escolares como medida de progreso.
 
-**Relacionar parejas** guarda cada relación como `{id, left, right}` y muestra las opciones derechas mezcladas al estudiante.
+**Etapa → Nivel → Bloques → Materias**
 
-**Subir archivo** solo aparece cuando Profesor lo agrega manualmente. Permite configurar cualquier archivo, imágenes, PDF, documentos o archivos comprimidos, con un máximo configurable de **1 a 5 archivos** por pregunta.
+Existen **5 etapas de 10 niveles cada una**, para un total de **50 niveles académicos**:
 
-El límite de Storage es **20 MB por archivo**.
+| Etapa | Niveles | Nota mínima |
+|---|---:|---:|
+| 🌱 Fundamentos | 1–10 | 60/100 |
+| 📘 Intermedio | 1–10 | 65/100 |
+| 🧠 Avanzado | 1–10 | 70/100 |
+| 🎓 Superior | 1–10 | 75/100 |
+| 🏆 Dominio | 1–10 | 80/100 |
 
-Las claves correctas de preguntas objetivas permanecen en `private.course_activity_answer_keys` y no se envían al estudiante.
+Cada clase y actividad pertenece a una **etapa y nivel concretos**. El estudiante solo recibe contenido correspondiente a su progreso actual.
 
-### 📎 Respuestas por archivo
+### 📊 Bloques
 
-Cada archivo nuevo queda ligado a la **pregunta `file_upload` específica** que el profesor creó.
+Cada materia tiene **4 bloques por nivel**.
 
-La ruta privada usa la estructura:
+Cada bloque dispone de exactamente **100 puntos publicados**. Nexora impide publicar tareas normales que hagan superar ese límite.
 
-`usuario / intento / pregunta / archivo`
+Un bloque tiene dos estados distintos:
 
-El estudiante puede subir o eliminar sus archivos únicamente mientras el intento está abierto. Después de entregar, quedan bloqueados con esa entrega.
+- **Cerrado:** ya existen 100 puntos publicados.
+- **Completo:** además, todas sus actividades calificables ya tienen una calificación válida para el estudiante.
 
-Supabase comprueba que la pregunta realmente sea de tipo `file_upload`. Al calificar, Profesor puede abrir los archivos desde el panel de revisión.
+### Nota final
 
-### Revisión y calificación
+Cuando los cuatro bloques están completos, la nota final de la materia se calcula automáticamente:
 
-Administración está organizada por alumno. Al seleccionar un estudiante se pueden ver sus cursos y sus entregas.
+`(Bloque 1 + Bloque 2 + Bloque 3 + Bloque 4) / 4`
 
-Cada respuesta puede marcarse como:
+La materia se aprueba si la nota final alcanza el mínimo correspondiente a la etapa.
 
-- ✅ **Correcta**;
-- ❌ **Incorrecta**.
+## 🔁 PMA
 
-También existe comentario independiente por pregunta y retroalimentación general final. Cada revisión queda firmada automáticamente con el nombre académico del profesor.
+Administración puede escoger una tarea original y pulsar **Aplicar PMA**.
 
-La nota final sigue siendo **manual y personalizada**: Nexora no reparte automáticamente el punteo de cada pregunta; Profesor decide cuánto recibe cada alumno.
+Nexora crea un borrador de recuperación que conserva automáticamente:
 
-## ✍️ Experiencia del estudiante
+- materia;
+- tipo de actividad;
+- punteo;
+- bloque;
+- etapa y nivel;
+- destinatarios.
 
-Dentro de cada curso, Tareas y Ejercicios funcionan como bibliotecas acumulables.
+Profesor escribe ejercicios distintos del mismo tema y puede definir intentos, cronómetro, fechas e instrucciones antes de publicarlo.
 
-Al comenzar un intento:
+El PMA **no agrega puntos nuevos al bloque**. Original y PMA ocupan el mismo espacio académico y Nexora conserva automáticamente el resultado más alto.
 
-- las preguntas se muestran una por una;
-- existe navegación lateral numerada;
-- las respuestas se guardan automáticamente;
-- el cronómetro es persistente y controlado por servidor;
-- una pregunta **Subir archivo** muestra su selector únicamente cuando el profesor la añadió;
-- el archivo queda asociado a esa pregunta;
-- al entregar, respuestas y archivos quedan bloqueados.
+## ⬆️ Ascenso automático
 
-Los ejercicios cerrados permanecen accesibles para consultar respuestas, revisión y calificación.
+Después de cada calificación, Supabase vuelve a calcular el progreso académico.
 
-### Tareas en Inicio
+Para aprobar un nivel:
 
-Inicio separa las tareas en:
+1. cada materia activa debe tener sus cuatro bloques completos;
+2. Nexora calcula la nota final de cada materia;
+3. todas las materias deben alcanzar el mínimo de la etapa.
 
-- **Pendientes**;
-- **Próximas**;
-- **Entregadas**;
-- **Calificadas**;
-- **Vencidas**.
+Si alguna materia queda debajo del mínimo, el nivel pasa a **Pendiente de aprobación**. Las materias aprobadas se conservan y solo la materia pendiente necesita recuperación.
 
-Las tareas entregadas dejan de contarse como pendientes.
+Cuando todas las materias quedan aprobadas, Nexora guarda el nivel en el historial y avanza automáticamente:
 
-## 📊 Calificaciones y promedio
+- Nivel 1 → Nivel 2 → … → Nivel 10;
+- al superar Nivel 10, pasa a Nivel 1 de la siguiente etapa;
+- 🏆 Dominio · Nivel 10 es actualmente el máximo disponible.
 
-- Cada tarea calificable pertenece a uno de los 4 bloques.
-- Cada bloque muestra puntos obtenidos sobre los puntos ya calificados, por ejemplo `35/40`.
-- Si una tarea tiene varios intentos revisados, cuenta el intento con mejor porcentaje.
-- Los ejercicios prácticos no afectan el promedio académico.
-- Dentro de cada materia se muestra Promedio actual, Bloque 1–4 y detalle de tareas calificadas.
+## 📜 Historial y Perfil
 
-**Pendiente:** definir el cierre definitivo de cada bloque y el cálculo final de los cuatro bloques para decidir aprobación, PMA y ascenso académico.
+`academic_level_history` conserva una fotografía permanente de cada nivel aprobado: etapa, nivel, mínimo requerido, resultados de materias y fecha de finalización.
 
-## 🟢 Presencia en línea
+Perfil muestra automáticamente:
 
-Cada sesión autenticada envía un latido a Supabase aproximadamente cada 30 segundos mientras utiliza Nexora.
+- etapa y nivel actuales;
+- progreso dentro de la etapa;
+- nota mínima;
+- estado académico;
+- estado de cada materia y sus cuatro bloques;
+- historial de niveles completados.
 
-La plataforma distingue:
+## 🟢 Presencia
 
-- 🟢 **En línea**: sesión reciente y actividad reciente;
-- 🟡 **Inactivo**: sesión reciente pero sin interacción durante varios minutos;
-- ⚫ **Desconectado**: dejaron de recibirse latidos recientes.
+Cada sesión autenticada actualiza `user_presence`. Nexora distingue:
 
-La sección **🟢 En línea** puede verla cualquier usuario autenticado. La vista general solo muestra nombre académico, nombre de usuario, estado y última conexión.
+- 🟢 En línea
+- 🟡 Inactivo
+- ⚫ Desconectado
 
-La tabla `user_presence` continúa protegida por RLS; los usuarios normales obtienen una vista sanitizada mediante `get_presence()`.
+La vista general no expone Carné Nexora ni datos administrativos.
 
-## 🖥️ Interfaz
+## 🌱 Formación esencial
 
-La interfaz usa una distribución amplia en escritorio y vuelve a una sola columna en pantallas pequeñas.
-
-La barra lateral ya muestra la progresión como **Etapa · Nivel** y obtiene `stage` y `level` desde `profiles`.
-
-## 🌱 Formación esencial — primeros 365 días
-
-Cada usuario queda inscrito automáticamente durante sus primeros 365 días en:
+Durante los primeros 365 días se asignan automáticamente:
 
 - ✍️ Caligrafía y escritura clara
 - 📖 Comprensión y expresión lectora
@@ -187,63 +186,17 @@ Cada usuario queda inscrito automáticamente durante sus primeros 365 días en:
 
 ## 🔐 Seguridad
 
-- Supabase Auth gestiona cuentas y recuperación de contraseña.
-- RLS limita perfiles, solicitudes, inscripciones, clases, diagnósticos, actividades, asignaciones, intentos y adjuntos.
-- El estudiante solo puede leer contenido publicado que le corresponda.
-- Las clases individuales solo son visibles para sus destinatarios, Profesor o Administración.
-- Las respuestas correctas no se exponen al estudiante.
-- Crear, guardar y entregar intentos pasa por funciones seguras del servidor.
-- La calificación manual usa RPC protegida y firma del profesor.
-- Los archivos viven en el bucket privado `activity-submissions`.
-- Los archivos solo pueden subirse dentro de un intento propio abierto y vinculados a una pregunta `file_upload` válida.
-- `get_presence()` exige autenticación y solo devuelve información pública de presencia; la tabla directa sigue protegida.
+- RLS protege perfiles, cursos, solicitudes, inscripciones, clases, actividades, intentos, historial y archivos.
+- El estudiante solo recibe contenido publicado que le corresponde.
+- Las claves correctas no se exponen al navegador del estudiante.
+- Crear, guardar y entregar intentos pasa por funciones de servidor.
+- PMA valida servidor a servidor su relación con la tarea original.
+- El historial académico no admite escritura directa del estudiante.
+- Los RPC académicos públicos usan wrappers `SECURITY INVOKER`; las operaciones privilegiadas permanecen en funciones privadas con comprobaciones explícitas de autenticación y roles.
 
-**Pendiente antes de una beta más amplia:** activar **Leaked Password Protection** en Supabase Auth.
-
-## 🔁 PMA
-
-PMA será una modalidad especial basada en el sistema actual de múltiples intentos. Añadirá reglas, ventana y etiqueta propias sin duplicar el almacenamiento de intentos.
-
-Todavía falta definir exactamente:
-
-- cuándo una materia entra a PMA;
-- cuántas oportunidades ofrece;
-- qué nota reemplaza o recupera;
-- cómo afecta al cierre del nivel.
-
-## 🏆 Sistema académico — Etapas y Niveles
-
-Nexora **no usa años escolares** como medida de progreso. El avance se organiza mediante:
-
-**Etapa → Nivel → Bloques → Materias**
-
-Las materias se mantienen durante la progresión y aumentan en contenido, profundidad y dificultad.
-
-| Etapa base | Nota mínima de referencia |
-|---|---:|
-| 🌱 Fundamentos | 60/100 |
-| 📘 Intermedio | 65/100 |
-| 🧠 Avanzado | 70/100 |
-| 🎓 Superior | 75/100 |
-| 🏆 Dominio | 80/100 |
-
-Cada materia mantiene **4 bloques de hasta 100 puntos por nivel**.
-
-### Base acordada para ascender
-
-El ascenso será **académico, no por tiempo ni por XP**. La base de diseño es:
-
-1. cerrar los cuatro bloques del nivel;
-2. calcular la nota final de cada materia;
-3. exigir la nota mínima correspondiente a la etapa;
-4. permitir PMA cuando una materia no alcance el mínimo;
-5. avanzar de nivel solo cuando se cumplan las reglas académicas definitivas.
-
-**Todavía falta decidir cuántos niveles contiene cada etapa** y convertir estas reglas en lógica automática de Supabase.
+**Antes de una beta pública amplia:** activar **Leaked Password Protection** en Supabase Auth.
 
 ## 🗄️ Datos principales
-
-Tablas destacadas:
 
 - `profiles`
 - `user_roles`
@@ -257,115 +210,56 @@ Tablas destacadas:
 - `course_activity_assignments`
 - `activity_attempts`
 - `activity_attempt_attachments`
+- `academic_level_history`
 - `admin_notifications`
 - tablas de diagnóstico
 - `private.course_activity_answer_keys`
 
-Storage privado:
+Storage privado: `activity-submissions`.
 
-- `activity-submissions`
+Las migraciones y cambios de Supabase se documentan en `supabase-notes/`.
 
-Las migraciones administrativas quedan documentadas en `supabase-notes/`.
+## ✅ Base funcional v0.26
 
-## ✅ Ya implementado
+La base académica principal queda definida: autenticación, cursos, contenido, tareas, intentos, revisión, calificaciones, cuatro bloques, PMA, 50 niveles, ascenso automático, historial, perfil y presencia.
 
-- Autenticación y recuperación de contraseña.
-- Identidad académica, Carné Nexora y roles múltiples.
-- Catálogo, solicitudes e inscripciones.
-- Diagnóstico de Matemática con banco permanente.
-- Clases manuales y asignación por curso o estudiantes específicos.
-- Tareas de cuaderno, virtuales y ejercicios prácticos.
-- Seis tipos de pregunta, incluyendo parejas y subida de archivos.
-- Intentos persistentes, autosave y cronómetro.
-- Revisión manual detallada y firma del profesor.
-- Calificaciones por bloques y mejor intento revisado.
-- Panel de tareas del estudiante.
-- Gestión administrativa por alumno.
-- Presencia En línea / Inactivo / Desconectado.
-- Formación esencial durante los primeros 365 días.
-- Base visual y de datos para Etapa y Nivel.
+El proyecto continuará recibiendo mejoras, pruebas, contenido y funciones nuevas, pero estas ya no son necesarias para definir la estructura académica central.
 
-## 🚧 Próximos objetivos
+## 🚧 Antes de compartir ampliamente
 
-1. Definir cuántos **Niveles** contiene cada Etapa.
-2. Definir cierre de bloques, nota final de materia y aprobación del Nivel.
-3. Definir e implementar las reglas completas de **PMA**.
-4. Implementar ascenso automático de Nivel y Etapa en Supabase.
-5. Hacer dinámicas todas las reglas académicas mostradas en Perfil e interfaz.
-6. Activar **Leaked Password Protection** antes de una beta más amplia.
-7. Revisar pruebas, errores y experiencia móvil antes de abrir una beta.
-
-Los minijuegos no forman parte actualmente del plan de desarrollo.
+1. Activar **Leaked Password Protection** en Supabase Auth.
+2. Eliminar manualmente la antigua Edge Function `nexora-ai-teacher` y cualquier secreto `OPENAI_API_KEY` que todavía exista.
+3. Confirmar el despliegue de GitHub Pages y hacer una prueba completa con una segunda cuenta.
+4. Añadir SEO público (metadatos, `robots.txt` y `sitemap.xml`) si se quiere que buscadores como Google encuentren Academia Nexora con facilidad.
 
 ---
 
 # 📒 Bitácora
 
-## 30 de septiembre de 2026 — Inicio
+### 30 de septiembre de 2026 — Inicio
+Se creó Academia Nexora y se definió la primera estructura de cursos, tareas, ejercicios, calificaciones, PMA y progresión.
 
-- Se creó Academia Nexora y su repositorio.
-- Se definieron cursos, tareas, ejercicios, calificaciones, PMA y progresión académica.
-- Se configuraron GitHub Pages y Supabase.
+### 1 de octubre de 2026 — v0.3 a v0.14
+Registro, login, Carné Nexora, roles, diagnóstico de Matemática, catálogo, solicitudes, inscripciones, creador de contenido, intentos persistentes, autosave y cronómetro.
 
-## 1 de octubre de 2026 — v0.3 a v0.14
+### 2 de octubre de 2026 — v0.15 a v0.20
+Recuperación de contraseña, bibliotecas de tareas, revisión detallada, administración por alumno, calificaciones por curso, tablero de tareas y gestión de cursos.
 
-- Registro, login, identidad académica, Carné Nexora y roles.
-- Diagnóstico funcional de Matemática y banco permanente de preguntas.
-- Catálogo, solicitudes e inscripciones.
-- Creador de tareas, ejercicios y clases.
-- Intentos persistentes, autosave, cronómetro y revisión manual.
-- Asignación individual de actividades y bloques 1–4.
+### 2 de octubre de 2026 — v0.21–v0.22
+Se experimentó con Profesor IA y se añadieron clases individuales, Storage privado, preguntas de parejas y la base Etapa + Nivel.
 
-## 2 de octubre de 2026 — v0.15 a v0.20
+### 2 de octubre de 2026 — v0.23
+Presencia en línea, estados de actividad y cambio definitivo de Año a Nivel.
 
-- Recuperación de contraseña.
-- Biblioteca acumulativa de tareas y ejercicios.
-- Corrección detallada y comentarios por pregunta.
-- Administración organizada por alumno.
-- Calificaciones dentro de cada curso.
-- Tareas organizadas en Inicio.
-- Gestión administrativa de cursos e interfaz ampliada.
+### 2 de octubre de 2026 — v0.24 / v0.24.1
+Clases dirigidas, archivos por pregunta, presencia general y corrección de permisos de presencia.
 
-## 2 de octubre de 2026 — v0.21: Profesor IA exclusivo
+### 2 de octubre de 2026 — v0.25
+Se retiró Profesor IA del producto y se decidió que las funciones principales de Nexora no dependerán de APIs de pago.
 
-- Se creó experimentalmente un acceso de Profesor IA para la cuenta principal.
-- Se desplegó `nexora-ai-teacher` con JWT y comprobación de acceso.
-
-## 2 de octubre de 2026 — v0.22: contenido personal, archivos y parejas
-
-- La función experimental de IA podía publicar contenido individual.
-- Se añadieron clases individuales en base de datos.
-- Se creó Storage privado para entregas.
-- Se añadió **Relacionar parejas**.
-- El sistema académico pasó a **Etapas + Niveles**.
-
-## 2 de octubre de 2026 — v0.23: presencia en línea
-
-- Se creó `user_presence` y el latido periódico.
-- Se añadieron estados En línea, Inactivo y Desconectado.
-- La primera interfaz de presencia se colocó dentro de Administración.
-- La barra lateral pasó definitivamente de Año a Nivel.
-
-## 2 de octubre de 2026 — v0.24 / v0.24.1
-
-- **Crear clases** permite escoger Todo el curso o Estudiantes específicos.
-- Editar una clase vuelve a cargar sus destinatarios.
-- Se añadió **Subir archivo** como sexto tipo manual del constructor de preguntas.
-- Profesor puede definir tipo de archivo y máximo de 1 a 5 archivos.
-- Cada archivo nuevo se liga a su pregunta mediante `question_id`.
-- Storage valida que el archivo corresponda realmente a una pregunta `file_upload`.
-- **En línea** pasó a la navegación general para todos los usuarios autenticados.
-- v0.24.1 corrigió permisos de la RPC de presencia.
-
-## 2 de octubre de 2026 — v0.25: retiro de IA
-
-- Se decidió que las funciones principales de Nexora no dependerán de APIs de pago.
-- Se retiró **Profesor IA** del panel de Administración.
-- Se eliminaron sus componentes y estilos dedicados del frontend.
-- Se retiró la migración dedicada antigua y se añadió `v025-remove-ai-teacher.sql` para limpiar funciones y tabla exclusivas de IA en Supabase.
-- La Edge Function `nexora-ai-teacher` y el secreto asociado deben retirarse también del proyecto Supabase.
-- El desarrollo vuelve a centrarse en progresión académica, bloques y PMA.
+### 2 de octubre de 2026 — v0.26
+Se implementó el núcleo académico automático: 5 etapas × 10 niveles, bloques de 100 puntos, nota final automática, PMA por tarea, recuperación de materias, ascenso automático, snapshots por intento, historial permanente y perfil dinámico.
 
 ---
 
-> Este README funciona como **resumen general y bitácora del proyecto** y debe mantenerse actualizado con cada cambio importante.
+> Este README funciona como resumen general y bitácora del proyecto y debe mantenerse actualizado con cada cambio importante.
