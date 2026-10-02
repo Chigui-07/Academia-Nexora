@@ -29,7 +29,9 @@ type ActivitySheetProps = {
   responsesDisabled?: boolean;
   onAnswerChange?: (questionId: string, value: ActivityAnswerValue) => void;
   questionReviews?: Record<string, ActivityQuestionReview>;
+  questionFeedback?: Record<string, string>;
   reviewSummary?: ActivityReviewSummary | null;
+  activeQuestionIndex?: number | null;
 };
 
 const typeLabels: Record<ActivitySheetType, string> = {
@@ -66,12 +68,19 @@ export default function ActivitySheet({
   responsesDisabled = false,
   onAnswerChange,
   questionReviews = {},
+  questionFeedback = {},
   reviewSummary = null,
+  activeQuestionIndex = null,
 }: ActivitySheetProps) {
   const opensLabel = formatDate(opensAt);
   const closesLabel = formatDate(closesAt);
   const reviewedLabel = formatDate(reviewSummary?.reviewedAt);
   const inputDisabled = preview || responsesDisabled;
+  const visibleQuestions = activeQuestionIndex === null
+    ? questionBlocks.map((question, index) => ({ question, index }))
+    : questionBlocks[activeQuestionIndex]
+      ? [{ question: questionBlocks[activeQuestionIndex], index: activeQuestionIndex }]
+      : [];
 
   return (
     <article className={styles.paper}>
@@ -100,12 +109,13 @@ export default function ActivitySheet({
           {content.trim() ? content : questionBlocks.length === 0 ? "El contenido de la actividad aparecerá aquí." : ""}
         </div>
 
-        {questionBlocks.length > 0 && (
+        {visibleQuestions.length > 0 && (
           <section className={styles.questions}>
-            {questionBlocks.map((question, index) => {
+            {visibleQuestions.map(({ question, index }) => {
               const current = answers[question.id];
               const selectedMultiple = Array.isArray(current) ? current : [];
               const questionReview = questionReviews[question.id];
+              const teacherComment = questionFeedback[question.id]?.trim();
 
               return (
                 <div className={styles.question} key={question.id}>
@@ -196,6 +206,13 @@ export default function ActivitySheet({
                   {questionReview && (
                     <div className={`${styles.reviewMark} ${questionReview === "correct" ? styles.reviewCorrect : styles.reviewIncorrect}`}>
                       {questionReview === "correct" ? "✅ Respuesta correcta" : "❌ Respuesta incorrecta"}
+                    </div>
+                  )}
+
+                  {teacherComment && (
+                    <div className={styles.questionFeedback}>
+                      <small>🟡 Comentario del profesor</small>
+                      <p>{teacherComment}</p>
                     </div>
                   )}
                 </div>
