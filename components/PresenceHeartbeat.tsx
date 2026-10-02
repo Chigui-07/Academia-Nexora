@@ -3,7 +3,7 @@
 import { useEffect, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 
-const HEARTBEAT_MS = 60_000;
+const HEARTBEAT_MS = 30_000;
 const IDLE_AFTER_MS = 5 * 60_000;
 
 export default function PresenceHeartbeat() {
