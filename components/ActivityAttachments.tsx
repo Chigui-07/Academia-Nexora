@@ -51,7 +51,7 @@ function isImage(mime: string | null) {
 export default function ActivityAttachments({
   attemptId,
   editable,
-  questionId = null,
+  questionId,
   maxFiles = 5,
   accept,
   title = "Archivos de la respuesta",
@@ -66,7 +66,7 @@ export default function ActivityAttachments({
   const [message, setMessage] = useState<string | null>(null);
 
   const remaining = Math.max(0, maxFiles - attachments.length);
-  const canUpload = editable && remaining > 0;
+  const canUpload = editable && typeof questionId === "string" && remaining > 0;
 
   async function loadAttachments() {
     let query = supabase
@@ -74,14 +74,15 @@ export default function ActivityAttachments({
       .select("id, attempt_id, user_id, question_id, storage_path, file_name, mime_type, file_size, created_at")
       .eq("attempt_id", attemptId);
 
-    query = questionId ? query.eq("question_id", questionId) : query.is("question_id", null);
+    if (typeof questionId === "string") query = query.eq("question_id", questionId);
+    else if (questionId === null) query = query.is("question_id", null);
 
     const { data, error: loadError } = await query.order("created_at", { ascending: true });
     if (loadError) throw loadError;
 
     const rows = (data ?? []) as Attachment[];
     setAttachments(rows);
-    onAttachmentsChange?.(rows.map((item) => item.id));
+    if (typeof questionId === "string") onAttachmentsChange?.(rows.map((item) => item.id));
 
     const imageRows = rows.filter((item) => isImage(item.mime_type));
     if (imageRows.length === 0) {
@@ -221,13 +222,16 @@ export default function ActivityAttachments({
     window.open(data.signedUrl, "_blank", "noopener,noreferrer");
   }
 
-  const summary = useMemo(() => `${attachments.length}/${maxFiles} archivos`, [attachments.length, maxFiles]);
+  const summary = useMemo(() => {
+    if (typeof questionId === "undefined") return `${attachments.length} archivo${attachments.length === 1 ? "" : "s"}`;
+    return `${attachments.length}/${maxFiles} archivos`;
+  }, [attachments.length, maxFiles, questionId]);
 
   return (
     <section className={styles.wrapper}>
       <div className={styles.heading}>
         <div>
-          <p className="eyebrow">📎 Respuesta por archivo</p>
+          <p className="eyebrow">📎 {typeof questionId === "undefined" ? "Archivos de la entrega" : "Respuesta por archivo"}</p>
           <h3>{title}</h3>
           <p>{description}</p>
         </div>
@@ -271,7 +275,7 @@ export default function ActivityAttachments({
           )}
 
           {!editable && attachments.length === 0 && (
-            <div className="empty-state">El estudiante no adjuntó archivos en esta respuesta.</div>
+            <div className="empty-state">El estudiante no adjuntó archivos en esta entrega.</div>
           )}
 
           {error && <div className="auth-message auth-error">{error}</div>}
