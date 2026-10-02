@@ -135,22 +135,28 @@ export default function TeacherActivityManager() {
     }
 
     let cancelled = false;
-    setStudentsLoading(true);
 
-    supabase
-      .rpc("get_course_students", { p_course_id: courseId })
-      .then(({ data, error: studentsError }) => {
+    async function loadStudents() {
+      setStudentsLoading(true);
+      try {
+        const { data, error: studentsError } = await supabase.rpc("get_course_students", {
+          p_course_id: courseId,
+        });
+
         if (cancelled) return;
         if (studentsError) {
           setCourseStudents([]);
           setError("No se pudo cargar la lista de estudiantes del curso.");
           return;
         }
+
         setCourseStudents((data ?? []) as CourseStudent[]);
-      })
-      .finally(() => {
+      } finally {
         if (!cancelled) setStudentsLoading(false);
-      });
+      }
+    }
+
+    void loadStudents();
 
     return () => {
       cancelled = true;
