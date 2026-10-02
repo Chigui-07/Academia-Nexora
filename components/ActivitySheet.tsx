@@ -2,6 +2,15 @@ import { ActivityAnswerKey, ActivityAnswerValue, ActivityQuestionBlock, activity
 import styles from "./ActivitySheet.module.css";
 
 export type ActivitySheetType = "notebook_task" | "virtual_task" | "practice";
+export type ActivityQuestionReview = "correct" | "incorrect";
+
+export type ActivityReviewSummary = {
+  reviewerName: string;
+  gradeValue: number;
+  gradeMax: number;
+  feedback?: string | null;
+  reviewedAt?: string | null;
+};
 
 type ActivitySheetProps = {
   courseName: string;
@@ -18,6 +27,8 @@ type ActivitySheetProps = {
   answers?: ActivityAnswerKey;
   responsesDisabled?: boolean;
   onAnswerChange?: (questionId: string, value: ActivityAnswerValue) => void;
+  questionReviews?: Record<string, ActivityQuestionReview>;
+  reviewSummary?: ActivityReviewSummary | null;
 };
 
 const typeLabels: Record<ActivitySheetType, string> = {
@@ -52,9 +63,12 @@ export default function ActivitySheet({
   answers = {},
   responsesDisabled = false,
   onAnswerChange,
+  questionReviews = {},
+  reviewSummary = null,
 }: ActivitySheetProps) {
   const opensLabel = formatDate(opensAt);
   const closesLabel = formatDate(closesAt);
+  const reviewedLabel = formatDate(reviewSummary?.reviewedAt);
   const inputDisabled = preview || responsesDisabled;
 
   return (
@@ -88,6 +102,7 @@ export default function ActivitySheet({
             {questionBlocks.map((question, index) => {
               const current = answers[question.id];
               const selectedMultiple = Array.isArray(current) ? current : [];
+              const questionReview = questionReviews[question.id];
 
               return (
                 <div className={styles.question} key={question.id}>
@@ -174,6 +189,12 @@ export default function ActivitySheet({
                       </label>
                     </div>
                   )}
+
+                  {questionReview && (
+                    <div className={`${styles.reviewMark} ${questionReview === "correct" ? styles.reviewCorrect : styles.reviewIncorrect}`}>
+                      {questionReview === "correct" ? "✅ Respuesta correcta" : "❌ Respuesta incorrecta"}
+                    </div>
+                  )}
                 </div>
               );
             })}
@@ -184,6 +205,27 @@ export default function ActivitySheet({
           <div className={styles.timerNote}>
             ⏱️ El cronómetro comenzará cuando el estudiante pulse Comenzar actividad.
           </div>
+        )}
+
+        {reviewSummary && (
+          <section className={styles.reviewSummary}>
+            <div className={styles.reviewSummaryTop}>
+              <div>
+                <small>Calificación</small>
+                <strong>{reviewSummary.gradeValue} / {reviewSummary.gradeMax}</strong>
+              </div>
+              <div className={styles.reviewSignature}>
+                <span>Revisado y calificado por</span>
+                <strong>{reviewSummary.reviewerName}</strong>
+                {reviewedLabel && <small>{reviewedLabel}</small>}
+              </div>
+            </div>
+
+            <div className={styles.feedbackBox}>
+              <small>💬 Retroalimentación del profesor</small>
+              <p>{reviewSummary.feedback?.trim() || "Sin comentario adicional."}</p>
+            </div>
+          </section>
         )}
       </div>
     </article>
