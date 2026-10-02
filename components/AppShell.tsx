@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
+import PresenceHeartbeat from "./PresenceHeartbeat";
 import ThemeToggle from "./ThemeToggle";
 import { replaceWith } from "@/lib/navigation";
 import { supabase } from "@/lib/supabase";
@@ -40,7 +41,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [email, setEmail] = useState("");
   const [roles, setRoles] = useState<string[]>([]);
   const [adminUnread, setAdminUnread] = useState(0);
-  const lastInteractionRef = useRef(Date.now());
 
   useEffect(() => {
     let mounted = true;
@@ -120,43 +120,6 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
-  useEffect(() => {
-    if (!ready) return;
-
-    let disposed = false;
-    const activityEvents: (keyof WindowEventMap)[] = ["pointerdown", "keydown", "touchstart", "scroll"];
-
-    function markInteraction() {
-      lastInteractionRef.current = Date.now();
-    }
-
-    async function sendHeartbeat() {
-      if (disposed) return;
-      const recentlyActive = Date.now() - lastInteractionRef.current < 5 * 60 * 1000;
-      const active = document.visibilityState === "visible" && recentlyActive;
-      await supabase.rpc("heartbeat_user_presence", { p_active: active });
-    }
-
-    function handleVisibilityChange() {
-      if (document.visibilityState === "visible") markInteraction();
-      void sendHeartbeat();
-    }
-
-    activityEvents.forEach((eventName) => window.addEventListener(eventName, markInteraction, { passive: true }));
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    markInteraction();
-    void sendHeartbeat();
-    const interval = window.setInterval(() => void sendHeartbeat(), 30_000);
-
-    return () => {
-      disposed = true;
-      window.clearInterval(interval);
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-      activityEvents.forEach((eventName) => window.removeEventListener(eventName, markInteraction));
-    };
-  }, [ready]);
-
   async function handleLogout() {
     await supabase.rpc("heartbeat_user_presence", { p_active: false });
     await supabase.auth.signOut();
@@ -181,6 +144,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="app-shell">
+      <PresenceHeartbeat />
+
       <aside className="sidebar">
         <Link className="logo-mark" href="/dashboard">
           <span className="logo-icon">N</span>
