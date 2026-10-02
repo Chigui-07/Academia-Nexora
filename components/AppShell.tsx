@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import ThemeToggle from "./ThemeToggle";
 import { replaceWith } from "@/lib/navigation";
 import { supabase } from "@/lib/supabase";
@@ -18,10 +18,18 @@ const studentNavItems = [
 
 const adminNavItem = ["⚙️", "Administración", "/admin"] as const;
 
+const stageMeta: Record<string, { icon: string; minimum: number }> = {
+  Fundamentos: { icon: "🌱", minimum: 60 },
+  Intermedio: { icon: "📘", minimum: 65 },
+  Avanzado: { icon: "🧠", minimum: 70 },
+  Superior: { icon: "🎓", minimum: 75 },
+  Dominio: { icon: "🏆", minimum: 80 },
+};
+
 type Profile = {
   display_name: string;
   stage: string;
-  school_year: number;
+  level: number;
   theme: "light" | "dark";
   onboarding_completed_at: string | null;
 };
@@ -32,6 +40,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const [email, setEmail] = useState("");
   const [roles, setRoles] = useState<string[]>([]);
   const [adminUnread, setAdminUnread] = useState(0);
+  const lastInteractionRef = useRef(Date.now());
 
   useEffect(() => {
     let mounted = true;
@@ -48,7 +57,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       const [{ data: profileData }, { data: roleData }] = await Promise.all([
         supabase
           .from("profiles")
-          .select("display_name, stage, school_year, theme, onboarding_completed_at")
+          .select("display_name, stage, level, theme, onboarding_completed_at")
           .eq("id", session.user.id)
           .single(),
         supabase
@@ -111,7 +120,45 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     };
   }, []);
 
+  useEffect(() => {
+    if (!ready) return;
+
+    let disposed = false;
+    const activityEvents: (keyof WindowEventMap)[] = ["pointerdown", "keydown", "touchstart", "scroll"];
+
+    function markInteraction() {
+      lastInteractionRef.current = Date.now();
+    }
+
+    async function sendHeartbeat() {
+      if (disposed) return;
+      const recentlyActive = Date.now() - lastInteractionRef.current < 5 * 60 * 1000;
+      const active = document.visibilityState === "visible" && recentlyActive;
+      await supabase.rpc("heartbeat_user_presence", { p_active: active });
+    }
+
+    function handleVisibilityChange() {
+      if (document.visibilityState === "visible") markInteraction();
+      void sendHeartbeat();
+    }
+
+    activityEvents.forEach((eventName) => window.addEventListener(eventName, markInteraction, { passive: true }));
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    markInteraction();
+    void sendHeartbeat();
+    const interval = window.setInterval(() => void sendHeartbeat(), 30_000);
+
+    return () => {
+      disposed = true;
+      window.clearInterval(interval);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      activityEvents.forEach((eventName) => window.removeEventListener(eventName, markInteraction));
+    };
+  }, [ready]);
+
   async function handleLogout() {
+    await supabase.rpc("heartbeat_user_presence", { p_active: false });
     await supabase.auth.signOut();
     replaceWith("/");
   }
@@ -129,6 +176,8 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
   const navItems = canManage ? [...studentNavItems, adminNavItem] : studentNavItems;
   const displayName = profile?.display_name || email.split("@")[0] || "Estudiante";
   const avatarLetter = displayName.charAt(0).toUpperCase();
+  const currentStage = profile?.stage ?? "Fundamentos";
+  const currentStageMeta = stageMeta[currentStage] ?? { icon: "📚", minimum: 60 };
 
   return (
     <div className="app-shell">
@@ -170,9 +219,9 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         </nav>
 
         <div className="sidebar-note">
-          🌱 <strong>{profile?.stage ?? "Fundamentos"} · Año {profile?.school_year ?? 1}</strong>
+          {currentStageMeta.icon} <strong>{currentStage} · Nivel {profile?.level ?? 1}</strong>
           <br />
-          Nota mínima actual: 60/100
+          Nota mínima actual: {currentStageMeta.minimum}/100
         </div>
       </aside>
 
