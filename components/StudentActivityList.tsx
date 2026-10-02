@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import ActivitySheet, { ActivitySheetType } from "./ActivitySheet";
+import { ActivityQuestionBlock } from "@/lib/activityQuestions";
 import { supabase } from "@/lib/supabase";
 
 type Activity = {
@@ -10,6 +11,7 @@ type Activity = {
   activity_type: ActivitySheetType;
   title: string;
   worksheet_content: string;
+  question_blocks: ActivityQuestionBlock[];
   points: number | null;
   opens_at: string | null;
   closes_at: string | null;
@@ -38,7 +40,7 @@ export default function StudentActivityList({ courseId, types, emptyMessage }: S
     async function load() {
       let query = supabase
         .from("course_activities")
-        .select("id, course_id, activity_type, title, worksheet_content, points, opens_at, closes_at, time_limit_minutes")
+        .select("id, course_id, activity_type, title, worksheet_content, question_blocks, points, opens_at, closes_at, time_limit_minutes")
         .eq("status", "published")
         .in("activity_type", types)
         .order("opens_at", { ascending: true, nullsFirst: true });
@@ -95,6 +97,7 @@ export default function StudentActivityList({ courseId, types, emptyMessage }: S
             activityType={activity.activity_type}
             title={activity.title}
             content={activity.worksheet_content}
+            questionBlocks={activity.question_blocks ?? []}
             points={activity.points}
             opensAt={activity.opens_at}
             closesAt={activity.closes_at}
