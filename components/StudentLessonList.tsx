@@ -28,11 +28,24 @@ export default function StudentLessonList({ courseId, courseName, courseIcon = "
 
   useEffect(() => {
     async function load() {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const userId = sessionData.session?.user.id;
+      if (!userId) { setReady(true); return; }
+
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("stage, level")
+        .eq("id", userId)
+        .single();
+      if (profileError) throw profileError;
+
       const { data, error: loadError } = await supabase
         .from("course_lessons")
         .select("id, course_id, unit_title, title, lesson_content, examples, resources, position")
         .eq("course_id", courseId)
         .eq("status", "published")
+        .eq("academic_stage", profile.stage)
+        .eq("academic_level", profile.level)
         .order("position", { ascending: true })
         .order("created_at", { ascending: true });
 
@@ -49,7 +62,7 @@ export default function StudentLessonList({ courseId, courseName, courseIcon = "
 
   if (!ready) return <div className="empty-state">Cargando clases...</div>;
   if (error) return <div className="auth-message auth-error">{error}</div>;
-  if (lessons.length === 0) return <div className="empty-state">Todavía no hay clases publicadas en este curso.</div>;
+  if (lessons.length === 0) return <div className="empty-state">Todavía no hay clases publicadas para tu etapa y nivel actual.</div>;
 
   return (
     <div style={{ display: "grid", gap: 22 }}>
