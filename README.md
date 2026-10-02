@@ -4,12 +4,12 @@
 
 ## 📌 Estado del proyecto
 
-**Fase actual: v0.22 — Profesor IA personal, adjuntos privados y relacionar parejas.**
+**Fase actual: v0.23 — Presencia en línea privada para Administración.**
 
 Frontend: Next.js + TypeScript + CSS, publicado con GitHub Pages.  
 Backend, autenticación, Storage y datos: Supabase.
 
-Ya existen registro, confirmación por correo, recuperación de contraseña, perfiles, Carné Nexora, roles, onboarding, solicitudes e inscripciones, diagnóstico funcional de Matemática, historial de diagnósticos, creador de clases y actividades, preguntas configurables, Formación esencial, intentos persistentes, asignación individual, revisión firmada con comentarios por pregunta, biblioteca de tareas/ejercicios, administración centrada en el alumno, calificaciones reales por curso, tablero de tareas en Inicio, gestión administrativa del catálogo, Profesor IA privado para la cuenta principal, archivos privados por intento y preguntas de relacionar parejas.
+Ya existen registro, confirmación por correo, recuperación de contraseña, perfiles, Carné Nexora, roles, onboarding, solicitudes e inscripciones, diagnóstico funcional de Matemática, historial de diagnósticos, creador de clases y actividades, preguntas configurables, Formación esencial, intentos persistentes, asignación individual, revisión firmada con comentarios por pregunta, biblioteca de tareas/ejercicios, administración centrada en el alumno, calificaciones reales por curso, tablero de tareas en Inicio, gestión administrativa del catálogo, Profesor IA privado para la cuenta principal, archivos privados por intento, preguntas de relacionar parejas y presencia en línea privada para Administración.
 
 ## 🧭 Navegación principal
 
@@ -197,11 +197,28 @@ La sección global **Calificaciones** y la pestaña **Calificaciones de cada cur
 
 El cierre definitivo de bloques y el promedio final de los cuatro bloques todavía se implementarán como reglas académicas separadas.
 
+## 🟢 Presencia en línea
+
+Desde v0.23 cada sesión autenticada registra un latido privado en Supabase mientras utiliza Nexora.
+
+Administración dispone de un panel que muestra:
+
+- 🟢 **En línea**: la sesión sigue conectada y hubo actividad reciente;
+- 🟡 **Inactivo**: la sesión sigue conectada, pero lleva varios minutos sin interacción o la pestaña quedó en segundo plano;
+- ⚫ **Desconectado**: no se han recibido latidos recientes;
+- la **última conexión** registrada.
+
+La interfaz envía el latido aproximadamente cada 30 segundos. La actividad se detecta mediante interacción del usuario y visibilidad de la pestaña. Si una sesión deja de enviar latidos, pasa automáticamente a desconectada sin requerir que el navegador alcance a ejecutar una acción especial al cerrarse.
+
+La lista completa de presencia es **privada para Administración**. Los alumnos no pueden consultar quién está conectado ni leer directamente la tabla `user_presence`.
+
 ## 🖥️ Interfaz
 
 La interfaz principal usa una distribución amplia en escritorio y vuelve automáticamente a una sola columna en pantallas pequeñas.
 
 El objetivo es que formularios, tarjetas, actividades, archivos y fichas de alumnos puedan utilizarse cómodamente tanto desde computadora como desde dispositivos móviles.
+
+La barra lateral muestra la progresión como **Etapa · Nivel**, eliminando el texto anterior basado en años escolares.
 
 ## 🌱 Formación esencial — primeros 365 días
 
@@ -232,6 +249,9 @@ La inscripción guarda `required_until`, calculado como 365 días desde la creac
 - La creación y edición del catálogo usa `admin_save_course`, que vuelve a comprobar el rol `admin` en Supabase.
 - Profesor IA usa un acceso dedicado de un solo usuario, una Edge Function con JWT obligatorio y un RPC de guardado que vuelve a validar el permiso.
 - El contenido aprobado del Profesor IA se asigna únicamente a la cuenta autorizada.
+- `user_presence` tiene RLS y su lectura está limitada a Administración.
+- `get_admin_presence()` vuelve a comprobar el rol `admin` en servidor.
+- Los alumnos solo pueden enviar su propio latido mediante `heartbeat_user_presence()`; no pueden consultar la presencia de otros usuarios.
 - Las cuentas de estudiante no reciben permisos directos para modificar calificaciones, revisiones, el catálogo ni el Profesor IA.
 
 Pendiente de seguridad antes de una beta más amplia: activar **Leaked Password Protection** en Supabase Auth.
@@ -268,6 +288,7 @@ El ascenso de nivel no ocurrirá por tiempo. Se implementará un motor de promoc
 
 - `profiles`
 - `user_roles`
+- `user_presence`
 - `courses`
 - `course_requests`
 - `course_enrollments`
@@ -296,13 +317,12 @@ Las funciones y migraciones administrativas se documentan en `supabase-notes/`.
 
 ## 🚧 Próximos objetivos
 
-1. Añadir **presencia en línea**: conectado, inactivo, desconectado y última conexión, con panel para Administración.
-2. Definir e implementar las condiciones definitivas para subir de **Nivel** y luego de **Etapa**.
-3. Completar reglas de cierre de los 4 bloques y PMA.
-4. Hacer dinámicos en toda la interfaz la etapa y el nivel del perfil, eliminando textos fijos como `Fundamentos · Año 1`.
-5. Activar **Leaked Password Protection** y cerrar la revisión final de seguridad para la Beta de amigos.
-6. Conectar el secreto `OPENAI_API_KEY` en Supabase si el panel Profesor IA indica **Conexión pendiente**.
-7. Más adelante: mejorar el Profesor IA para utilizar historial, calificaciones y progreso antes de decidir la siguiente clase o práctica personal.
+1. Definir e implementar las condiciones definitivas para subir de **Nivel** y luego de **Etapa**.
+2. Completar reglas de cierre de los 4 bloques y PMA.
+3. Terminar de hacer dinámicos en toda la interfaz la etapa, nivel y reglas académicas del perfil.
+4. Activar **Leaked Password Protection** y cerrar la revisión final de seguridad para la Beta de amigos.
+5. Conectar el secreto `OPENAI_API_KEY` en Supabase si el panel Profesor IA indica **Conexión pendiente**.
+6. Más adelante: mejorar el Profesor IA para utilizar historial, calificaciones y progreso antes de decidir la siguiente clase o práctica personal.
 
 Los minijuegos no forman parte actualmente del plan de desarrollo.
 
@@ -408,7 +428,17 @@ Los minijuegos no forman parte actualmente del plan de desarrollo.
 - Las parejas incompletas se bloquean también mediante validación de Supabase al publicar.
 - Se retiraron los minijuegos de la hoja de ruta actual.
 - El sistema académico se redefinió como **Etapas + Niveles**, sin usar años escolares como progreso.
-- Presencia en línea pasó a ser el siguiente objetivo funcional.
+
+## 2 de octubre de 2026 — v0.23: presencia en línea privada
+
+- Se creó `user_presence` con RLS.
+- Cada sesión autenticada envía un latido periódico mediante `heartbeat_user_presence`.
+- La plataforma distingue **En línea**, **Inactivo** y **Desconectado**.
+- Administración puede consultar la lista mediante `get_admin_presence` y ver la última conexión.
+- Los alumnos no pueden consultar la presencia de otros usuarios.
+- Se añadió el panel **Usuarios conectados** dentro de Administración.
+- La barra lateral pasó definitivamente de `Año` a **Nivel** y calcula la nota mínima según la etapa.
+- La migración queda documentada en `supabase-notes/online-presence.sql`.
 
 ---
 
