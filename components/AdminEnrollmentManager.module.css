@@ -1,0 +1,157 @@
+.wrapper {
+  margin-top: 18px;
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--surface);
+}
+
+.layout {
+  display: grid;
+  grid-template-columns: minmax(230px, 300px) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.studentsPanel,
+.coursePanel {
+  display: grid;
+  gap: 14px;
+}
+
+.searchLabel {
+  display: grid;
+  gap: 7px;
+  font-weight: 850;
+}
+
+.searchLabel input {
+  width: 100%;
+}
+
+.studentList {
+  display: grid;
+  gap: 8px;
+  max-height: 520px;
+  overflow: auto;
+}
+
+.studentButton {
+  display: grid;
+  gap: 3px;
+  width: 100%;
+  padding: 12px 13px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface-soft) 62%, transparent);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.studentButton small,
+.selectedHeader span,
+.courseCard span,
+.courseCard small {
+  color: var(--muted);
+}
+
+.studentButtonActive,
+.studentButton:hover {
+  border-color: color-mix(in srgb, var(--primary) 55%, var(--border));
+  background: color-mix(in srgb, var(--primary) 8%, var(--surface));
+}
+
+.selectedHeader {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  padding: 15px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface-soft) 48%, transparent);
+}
+
+.selectedHeader h3 {
+  margin: 2px 0 4px;
+}
+
+.selectedHeader > strong {
+  padding: 7px 10px;
+  border: 1px solid color-mix(in srgb, var(--primary) 35%, var(--border));
+  border-radius: 999px;
+  color: var(--primary);
+  font-size: 0.78rem;
+  white-space: nowrap;
+}
+
+.note {
+  padding: 11px 12px;
+  border: 1px dashed var(--border);
+  border-radius: 11px;
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
+.courseGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(235px, 1fr));
+  gap: 11px;
+}
+
+.courseCard {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 14px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--surface-soft) 46%, transparent);
+}
+
+.courseCard > div {
+  display: grid;
+  gap: 4px;
+}
+
+.courseCard h4 {
+  margin: 0;
+}
+
+.courseCard span,
+.courseCard small {
+  font-size: 0.76rem;
+}
+
+.courseCard button {
+  flex: 0 0 auto;
+}
+
+@media (max-width: 900px) {
+  .layout {
+    grid-template-columns: 1fr;
+  }
+
+  .studentList {
+    max-height: 300px;
+  }
+}
+
+@media (max-width: 620px) {
+  .selectedHeader,
+  .courseCard {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .selectedHeader > strong {
+    align-self: flex-start;
+  }
+
+  .courseCard button {
+    width: 100%;
+  }
+}
