@@ -1,0 +1,146 @@
+.wrapper {
+  margin-top: 18px;
+  padding: 18px;
+  border: 1px solid var(--border-color);
+  border-radius: 18px;
+  background: var(--card-bg);
+}
+
+.heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 14px;
+}
+
+.heading h3 {
+  margin: 2px 0 6px;
+}
+
+.heading p {
+  margin: 0;
+  color: var(--muted-text);
+}
+
+.counter {
+  white-space: nowrap;
+  padding: 7px 10px;
+  border-radius: 999px;
+  background: var(--soft-bg);
+  font-size: 0.82rem;
+  font-weight: 700;
+}
+
+.fileGrid {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.fileCard {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: center;
+  padding: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 14px;
+  background: var(--surface-bg);
+}
+
+.preview,
+.fileIcon {
+  width: 72px;
+  height: 58px;
+  border-radius: 10px;
+  background: var(--soft-bg);
+}
+
+.preview {
+  object-fit: cover;
+}
+
+.fileIcon {
+  display: grid;
+  place-items: center;
+  font-size: 1.65rem;
+}
+
+.fileInfo {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.fileInfo strong {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.fileInfo small {
+  color: var(--muted-text);
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+
+.removeButton {
+  border: 0;
+  background: transparent;
+  color: #c23b3b;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.dropZone {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 20px;
+  border: 1.5px dashed var(--border-color);
+  border-radius: 14px;
+  background: var(--soft-bg);
+  cursor: pointer;
+  text-align: center;
+}
+
+.dropZone input {
+  display: none;
+}
+
+.dropZone span {
+  font-weight: 800;
+}
+
+.dropZone small {
+  color: var(--muted-text);
+}
+
+@media (max-width: 720px) {
+  .heading {
+    flex-direction: column;
+  }
+
+  .fileCard {
+    grid-template-columns: 56px minmax(0, 1fr);
+  }
+
+  .preview,
+  .fileIcon {
+    width: 56px;
+    height: 48px;
+  }
+
+  .actions {
+    grid-column: 1 / -1;
+    justify-content: flex-end;
+  }
+}
