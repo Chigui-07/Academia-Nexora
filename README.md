@@ -4,7 +4,7 @@
 
 ## 📌 Estado del proyecto
 
-**Fase actual: v0.30 — base académica pública con clases en tarjetas y acceso directo a ejercicios.**
+**Fase actual: v0.31 — base académica pública con contenido organizado en hojas navegables.**
 
 - Frontend: Next.js + TypeScript + CSS.
 - Publicación: GitHub Pages.
@@ -64,6 +64,8 @@ Las clases admiten:
 Las tablas se guardan junto con el contenido de la clase sin romper las clases creadas anteriormente.
 
 En la vista del estudiante, las clases aparecen como **tarjetas compactas**, igual que los ejercicios. Al seleccionar una tarjeta se abre la clase completa y al final aparece el acceso **✏️ Haz el ejercicio para reforzar el tema**, que lleva a la pestaña de ejercicios del mismo curso.
+
+Desde v0.31, el contenido usa un sistema de **hojas navegables**. Las clases separan explicación, cada tabla, ejemplos y recursos en hojas distintas; las tareas y ejercicios muestran una pregunta por hoja. La navegación indica **Hoja X de Y** y permite avanzar o retroceder sin cargar todo el contenido de golpe.
 
 Cada estudiante puede marcar una clase con **🔖 Guardar clase**. Los marcadores se almacenan por cuenta en Supabase y la pestaña Clases permite alternar entre **Todas** y **Guardadas**. Quitar el marcador no elimina ni modifica la clase original.
 
