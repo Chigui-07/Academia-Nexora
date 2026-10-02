@@ -22,6 +22,7 @@ type ActivitySheetProps = {
   opensAt?: string | null;
   closesAt?: string | null;
   timeLimitMinutes?: number | null;
+  maxAttempts?: number;
   questionBlocks?: ActivityQuestionBlock[];
   preview?: boolean;
   answers?: ActivityAnswerKey;
@@ -58,6 +59,7 @@ export default function ActivitySheet({
   opensAt = null,
   closesAt = null,
   timeLimitMinutes = null,
+  maxAttempts = 1,
   questionBlocks = [],
   preview = false,
   answers = {},
@@ -91,6 +93,7 @@ export default function ActivitySheet({
           {opensLabel && <span>🟢 Abre: {opensLabel}</span>}
           {closesLabel && <span>🔒 Cierra: {closesLabel}</span>}
           {timeLimitMinutes ? <span>⏱️ Límite: {timeLimitMinutes} min</span> : <span>⏱️ Sin cronómetro</span>}
+          <span>🔁 {maxAttempts} {maxAttempts === 1 ? "intento" : "intentos"}</span>
         </div>
 
         <div className={styles.body}>
