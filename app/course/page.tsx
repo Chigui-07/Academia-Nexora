@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import AppShell from "@/components/AppShell";
 import StudentActivityList from "@/components/StudentActivityList";
+import StudentCourseGrades from "@/components/StudentCourseGrades";
 import StudentLessonList from "@/components/StudentLessonList";
 import { goTo } from "@/lib/navigation";
 import { supabase } from "@/lib/supabase";
@@ -197,10 +198,11 @@ export default function CoursePage() {
       )}
 
       {activeTab === "calificaciones" && (
-        <article className="panel">
-          <h2>📊 Calificaciones</h2>
-          <div className="empty-state">Las calificaciones aparecerán aquí cuando haya actividades calificadas.</div>
-        </article>
+        <StudentCourseGrades
+          courseId={course.id}
+          courseName={course.name}
+          courseIcon={course.icon}
+        />
       )}
     </AppShell>
   );
