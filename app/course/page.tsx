@@ -163,11 +163,20 @@ export default function CoursePage() {
       )}
 
       {activeTab === "tareas" && (
-        <StudentActivityList
-          courseId={course.id}
-          types={["notebook_task", "virtual_task"]}
-          emptyMessage="Todavía no hay tareas disponibles en este curso."
-        />
+        <>
+          <article className="panel" style={{ marginBottom: 18 }}>
+            <p className="eyebrow">Actividades del curso</p>
+            <h2>📝 Tareas</h2>
+            <p className="muted-copy">Selecciona una tarjeta para abrir la tarea. Las anteriores quedan acumuladas aquí para consultar entregas y calificaciones.</p>
+          </article>
+          <StudentActivityList
+            courseId={course.id}
+            types={["notebook_task", "virtual_task"]}
+            includeClosed
+            selectableCards
+            emptyMessage="Todavía no hay tareas publicadas en este curso."
+          />
+        </>
       )}
 
       {activeTab === "ejercicios" && (
@@ -175,12 +184,13 @@ export default function CoursePage() {
           <article className="panel" style={{ marginBottom: 18 }}>
             <p className="eyebrow">Práctica del curso</p>
             <h2>✏️ Ejercicios</h2>
-            <p className="muted-copy">Aquí se conservan también tus ejercicios cerrados para que puedas volver a ver respuestas, revisión y calificación.</p>
+            <p className="muted-copy">Cada ejercicio queda como una tarjeta. Selecciónalo para practicar o volver a consultar respuestas, revisión y calificación.</p>
           </article>
           <StudentActivityList
             courseId={course.id}
             types={["practice"]}
             includeClosed
+            selectableCards
             emptyMessage="Todavía no hay ejercicios publicados en este curso."
           />
         </>

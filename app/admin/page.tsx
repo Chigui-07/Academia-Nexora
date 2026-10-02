@@ -1,4 +1,5 @@
 import AdminCourseRequests from "@/components/AdminCourseRequests";
+import AdminEnrollmentManager from "@/components/AdminEnrollmentManager";
 import AppShell from "@/components/AppShell";
 import TeacherActivityManager from "@/components/TeacherActivityManager";
 import TeacherGradingManager from "@/components/TeacherGradingManager";
@@ -39,6 +40,8 @@ export default function AdminPage() {
           ))}
         </section>
       </section>
+
+      <AdminEnrollmentManager />
 
       <div style={{ marginTop: 18 }}>
         <AdminCourseRequests />

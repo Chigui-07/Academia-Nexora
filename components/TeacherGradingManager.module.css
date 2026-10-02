@@ -137,6 +137,19 @@
   line-height: 1.55;
 }
 
+.answerReviewGrid {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 0.9fr);
+  gap: 12px;
+  align-items: stretch;
+}
+
+.answerColumn {
+  display: grid;
+  align-content: start;
+  gap: 8px;
+}
+
 .answerBox,
 .expectedBox {
   display: grid;
@@ -151,7 +164,6 @@
 }
 
 .expectedBox {
-  margin-top: 8px;
   border: 1px dashed color-mix(in srgb, var(--primary) 35%, var(--border));
   background: color-mix(in srgb, var(--primary) 5%, var(--surface));
 }
@@ -160,6 +172,38 @@
 .expectedBox small {
   color: var(--muted, #94a3b8);
   font-weight: 750;
+}
+
+.questionCommentBox {
+  display: grid;
+  gap: 7px;
+  padding: 12px;
+  border: 1px solid rgba(234, 179, 8, 0.52);
+  border-radius: 11px;
+  background: rgba(234, 179, 8, 0.1);
+  color: var(--text);
+  font-weight: 800;
+}
+
+.questionCommentBox > span {
+  color: #facc15;
+  font-size: 0.84rem;
+  font-weight: 900;
+}
+
+.questionCommentBox textarea {
+  width: 100%;
+  min-height: 120px;
+  resize: vertical;
+  border-color: rgba(234, 179, 8, 0.34);
+  background: color-mix(in srgb, var(--surface) 88%, rgba(234, 179, 8, 0.08));
+}
+
+.questionCommentBox small {
+  color: color-mix(in srgb, #fde68a 72%, var(--muted));
+  font-size: 0.74rem;
+  font-weight: 700;
+  line-height: 1.4;
 }
 
 .reviewChoices {
@@ -211,6 +255,11 @@
   font-weight: 800;
 }
 
+.finalSection label > small {
+  color: var(--muted);
+  font-weight: 700;
+}
+
 .finalSection textarea,
 .finalSection input {
   width: 100%;
@@ -233,6 +282,12 @@
 .gradeInput span {
   color: var(--muted, #94a3b8);
   font-weight: 850;
+}
+
+@media (max-width: 1050px) {
+  .answerReviewGrid {
+    grid-template-columns: 1fr;
+  }
 }
 
 @media (max-width: 900px) {

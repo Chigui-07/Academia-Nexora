@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import ActivityRunner, { RunnableActivity } from "./ActivityRunner";
 import { ActivitySheetType } from "./ActivitySheet";
 import { supabase } from "@/lib/supabase";
+import styles from "./StudentActivityList.module.css";
 
 type Course = {
   id: string;
@@ -15,6 +16,9 @@ type AttemptSummary = {
   activity_id: string;
   status: "in_progress" | "submitted" | "timed_out";
   attempt_number: number;
+  grade_value: number | null;
+  grade_max: number | null;
+  reviewed_at: string | null;
 };
 
 type StudentActivityListProps = {
@@ -23,7 +27,27 @@ type StudentActivityListProps = {
   emptyMessage: string;
   includeClosed?: boolean;
   hideFinished?: boolean;
+  selectableCards?: boolean;
 };
+
+const typeLabels: Record<ActivitySheetType, string> = {
+  notebook_task: "Tarea de cuaderno",
+  virtual_task: "Tarea virtual",
+  practice: "Ejercicio práctico",
+};
+
+function activityStatus(activity: RunnableActivity, attempt?: AttemptSummary) {
+  const closed = activity.closes_at ? new Date(activity.closes_at).getTime() < Date.now() : false;
+
+  if (attempt?.reviewed_at && attempt.grade_value !== null && attempt.grade_max !== null) {
+    return { label: `📊 ${attempt.grade_value}/${attempt.grade_max}`, tone: "graded" as const };
+  }
+  if (attempt?.status === "in_progress") return { label: "▶️ En curso", tone: "active" as const };
+  if (attempt?.status === "submitted") return { label: "📤 Entregada", tone: "done" as const };
+  if (attempt?.status === "timed_out") return { label: "⏱️ Tiempo finalizado", tone: "done" as const };
+  if (closed) return { label: "🔒 Cerrado", tone: "closed" as const };
+  return { label: "🟢 Disponible", tone: "active" as const };
+}
 
 export default function StudentActivityList({
   courseId,
@@ -31,9 +55,12 @@ export default function StudentActivityList({
   emptyMessage,
   includeClosed = false,
   hideFinished = false,
+  selectableCards = false,
 }: StudentActivityListProps) {
   const [activities, setActivities] = useState<RunnableActivity[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
+  const [attempts, setAttempts] = useState<AttemptSummary[]>([]);
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -61,7 +88,8 @@ export default function StudentActivityList({
         return alreadyOpened && (includeClosed || stillOpen);
       });
 
-      if (hideFinished && visible.length > 0) {
+      let loadedAttempts: AttemptSummary[] = [];
+      if (visible.length > 0) {
         const { data: sessionData } = await supabase.auth.getSession();
         const session = sessionData.session;
 
@@ -69,12 +97,11 @@ export default function StudentActivityList({
           const activityIds = visible.map((activity) => activity.id);
           const { data: attemptData, error: attemptError } = await supabase
             .from("activity_attempts")
-            .select("activity_id, status, attempt_number")
+            .select("activity_id, status, attempt_number, grade_value, grade_max, reviewed_at")
             .eq("user_id", session.user.id)
             .in("activity_id", activityIds);
 
           if (attemptError) throw attemptError;
-
           const latestAttempt = new Map<string, AttemptSummary>();
           for (const row of (attemptData ?? []) as AttemptSummary[]) {
             const current = latestAttempt.get(row.activity_id);
@@ -82,11 +109,14 @@ export default function StudentActivityList({
               latestAttempt.set(row.activity_id, row);
             }
           }
+          loadedAttempts = Array.from(latestAttempt.values());
 
-          visible = visible.filter((activity) => {
-            const latest = latestAttempt.get(activity.id);
-            return !latest || latest.status === "in_progress";
-          });
+          if (hideFinished) {
+            visible = visible.filter((activity) => {
+              const latest = latestAttempt.get(activity.id);
+              return !latest || latest.status === "in_progress";
+            });
+          }
         }
       }
 
@@ -105,6 +135,8 @@ export default function StudentActivityList({
       }
 
       setActivities(visible);
+      setAttempts(loadedAttempts);
+      setSelectedId((current) => current && visible.some((activity) => activity.id === current) ? current : null);
 
       const courseIds = Array.from(new Set(visible.map((activity) => activity.course_id)));
       if (courseIds.length > 0) {
@@ -130,10 +162,68 @@ export default function StudentActivityList({
   }, [courseId, types.join("|"), includeClosed, hideFinished]);
 
   const courseMap = useMemo(() => new Map(courses.map((course) => [course.id, course])), [courses]);
+  const attemptMap = useMemo(() => new Map(attempts.map((attempt) => [attempt.activity_id, attempt])), [attempts]);
+  const selectedActivity = activities.find((activity) => activity.id === selectedId) ?? null;
 
   if (!ready) return <div className="empty-state">Cargando actividades...</div>;
   if (error) return <div className="auth-message auth-error">{error}</div>;
   if (activities.length === 0) return <div className="empty-state">{emptyMessage}</div>;
+
+  if (selectableCards) {
+    return (
+      <div className={styles.library}>
+        <div className={styles.cardGrid}>
+          {activities.map((activity) => {
+            const course = courseMap.get(activity.course_id);
+            const status = activityStatus(activity, attemptMap.get(activity.id));
+            return (
+              <button
+                key={activity.id}
+                type="button"
+                className={`${styles.activityCard} ${selectedId === activity.id ? styles.activityCardSelected : ""}`}
+                onClick={() => setSelectedId(activity.id)}
+              >
+                <div className={styles.cardTopline}>
+                  <span>{course?.icon ?? "📚"} {course?.name ?? "Curso"}</span>
+                  <span className={`${styles.status} ${styles[`status_${status.tone}`]}`}>{status.label}</span>
+                </div>
+                <strong>{activity.title}</strong>
+                <small>{typeLabels[activity.activity_type]} · {activity.question_blocks?.length ?? 0} preguntas</small>
+                <div className={styles.cardMeta}>
+                  {activity.activity_type === "practice"
+                    ? <span>🎯 /100</span>
+                    : activity.points !== null && <span>🎯 {activity.points} pts</span>}
+                  <span>🔁 {activity.max_attempts}</span>
+                  {activity.time_limit_minutes && <span>⏱️ {activity.time_limit_minutes} min</span>}
+                </div>
+                <span className={styles.openLabel}>Abrir actividad →</span>
+              </button>
+            );
+          })}
+        </div>
+
+        {!selectedActivity ? (
+          <div className={styles.selectionHint}>Selecciona una tarjeta para abrir la tarea o ejercicio.</div>
+        ) : (
+          <div className={styles.detail}>
+            <div className={styles.detailHeading}>
+              <div>
+                <p className="eyebrow">Actividad seleccionada</p>
+                <h3>{selectedActivity.title}</h3>
+              </div>
+              <button className="secondary-button" type="button" onClick={() => setSelectedId(null)}>Cerrar vista</button>
+            </div>
+            <ActivityRunner
+              activity={selectedActivity}
+              courseName={courseMap.get(selectedActivity.course_id)?.name ?? "Curso"}
+              courseIcon={courseMap.get(selectedActivity.course_id)?.icon ?? "📚"}
+              allowNewAttempts={!selectedActivity.closes_at || new Date(selectedActivity.closes_at).getTime() >= Date.now()}
+            />
+          </div>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: "grid", gap: 28 }}>
