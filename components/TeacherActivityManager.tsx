@@ -9,11 +9,18 @@ import styles from "./TeacherActivityManager.module.css";
 
 type ActivityType = "notebook_task" | "virtual_task" | "practice";
 type ActivityStatus = "draft" | "published";
+type AssignmentMode = "course" | "selected";
 
 type Course = {
   id: string;
   name: string;
   icon: string;
+};
+
+type CourseStudent = {
+  user_id: string;
+  display_name: string;
+  student_code: string;
 };
 
 type Activity = {
@@ -28,6 +35,7 @@ type Activity = {
   opens_at: string | null;
   closes_at: string | null;
   time_limit_minutes: number | null;
+  assignment_mode: AssignmentMode;
   status: ActivityStatus;
   created_at: string;
 };
@@ -50,8 +58,12 @@ export default function TeacherActivityManager() {
   const [ready, setReady] = useState(false);
   const [courses, setCourses] = useState<Course[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
+  const [courseStudents, setCourseStudents] = useState<CourseStudent[]>([]);
+  const [studentsLoading, setStudentsLoading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [courseId, setCourseId] = useState("");
+  const [assignmentMode, setAssignmentMode] = useState<AssignmentMode>("course");
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [activityType, setActivityType] = useState<ActivityType>("notebook_task");
   const [title, setTitle] = useState("");
   const [points, setPoints] = useState("10");
@@ -95,7 +107,7 @@ export default function TeacherActivityManager() {
         .order("name"),
       supabase
         .from("course_activities")
-        .select("id, course_id, created_by, activity_type, title, worksheet_content, question_blocks, points, opens_at, closes_at, time_limit_minutes, status, created_at")
+        .select("id, course_id, created_by, activity_type, title, worksheet_content, question_blocks, points, opens_at, closes_at, time_limit_minutes, assignment_mode, status, created_at")
         .order("created_at", { ascending: false }),
     ]);
 
@@ -116,8 +128,39 @@ export default function TeacherActivityManager() {
     });
   }, []);
 
+  useEffect(() => {
+    if (!isTeacher || !courseId) {
+      setCourseStudents([]);
+      return;
+    }
+
+    let cancelled = false;
+    setStudentsLoading(true);
+
+    supabase
+      .rpc("get_course_students", { p_course_id: courseId })
+      .then(({ data, error: studentsError }) => {
+        if (cancelled) return;
+        if (studentsError) {
+          setCourseStudents([]);
+          setError("No se pudo cargar la lista de estudiantes del curso.");
+          return;
+        }
+        setCourseStudents((data ?? []) as CourseStudent[]);
+      })
+      .finally(() => {
+        if (!cancelled) setStudentsLoading(false);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isTeacher, courseId]);
+
   function resetForm() {
     setEditingId(null);
+    setAssignmentMode("course");
+    setSelectedUserIds([]);
     setActivityType("notebook_task");
     setTitle("");
     setPoints("10");
@@ -133,9 +176,16 @@ export default function TeacherActivityManager() {
     setError(null);
   }
 
+  function toggleStudent(userId: string) {
+    setSelectedUserIds((current) =>
+      current.includes(userId) ? current.filter((id) => id !== userId) : [...current, userId]
+    );
+  }
+
   async function editActivity(activity: Activity) {
     setEditingId(activity.id);
     setCourseId(activity.course_id);
+    setAssignmentMode(activity.assignment_mode ?? "course");
     setActivityType(activity.activity_type);
     setTitle(activity.title);
     setPoints(activity.points === null ? "" : String(activity.points));
@@ -149,15 +199,23 @@ export default function TeacherActivityManager() {
     setMessage("Editando actividad existente.");
     setError(null);
 
-    const { data, error: keyError } = await supabase.rpc("get_course_activity_answer_key", {
-      p_activity_id: activity.id,
-    });
+    const [keyResponse, assignmentResponse] = await Promise.all([
+      supabase.rpc("get_course_activity_answer_key", { p_activity_id: activity.id }),
+      supabase.rpc("get_course_activity_assignments", { p_activity_id: activity.id }),
+    ]);
 
-    if (keyError) {
+    if (keyResponse.error) {
       setAnswerKey({});
       setError("La actividad abrió, pero no se pudo cargar su clave de respuestas.");
     } else {
-      setAnswerKey((data ?? {}) as ActivityAnswerKey);
+      setAnswerKey((keyResponse.data ?? {}) as ActivityAnswerKey);
+    }
+
+    if (assignmentResponse.error) {
+      setSelectedUserIds([]);
+      setError("La actividad abrió, pero no se pudo cargar a quién está asignada.");
+    } else {
+      setSelectedUserIds((assignmentResponse.data ?? []) as string[]);
     }
 
     window.scrollTo({ top: 0, behavior: "smooth" });
@@ -167,9 +225,7 @@ export default function TeacherActivityManager() {
     if (status !== "published") return;
 
     for (const [index, question] of questions.entries()) {
-      if (!question.prompt.trim()) {
-        throw new Error(`Escribe el enunciado de la pregunta ${index + 1}.`);
-      }
+      if (!question.prompt.trim()) throw new Error(`Escribe el enunciado de la pregunta ${index + 1}.`);
 
       if (question.type === "single_choice" || question.type === "multiple_choice") {
         const options = question.options ?? [];
@@ -205,6 +261,9 @@ export default function TeacherActivityManager() {
       if (!courseId) throw new Error("Selecciona un curso.");
       if (!title.trim()) throw new Error("Escribe un título para la actividad.");
       if (!worksheet.trim() && questions.length === 0) throw new Error("Agrega instrucciones o al menos una pregunta a la actividad.");
+      if (assignmentMode === "selected" && selectedUserIds.length === 0) {
+        throw new Error("Selecciona al menos un estudiante para esta actividad.");
+      }
 
       validatePublishedQuestions();
 
@@ -232,6 +291,7 @@ export default function TeacherActivityManager() {
         opens_at: opensAt ? new Date(opensAt).toISOString() : null,
         closes_at: closesAt ? new Date(closesAt).toISOString() : null,
         time_limit_minutes: timerValue,
+        assignment_mode: assignmentMode,
         status,
       };
 
@@ -255,12 +315,21 @@ export default function TeacherActivityManager() {
 
       if (!activityId) throw new Error("No se pudo identificar la actividad guardada.");
 
-      const { error: questionsError } = await supabase.rpc("save_course_activity_questions", {
-        p_activity_id: activityId,
-        p_question_blocks: questions,
-        p_answer_key: answerKey,
-      });
-      if (questionsError) throw questionsError;
+      const [questionsResponse, assignmentsResponse] = await Promise.all([
+        supabase.rpc("save_course_activity_questions", {
+          p_activity_id: activityId,
+          p_question_blocks: questions,
+          p_answer_key: answerKey,
+        }),
+        supabase.rpc("save_course_activity_assignments", {
+          p_activity_id: activityId,
+          p_assignment_mode: assignmentMode,
+          p_user_ids: assignmentMode === "selected" ? selectedUserIds : [],
+        }),
+      ]);
+
+      if (questionsResponse.error) throw questionsResponse.error;
+      if (assignmentsResponse.error) throw assignmentsResponse.error;
 
       setMessage(editingId
         ? "Actividad actualizada correctamente."
@@ -269,6 +338,8 @@ export default function TeacherActivityManager() {
           : "Borrador guardado correctamente.");
 
       setEditingId(null);
+      setAssignmentMode("course");
+      setSelectedUserIds([]);
       setTitle("");
       setWorksheet("");
       setQuestions([]);
@@ -300,7 +371,7 @@ export default function TeacherActivityManager() {
         <div>
           <p className="eyebrow">Profesor</p>
           <h2>👨‍🏫 Crear y gestionar actividades</h2>
-          <p className="muted-copy">Combina instrucciones, preguntas, fechas, punteo y cronómetro en una misma actividad.</p>
+          <p className="muted-copy">Combina instrucciones, preguntas, fechas, punteo y cronómetro, y decide exactamente quién recibe cada actividad.</p>
         </div>
       </div>
 
@@ -310,12 +381,65 @@ export default function TeacherActivityManager() {
 
           <label>
             Curso
-            <select value={courseId} onChange={(event) => setCourseId(event.target.value)} required>
+            <select
+              value={courseId}
+              onChange={(event) => {
+                setCourseId(event.target.value);
+                setSelectedUserIds([]);
+              }}
+              required
+            >
               {courses.map((course) => (
                 <option key={course.id} value={course.id}>{course.icon} {course.name}</option>
               ))}
             </select>
           </label>
+
+          <label>
+            👥 Asignar a
+            <select
+              value={assignmentMode}
+              onChange={(event) => {
+                const value = event.target.value as AssignmentMode;
+                setAssignmentMode(value);
+                if (value === "course") setSelectedUserIds([]);
+              }}
+            >
+              <option value="course">Todos los estudiantes del curso</option>
+              <option value="selected">Estudiantes específicos</option>
+            </select>
+            <small>Solo los estudiantes elegidos podrán ver e iniciar una actividad individual.</small>
+          </label>
+
+          {assignmentMode === "selected" && (
+            <div className={styles.studentPicker}>
+              <div className={styles.studentPickerHeader}>
+                <strong>Estudiantes inscritos</strong>
+                <span>{selectedUserIds.length} seleccionados</span>
+              </div>
+              {studentsLoading ? (
+                <small>Cargando estudiantes...</small>
+              ) : courseStudents.length === 0 ? (
+                <small>No hay estudiantes activos inscritos en este curso.</small>
+              ) : (
+                <div className={styles.studentList}>
+                  {courseStudents.map((student) => (
+                    <label className={styles.studentRow} key={student.user_id}>
+                      <input
+                        type="checkbox"
+                        checked={selectedUserIds.includes(student.user_id)}
+                        onChange={() => toggleStudent(student.user_id)}
+                      />
+                      <span>
+                        <strong>{student.display_name}</strong>
+                        <small>{student.student_code}</small>
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           <label>
             Tipo
@@ -467,6 +591,7 @@ export default function TeacherActivityManager() {
                     <small>
                       {activity.points !== null ? `${activity.points} pts · ` : ""}
                       {activity.question_blocks?.length ? `${activity.question_blocks.length} preguntas · ` : ""}
+                      {activity.assignment_mode === "selected" ? "👤 Estudiantes específicos · " : "👥 Todo el curso · "}
                       {activity.time_limit_minutes ? `⏱️ ${activity.time_limit_minutes} min · ` : "Sin cronómetro · "}
                       {activity.status === "published" ? "Publicada" : "Borrador"}
                     </small>

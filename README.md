@@ -4,12 +4,12 @@
 
 ## 📌 Estado del proyecto
 
-**Fase actual: v0.11 — Clases e intentos de actividades.**
+**Fase actual: v0.12 — Asignación individual de actividades.**
 
 Frontend: Next.js + TypeScript + CSS, publicado con GitHub Pages.  
 Backend, autenticación y datos: Supabase.
 
-Ya existen registro, confirmación por correo, perfiles, Carné Nexora, roles, onboarding, solicitudes e inscripciones, diagnóstico funcional de Matemática, historial de diagnósticos, creador de clases y actividades para Profesor, preguntas configurables, Formación esencial e intentos persistentes para estudiantes.
+Ya existen registro, confirmación por correo, perfiles, Carné Nexora, roles, onboarding, solicitudes e inscripciones, diagnóstico funcional de Matemática, historial de diagnósticos, creador de clases y actividades para Profesor, preguntas configurables, Formación esencial, intentos persistentes y asignación de actividades por curso o por estudiantes específicos.
 
 ## 🧭 Navegación principal
 
@@ -58,56 +58,40 @@ Dentro de Administración existe un apartado Profesor para cuentas con rol `teac
 
 ### Clases
 
-Profesor puede crear clases vinculadas a cualquier curso. Cada clase puede guardar:
-
-- unidad o tema;
-- título;
-- explicación;
-- ejemplos guiados;
-- recursos o notas;
-- posición para ordenar las clases;
-- estado Borrador/Publicada.
+Profesor puede crear clases vinculadas a cualquier curso. Cada clase puede guardar unidad o tema, título, explicación, ejemplos guiados, recursos o notas, posición para ordenar y estado Borrador/Publicada.
 
 Las clases publicadas aparecen en la pestaña **Clases** del curso. Los estudiantes únicamente pueden leer clases publicadas de cursos en los que están inscritos.
 
 ### Actividades
 
-Profesor puede crear y editar:
-
-- **Tareas de cuaderno**;
-- **Tareas virtuales**;
-- **Ejercicios prácticos**.
+Profesor puede crear y editar **Tareas de cuaderno**, **Tareas virtuales** y **Ejercicios prácticos**.
 
 Cada actividad puede configurar curso, título, punteo cuando corresponda, fecha/hora de apertura, fecha/hora de cierre, cronómetro opcional, estado Borrador/Publicada e instrucciones generales.
 
 La hoja en blanco funciona como editor. Antes de publicar puede usarse **👁️ Vista previa**. Al publicarse, el estudiante ve una hoja/cuaderno centrada inspirada en el estilo del diagnóstico.
 
+### Asignación de estudiantes
+
+Cada actividad puede enviarse de dos maneras:
+
+- **Todo el curso**: la reciben todos los estudiantes activos inscritos en esa materia.
+- **Estudiantes específicos**: Profesor selecciona una o varias personas inscritas y únicamente ellas pueden verla e iniciarla.
+
+La selección individual se almacena en `course_activity_assignments`. La protección también se aplica en RLS y en la función que inicia los intentos, por lo que otro estudiante del mismo curso no puede abrir una actividad individual aunque conozca su identificador.
+
 ### Constructor de preguntas
 
-Profesor puede combinar varios bloques dentro de una misma actividad:
-
-- **Respuesta escrita**;
-- **Elección única**;
-- **Selección múltiple**;
-- **Verdadero o falso**.
+Profesor puede combinar **Respuesta escrita**, **Elección única**, **Selección múltiple** y **Verdadero o falso**.
 
 Las claves correctas se almacenan en `private.course_activity_answer_keys` y no se envían al estudiante.
 
 ## ✍️ Intentos y entregas del estudiante
 
-Las actividades publicadas aparecen en **Tareas** o en las pestañas Tareas/Ejercicios de cada curso durante su ventana de disponibilidad.
+Las actividades publicadas aparecen en **Tareas** o en las pestañas Tareas/Ejercicios de cada curso durante su ventana de disponibilidad y únicamente cuando fueron asignadas al estudiante.
 
-El estudiante puede pulsar **Comenzar actividad**. En ese momento Nexora crea un intento persistente en `activity_attempts` y, si existe un cronómetro, calcula su hora de vencimiento en el servidor.
+El estudiante puede pulsar **Comenzar actividad**. Nexora crea un intento persistente en `activity_attempts` y, si existe un cronómetro, calcula su hora de vencimiento en el servidor.
 
-Durante un intento:
-
-- las respuestas se guardan automáticamente;
-- recargar la página no reinicia el intento;
-- el cronómetro continúa desde la hora original;
-- **Entregar actividad** cierra el intento;
-- al llegar a cero, el intento se marca como terminado por tiempo y conserva las respuestas guardadas;
-- las tareas normales quedan cerradas después de entregarse;
-- los ejercicios prácticos pueden iniciar un nuevo intento para seguir practicando.
+Durante un intento las respuestas se guardan automáticamente, recargar no reinicia el intento, el cronómetro continúa desde la hora original y **Entregar actividad** cierra el intento. Al llegar a cero se conserva lo respondido y el intento termina por tiempo. Las tareas normales quedan cerradas tras entregar y los ejercicios prácticos permiten nuevos intentos.
 
 La corrección automática, calificaciones y PMA se desarrollarán después de estabilizar la beta.
 
@@ -124,13 +108,11 @@ Cada usuario queda inscrito automáticamente durante su primer año en seis curs
 
 La inscripción guarda `required_until`, calculado como 365 días desde la creación del perfil. Después de esa fecha estos cursos dejan de ser obligatorios y podrán mantenerse de forma opcional.
 
-Las actividades de Formación esencial deben ser ligeras, normalmente de 10–15 minutos, y no se diseñan como castigo ni como una racha obligatoria.
-
 ## 🔐 Seguridad
 
 - Supabase Auth gestiona las cuentas.
-- RLS limita perfiles, solicitudes, inscripciones, clases, diagnósticos, actividades e intentos.
-- El estudiante solo puede leer contenido publicado de cursos en los que está inscrito.
+- RLS limita perfiles, solicitudes, inscripciones, clases, diagnósticos, actividades, asignaciones e intentos.
+- El estudiante solo puede leer contenido publicado que le corresponda.
 - Los intentos solo pueden ser leídos por su estudiante o por personal autorizado.
 - Las respuestas correctas del diagnóstico y de las actividades no se exponen al navegador.
 - Crear, guardar y entregar intentos pasa por funciones seguras del servidor.
@@ -160,6 +142,7 @@ Cada curso tendrá 4 bloques de hasta 100 puntos.
 - `course_enrollments`
 - `course_lessons`
 - `course_activities`
+- `course_activity_assignments`
 - `activity_attempts`
 - `admin_notifications`
 - `diagnostic_levels`
@@ -173,13 +156,12 @@ Cada curso tendrá 4 bloques de hasta 100 puntos.
 
 ## 🚧 Próximos objetivos
 
-1. Añadir **recuperación de contraseña**.
-2. Hacer una prueba completa con una segunda cuenta de estudiante y revisar aislamiento de datos/RLS.
-3. Preparar la **Beta para amigos** y crear las primeras clases según sus próximos exámenes.
-4. Implementar corrección, calificaciones por bloques y PMA.
-5. Hacer que Tareas pendientes y Promedio actual del Dashboard provengan de datos reales.
-6. Añadir presencia opcional **Conectados ahora**, XP Nexora, ligas y ranking semanal opcional.
-7. Añadir mejoras de contenido, recursos y posteriormente IA educativa segura.
+1. Añadir **recuperación de contraseña** y cerrar la preparación mínima de la Beta para amigos.
+2. Convertir las tarjetas superiores de Administración en apartados funcionales para catálogo e inscripciones.
+3. Implementar corrección, calificaciones por bloques y PMA.
+4. Hacer que Tareas pendientes y Promedio actual del Dashboard provengan de datos reales.
+5. Añadir presencia opcional **Conectados ahora**, XP Nexora, ligas y ranking semanal opcional.
+6. Añadir mejoras de contenido, recursos y posteriormente IA educativa segura.
 
 ---
 
@@ -246,12 +228,17 @@ Cada curso tendrá 4 bloques de hasta 100 puntos.
 - Profesor puede crear, ordenar, previsualizar y publicar clases.
 - Las clases publicadas aparecen dentro de cada curso.
 - Se creó `activity_attempts` para conservar el trabajo de cada estudiante.
-- Se añadió **Comenzar actividad**.
-- Las respuestas se guardan automáticamente durante el intento.
-- Se añadió **Entregar actividad** y cierre del intento.
-- El cronómetro utiliza una hora de vencimiento persistente y no se reinicia al recargar.
+- Se añadió **Comenzar actividad**, guardado automático, **Entregar actividad** y cronómetro persistente.
 - Los ejercicios prácticos permiten iniciar nuevos intentos.
-- Los flujos de iniciar, guardar y entregar se probaron dentro de una transacción segura y se revirtieron después de la comprobación.
+
+## 1 de octubre de 2026 — v0.12: asignación individual
+
+- Profesor puede enviar una actividad a todo un curso o a estudiantes específicos.
+- Se añadió `course_activity_assignments`.
+- El selector muestra nombre académico y Carné de los estudiantes activos del curso.
+- RLS oculta una actividad individual a quienes no estén asignados.
+- La función de iniciar intentos comprueba también la asignación en servidor.
+- El flujo de guardado de asignaciones se probó dentro de una transacción y se revirtió después de la comprobación.
 
 ---
 

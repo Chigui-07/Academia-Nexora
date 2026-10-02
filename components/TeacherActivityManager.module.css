@@ -48,6 +48,66 @@
   width: 100%;
 }
 
+.studentPicker {
+  display: grid;
+  gap: 10px;
+  max-height: 290px;
+  padding: 12px;
+  overflow: auto;
+  border: 1px solid var(--border, rgba(148, 163, 184, 0.18));
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--surface) 90%, var(--surface-soft));
+}
+
+.studentPickerHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.studentPickerHeader span {
+  color: var(--muted, #94a3b8);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.studentList {
+  display: grid;
+  gap: 7px;
+}
+
+.studentRow {
+  grid-template-columns: auto 1fr !important;
+  align-items: center;
+  gap: 10px !important;
+  padding: 9px 10px;
+  border: 1px solid var(--border, rgba(148, 163, 184, 0.18));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  cursor: pointer;
+}
+
+.studentRow input {
+  width: 18px !important;
+  height: 18px;
+  margin: 0;
+}
+
+.studentRow > span {
+  display: grid;
+  gap: 2px;
+}
+
+.studentRow strong {
+  font-size: 0.9rem;
+}
+
+.studentRow small {
+  color: var(--muted, #94a3b8);
+  font-size: 0.76rem;
+}
+
 .dateGrid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -201,7 +261,8 @@
 
   .sheetHeader,
   .previewHeading,
-  .activityCard {
+  .activityCard,
+  .studentPickerHeader {
     align-items: stretch;
     flex-direction: column;
   }
