@@ -1,3 +1,4 @@
+import AdminCourseManager from "@/components/AdminCourseManager";
 import AdminCourseRequests from "@/components/AdminCourseRequests";
 import AdminEnrollmentManager from "@/components/AdminEnrollmentManager";
 import AppShell from "@/components/AppShell";
@@ -5,7 +6,7 @@ import TeacherActivityManager from "@/components/TeacherActivityManager";
 import TeacherLessonManager from "@/components/TeacherLessonManager";
 
 const adminActions = [
-  ["📚 Gestionar cursos", "Administra el catálogo de materias de Academia Nexora."],
+  ["📚 Gestionar cursos", "Crea, edita, activa o desactiva materias del catálogo."],
   ["👥 Alumnos", "Selecciona un alumno para ver sus cursos, asignaciones y entregas."],
   ["📩 Solicitudes", "Revisa las solicitudes de cursos enviadas por los estudiantes."],
 ] as const;
@@ -17,7 +18,7 @@ export default function AdminPage() {
         <div>
           <p className="eyebrow">Administración y Profesor</p>
           <h1>Panel de gestión</h1>
-          <p>Organiza primero por alumno: revisa sus cursos, asígnale materias y califica únicamente sus entregas.</p>
+          <p>Gestiona el catálogo, organiza a tus alumnos y prepara el contenido académico desde un solo lugar.</p>
         </div>
       </div>
 
@@ -26,7 +27,7 @@ export default function AdminPage() {
           <div>
             <p className="eyebrow">Administración</p>
             <h2>⚙️ Cursos y usuarios</h2>
-            <p className="muted-copy">La ficha de cada alumno concentra sus cursos y sus entregas para que no tengas información de usuarios distintos mezclada.</p>
+            <p className="muted-copy">Cada apartado tiene más espacio para que puedas trabajar con calma sin mezclar información entre cursos o estudiantes.</p>
           </div>
         </div>
 
@@ -40,14 +41,13 @@ export default function AdminPage() {
         </section>
       </section>
 
-      <AdminEnrollmentManager />
-
-      <div style={{ marginTop: 18 }}>
+      <div className="admin-management-stack">
+        <AdminCourseManager />
+        <AdminEnrollmentManager />
         <AdminCourseRequests />
+        <TeacherLessonManager />
+        <TeacherActivityManager />
       </div>
-
-      <TeacherLessonManager />
-      <TeacherActivityManager />
     </AppShell>
   );
 }
