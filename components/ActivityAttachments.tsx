@@ -8,6 +8,7 @@ type Attachment = {
   id: string;
   attempt_id: string;
   user_id: string;
+  question_id: string | null;
   storage_path: string;
   file_name: string;
   mime_type: string | null;
@@ -18,9 +19,12 @@ type Attachment = {
 type Props = {
   attemptId: string;
   editable: boolean;
+  questionId?: string | null;
   maxFiles?: number;
+  accept?: string;
   title?: string;
   description?: string;
+  onAttachmentsChange?: (attachmentIds: string[]) => void;
 };
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024;
@@ -47,9 +51,12 @@ function isImage(mime: string | null) {
 export default function ActivityAttachments({
   attemptId,
   editable,
+  questionId,
   maxFiles = 5,
-  title = "Archivos de la entrega",
-  description = "Puedes adjuntar fotografías del procedimiento, documentos u otros archivos solicitados por el profesor.",
+  accept,
+  title = "Archivos de la respuesta",
+  description = "Adjunta los archivos solicitados por el profesor.",
+  onAttachmentsChange,
 }: Props) {
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [previewUrls, setPreviewUrls] = useState<Record<string, string>>({});
@@ -59,18 +66,23 @@ export default function ActivityAttachments({
   const [message, setMessage] = useState<string | null>(null);
 
   const remaining = Math.max(0, maxFiles - attachments.length);
-  const canUpload = editable && remaining > 0;
+  const canUpload = editable && typeof questionId === "string" && remaining > 0;
 
   async function loadAttachments() {
-    const { data, error: loadError } = await supabase
+    let query = supabase
       .from("activity_attempt_attachments")
-      .select("id, attempt_id, user_id, storage_path, file_name, mime_type, file_size, created_at")
-      .eq("attempt_id", attemptId)
-      .order("created_at", { ascending: true });
+      .select("id, attempt_id, user_id, question_id, storage_path, file_name, mime_type, file_size, created_at")
+      .eq("attempt_id", attemptId);
 
+    if (typeof questionId === "string") query = query.eq("question_id", questionId);
+    else if (questionId === null) query = query.is("question_id", null);
+
+    const { data, error: loadError } = await query.order("created_at", { ascending: true });
     if (loadError) throw loadError;
+
     const rows = (data ?? []) as Attachment[];
     setAttachments(rows);
+    if (typeof questionId === "string") onAttachmentsChange?.(rows.map((item) => item.id));
 
     const imageRows = rows.filter((item) => isImage(item.mime_type));
     if (imageRows.length === 0) {
@@ -102,9 +114,10 @@ export default function ActivityAttachments({
       });
 
     return () => { cancelled = true; };
-  }, [attemptId]);
+  }, [attemptId, questionId]);
 
   async function uploadOne(file: File) {
+    if (!questionId) throw new Error("Esta respuesta no está vinculada a una pregunta de archivo.");
     if (file.size <= 0) throw new Error(`${file.name}: el archivo está vacío.`);
     if (file.size > MAX_FILE_SIZE) throw new Error(`${file.name}: supera el límite de 20 MB.`);
 
@@ -115,7 +128,7 @@ export default function ActivityAttachments({
     const unique = typeof crypto !== "undefined" && "randomUUID" in crypto
       ? crypto.randomUUID()
       : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    const path = `${user.id}/${attemptId}/${unique}-${safeFileName(file.name)}`;
+    const path = `${user.id}/${attemptId}/${questionId}/${unique}-${safeFileName(file.name)}`;
 
     const { error: uploadError } = await supabase.storage
       .from("activity-submissions")
@@ -128,6 +141,7 @@ export default function ActivityAttachments({
     const { error: metadataError } = await supabase.from("activity_attempt_attachments").insert({
       attempt_id: attemptId,
       user_id: user.id,
+      question_id: questionId,
       storage_path: path,
       file_name: file.name.slice(0, 255),
       mime_type: file.type || null,
@@ -150,7 +164,7 @@ export default function ActivityAttachments({
       return;
     }
     if (selected.length > remaining) {
-      setError(`Solo puedes agregar ${remaining} archivo${remaining === 1 ? "" : "s"} más en este intento.`);
+      setError(`Solo puedes agregar ${remaining} archivo${remaining === 1 ? "" : "s"} más en esta respuesta.`);
       return;
     }
 
@@ -208,13 +222,16 @@ export default function ActivityAttachments({
     window.open(data.signedUrl, "_blank", "noopener,noreferrer");
   }
 
-  const summary = useMemo(() => `${attachments.length}/${maxFiles} archivos`, [attachments.length, maxFiles]);
+  const summary = useMemo(() => {
+    if (typeof questionId === "undefined") return `${attachments.length} archivo${attachments.length === 1 ? "" : "s"}`;
+    return `${attachments.length}/${maxFiles} archivos`;
+  }, [attachments.length, maxFiles, questionId]);
 
   return (
     <section className={styles.wrapper}>
       <div className={styles.heading}>
         <div>
-          <p className="eyebrow">📎 Evidencia y documentos</p>
+          <p className="eyebrow">📎 {typeof questionId === "undefined" ? "Archivos de la entrega" : "Respuesta por archivo"}</p>
           <h3>{title}</h3>
           <p>{description}</p>
         </div>
@@ -251,14 +268,14 @@ export default function ActivityAttachments({
 
           {canUpload && (
             <label className={styles.dropZone}>
-              <input type="file" multiple onChange={handleFiles} disabled={uploading} />
-              <span>{uploading ? "Subiendo archivos..." : "＋ Adjuntar imágenes o archivos"}</span>
+              <input type="file" multiple={maxFiles > 1} accept={accept} onChange={handleFiles} disabled={uploading} />
+              <span>{uploading ? "Subiendo archivos..." : "＋ Seleccionar archivo"}</span>
               <small>Máximo 20 MB por archivo · puedes agregar {remaining} más.</small>
             </label>
           )}
 
           {!editable && attachments.length === 0 && (
-            <div className="empty-state">Este intento no incluye archivos adjuntos.</div>
+            <div className="empty-state">El estudiante no adjuntó archivos en esta entrega.</div>
           )}
 
           {error && <div className="auth-message auth-error">{error}</div>}

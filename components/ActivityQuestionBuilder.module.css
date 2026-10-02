@@ -146,8 +146,35 @@
   gap: 7px;
 }
 
+.fileSettings {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-soft);
+}
+
+.fileSettings > .optionHelp,
+.fileSettings > .fileNote {
+  grid-column: 1 / -1;
+}
+
+.fileSettings select,
+.fileSettings input {
+  width: 100%;
+}
+
+.fileNote {
+  color: var(--muted);
+  font-size: 0.82rem;
+  line-height: 1.45;
+}
+
 @media (max-width: 680px) {
-  .addGrid {
+  .addGrid,
+  .fileSettings {
     grid-template-columns: 1fr;
   }
 

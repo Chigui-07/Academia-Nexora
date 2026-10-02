@@ -6,11 +6,18 @@ import { supabase } from "@/lib/supabase";
 import styles from "./TeacherLessonManager.module.css";
 
 type LessonStatus = "draft" | "published";
+type AssignmentMode = "course" | "selected";
 
 type Course = {
   id: string;
   name: string;
   icon: string;
+};
+
+type CourseStudent = {
+  user_id: string;
+  display_name: string;
+  student_code: string | null;
 };
 
 type Lesson = {
@@ -24,6 +31,7 @@ type Lesson = {
   resources: string;
   position: number;
   status: LessonStatus;
+  assignment_mode: AssignmentMode;
   published_at: string | null;
   created_at: string;
 };
@@ -33,8 +41,12 @@ export default function TeacherLessonManager() {
   const [ready, setReady] = useState(false);
   const [courses, setCourses] = useState<Course[]>([]);
   const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [courseStudents, setCourseStudents] = useState<CourseStudent[]>([]);
+  const [studentsLoading, setStudentsLoading] = useState(false);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [courseId, setCourseId] = useState("");
+  const [assignmentMode, setAssignmentMode] = useState<AssignmentMode>("course");
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [unitTitle, setUnitTitle] = useState("");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
@@ -75,7 +87,7 @@ export default function TeacherLessonManager() {
         .order("name"),
       supabase
         .from("course_lessons")
-        .select("id, course_id, created_by, unit_title, title, lesson_content, examples, resources, position, status, published_at, created_at")
+        .select("id, course_id, created_by, unit_title, title, lesson_content, examples, resources, position, status, assignment_mode, published_at, created_at")
         .order("position", { ascending: true })
         .order("created_at", { ascending: true }),
     ]);
@@ -97,8 +109,37 @@ export default function TeacherLessonManager() {
     });
   }, []);
 
+  useEffect(() => {
+    if (!isTeacher || !courseId) {
+      setCourseStudents([]);
+      return;
+    }
+
+    let cancelled = false;
+    async function loadStudents() {
+      setStudentsLoading(true);
+      try {
+        const { data, error: studentsError } = await supabase.rpc("get_course_students", { p_course_id: courseId });
+        if (cancelled) return;
+        if (studentsError) {
+          setCourseStudents([]);
+          setError("No se pudo cargar la lista de estudiantes del curso.");
+          return;
+        }
+        setCourseStudents((data ?? []) as CourseStudent[]);
+      } finally {
+        if (!cancelled) setStudentsLoading(false);
+      }
+    }
+
+    void loadStudents();
+    return () => { cancelled = true; };
+  }, [isTeacher, courseId]);
+
   function resetForm() {
     setEditingId(null);
+    setAssignmentMode("course");
+    setSelectedUserIds([]);
     setUnitTitle("");
     setTitle("");
     setContent("");
@@ -111,9 +152,16 @@ export default function TeacherLessonManager() {
     setError(null);
   }
 
-  function editLesson(lesson: Lesson) {
+  function toggleStudent(userId: string) {
+    setSelectedUserIds((current) => current.includes(userId)
+      ? current.filter((id) => id !== userId)
+      : [...current, userId]);
+  }
+
+  async function editLesson(lesson: Lesson) {
     setEditingId(lesson.id);
     setCourseId(lesson.course_id);
+    setAssignmentMode(lesson.assignment_mode ?? "course");
     setUnitTitle(lesson.unit_title);
     setTitle(lesson.title);
     setContent(lesson.lesson_content);
@@ -124,6 +172,21 @@ export default function TeacherLessonManager() {
     setPreviewOpen(false);
     setMessage("Editando clase existente.");
     setError(null);
+
+    if (lesson.assignment_mode === "selected") {
+      const { data, error: assignmentError } = await supabase.rpc("get_course_lesson_assignments", {
+        p_lesson_id: lesson.id,
+      });
+      if (assignmentError) {
+        setSelectedUserIds([]);
+        setError("La clase abrió, pero no se pudieron cargar sus destinatarios.");
+      } else {
+        setSelectedUserIds((data ?? []).map((row: { user_id: string }) => row.user_id));
+      }
+    } else {
+      setSelectedUserIds([]);
+    }
+
     window.scrollTo({ top: 0, behavior: "smooth" });
   }
 
@@ -140,49 +203,35 @@ export default function TeacherLessonManager() {
       if (!courseId) throw new Error("Selecciona un curso.");
       if (title.trim().length < 2) throw new Error("Escribe un título para la clase.");
       if (status === "published" && !content.trim()) throw new Error("Una clase publicada necesita una explicación.");
+      if (assignmentMode === "selected" && selectedUserIds.length === 0) throw new Error("Selecciona al menos un estudiante para esta clase.");
 
       const positionValue = Number(position);
       if (!Number.isInteger(positionValue) || positionValue < 1 || positionValue > 999) {
         throw new Error("El orden de la clase debe ser un número entre 1 y 999.");
       }
 
-      const payload = {
-        course_id: courseId,
-        unit_title: unitTitle.trim(),
-        title: title.trim(),
-        lesson_content: content.trim(),
-        examples: examples.trim(),
-        resources: resources.trim(),
-        position: positionValue,
-        status,
-        published_at: status === "published" ? new Date().toISOString() : null,
-        updated_at: new Date().toISOString(),
-      };
+      const { error: saveError } = await supabase.rpc("save_course_lesson", {
+        p_lesson_id: editingId,
+        p_course_id: courseId,
+        p_unit_title: unitTitle.trim(),
+        p_title: title.trim(),
+        p_lesson_content: content.trim(),
+        p_examples: examples.trim(),
+        p_resources: resources.trim(),
+        p_position: positionValue,
+        p_status: status,
+        p_assignment_mode: assignmentMode,
+        p_user_ids: assignmentMode === "selected" ? selectedUserIds : [],
+      });
+      if (saveError) throw saveError;
 
-      if (editingId) {
-        const { error: updateError } = await supabase
-          .from("course_lessons")
-          .update(payload)
-          .eq("id", editingId);
-        if (updateError) throw updateError;
-        setMessage("Clase actualizada correctamente.");
-      } else {
-        const { error: insertError } = await supabase
-          .from("course_lessons")
-          .insert({ ...payload, created_by: session.user.id });
-        if (insertError) throw insertError;
-        setMessage(status === "published" ? "Clase publicada correctamente." : "Borrador de clase guardado.");
-      }
-
-      setEditingId(null);
-      setUnitTitle("");
-      setTitle("");
-      setContent("");
-      setExamples("");
-      setResources("");
-      setPosition("1");
-      setStatus("draft");
-      setPreviewOpen(false);
+      const wasEditing = Boolean(editingId);
+      resetForm();
+      setMessage(wasEditing
+        ? "Clase actualizada correctamente."
+        : status === "published"
+          ? "Clase publicada correctamente."
+          : "Borrador de clase guardado.");
       await loadData();
     } catch (caughtError) {
       setError(caughtError instanceof Error ? caughtError.message : "No se pudo guardar la clase.");
@@ -202,7 +251,7 @@ export default function TeacherLessonManager() {
         <div>
           <p className="eyebrow">Profesor</p>
           <h2>📖 Crear y gestionar clases</h2>
-          <p className="muted-copy">Publica teoría, explicaciones y ejemplos para que el estudiante pueda estudiar antes de practicar.</p>
+          <p className="muted-copy">Publica teoría, explicaciones y ejemplos, y decide si la clase será para todo el curso o solo para estudiantes concretos.</p>
         </div>
       </div>
 
@@ -212,12 +261,57 @@ export default function TeacherLessonManager() {
 
           <label>
             Curso
-            <select value={courseId} onChange={(event) => setCourseId(event.target.value)} required>
+            <select value={courseId} onChange={(event) => {
+              setCourseId(event.target.value);
+              setSelectedUserIds([]);
+            }} required>
               {courses.map((course) => (
                 <option key={course.id} value={course.id}>{course.icon} {course.name}</option>
               ))}
             </select>
           </label>
+
+          <label>
+            👥 Dar clase a
+            <select value={assignmentMode} onChange={(event) => {
+              const next = event.target.value as AssignmentMode;
+              setAssignmentMode(next);
+              if (next === "course") setSelectedUserIds([]);
+            }}>
+              <option value="course">Todo el curso</option>
+              <option value="selected">Estudiantes específicos</option>
+            </select>
+          </label>
+
+          {assignmentMode === "selected" && (
+            <div className={styles.studentPicker}>
+              <div className={styles.studentPickerHeading}>
+                <strong>Selecciona estudiantes</strong>
+                <span>{selectedUserIds.length} seleccionados</span>
+              </div>
+              {studentsLoading ? (
+                <small>Cargando estudiantes...</small>
+              ) : courseStudents.length === 0 ? (
+                <small>No hay estudiantes activos en este curso.</small>
+              ) : (
+                <div className={styles.studentList}>
+                  {courseStudents.map((student) => (
+                    <label className={styles.studentOption} key={student.user_id}>
+                      <input
+                        type="checkbox"
+                        checked={selectedUserIds.includes(student.user_id)}
+                        onChange={() => toggleStudent(student.user_id)}
+                      />
+                      <span>
+                        <strong>{student.display_name}</strong>
+                        {student.student_code && <small>{student.student_code}</small>}
+                      </span>
+                    </label>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           <label>
             Unidad o tema
@@ -325,9 +419,11 @@ export default function TeacherLessonManager() {
                   <div>
                     <span>{course?.icon ?? "📚"} {course?.name ?? "Curso"} · Orden {lesson.position}</span>
                     <strong>{lesson.title}</strong>
-                    <small>{lesson.unit_title || "Sin unidad"} · {lesson.status === "published" ? "Publicada" : "Borrador"}</small>
+                    <small>
+                      {lesson.unit_title || "Sin unidad"} · {lesson.status === "published" ? "Publicada" : "Borrador"} · {lesson.assignment_mode === "selected" ? "Estudiantes específicos" : "Todo el curso"}
+                    </small>
                   </div>
-                  <button className="secondary-button" type="button" onClick={() => editLesson(lesson)}>Editar</button>
+                  <button className="secondary-button" type="button" onClick={() => void editLesson(lesson)}>Editar</button>
                 </article>
               );
             })}

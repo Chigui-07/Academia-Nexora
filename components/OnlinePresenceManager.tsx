@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
-import styles from "./AdminPresenceManager.module.css";
+import styles from "./OnlinePresenceManager.module.css";
 
 type PresenceStatus = "online" | "idle" | "offline";
 
@@ -10,7 +10,6 @@ type PresenceRow = {
   user_id: string;
   display_name: string;
   username: string | null;
-  student_code: string | null;
   last_seen_at: string | null;
   last_active_at: string | null;
   presence_status: PresenceStatus;
@@ -32,8 +31,7 @@ function formatLastSeen(value: string | null) {
   }).format(new Date(value));
 }
 
-export default function AdminPresenceManager() {
-  const [allowed, setAllowed] = useState(false);
+export default function OnlinePresenceManager() {
   const [rows, setRows] = useState<PresenceRow[]>([]);
   const [ready, setReady] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -44,21 +42,7 @@ export default function AdminPresenceManager() {
     setError(null);
 
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
-      const userId = sessionData.session?.user.id;
-      if (!userId) return;
-
-      const { data: roleData, error: roleError } = await supabase
-        .from("user_roles")
-        .select("role")
-        .eq("user_id", userId);
-      if (roleError) throw roleError;
-
-      const isAdmin = (roleData ?? []).some((item) => item.role === "admin");
-      setAllowed(isAdmin);
-      if (!isAdmin) return;
-
-      const { data, error: presenceError } = await supabase.rpc("get_admin_presence");
+      const { data, error: presenceError } = await supabase.rpc("get_presence");
       if (presenceError) throw presenceError;
       setRows((data ?? []) as PresenceRow[]);
     } catch (caughtError) {
@@ -72,12 +56,7 @@ export default function AdminPresenceManager() {
   useEffect(() => {
     let cancelled = false;
 
-    async function firstLoad() {
-      await load(false);
-      if (cancelled) return;
-    }
-
-    void firstLoad();
+    void load(false);
     const interval = window.setInterval(() => {
       if (!cancelled) void load(false);
     }, 30_000);
@@ -88,26 +67,23 @@ export default function AdminPresenceManager() {
     };
   }, []);
 
-  const counts = useMemo(() => {
-    return rows.reduce(
-      (acc, row) => {
-        acc[row.presence_status] += 1;
-        return acc;
-      },
-      { online: 0, idle: 0, offline: 0 } as Record<PresenceStatus, number>,
-    );
-  }, [rows]);
+  const counts = useMemo(() => rows.reduce(
+    (acc, row) => {
+      acc[row.presence_status] += 1;
+      return acc;
+    },
+    { online: 0, idle: 0, offline: 0 } as Record<PresenceStatus, number>,
+  ), [rows]);
 
-  if (!ready) return <section className="panel"><div className="empty-state">Cargando usuarios conectados...</div></section>;
-  if (!allowed) return null;
+  if (!ready) return <div className="empty-state">Cargando usuarios conectados...</div>;
 
   return (
     <section className="panel">
       <div className="section-heading">
         <div>
-          <p className="eyebrow">Presencia</p>
-          <h2>🟢 Usuarios conectados</h2>
-          <p className="muted-copy">Solo Administración puede ver este estado. La lista se actualiza automáticamente y no muestra la presencia entre alumnos.</p>
+          <p className="eyebrow">Comunidad Nexora</p>
+          <h2>🟢 Usuarios en línea</h2>
+          <p className="muted-copy">Todos los usuarios con sesión pueden ver este estado. Solo se muestra nombre, usuario y presencia; no se muestran datos administrativos.</p>
         </div>
         <button className="secondary-button" type="button" onClick={() => void load(true)} disabled={refreshing}>
           {refreshing ? "Actualizando..." : "↻ Actualizar"}
@@ -129,10 +105,7 @@ export default function AdminPresenceManager() {
               <span className={`${styles.dot} ${styles[row.presence_status]}`} aria-hidden="true" />
               <div>
                 <strong>{row.display_name}</strong>
-                <small>
-                  {row.username ? `@${row.username}` : "Sin usuario"}
-                  {row.student_code ? ` · ${row.student_code}` : ""}
-                </small>
+                <small>{row.username ? `@${row.username}` : "Sin nombre de usuario"}</small>
               </div>
             </div>
 

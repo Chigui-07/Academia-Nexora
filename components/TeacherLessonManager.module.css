@@ -66,6 +66,62 @@
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 12%, transparent);
 }
 
+.studentPicker {
+  display: grid;
+  gap: 10px;
+  padding: 12px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface-soft);
+}
+
+.studentPickerHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.studentPickerHeading span {
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.studentList {
+  display: grid;
+  gap: 7px;
+  max-height: 220px;
+  overflow: auto;
+}
+
+.studentOption {
+  display: flex !important;
+  grid-template-columns: unset !important;
+  align-items: center;
+  gap: 9px !important;
+  padding: 9px 10px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: var(--surface);
+  cursor: pointer;
+}
+
+.studentOption input {
+  width: 17px !important;
+  height: 17px;
+  flex: 0 0 auto;
+}
+
+.studentOption > span {
+  display: grid;
+  gap: 2px;
+}
+
+.studentOption small {
+  font-size: 0.76rem;
+}
+
 .actions {
   display: flex;
   flex-wrap: wrap;
@@ -116,6 +172,11 @@
 @media (max-width: 620px) {
   .lessonRow {
     align-items: stretch;
+    flex-direction: column;
+  }
+
+  .studentPickerHeading {
+    align-items: flex-start;
     flex-direction: column;
   }
 }

@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import ActivityAttachments from "./ActivityAttachments";
 import ActivitySheet, { ActivityQuestionReview, ActivitySheetType } from "./ActivitySheet";
-import { ActivityAnswerKey, ActivityAnswerValue, ActivityQuestionBlock } from "@/lib/activityQuestions";
+import { ActivityAnswerKey, ActivityAnswerValue, ActivityQuestionBlock, fileAcceptAttribute } from "@/lib/activityQuestions";
 import { supabase } from "@/lib/supabase";
 import styles from "./ActivityRunner.module.css";
 
@@ -298,6 +298,16 @@ export default function ActivityRunner({
     setError(null);
   }
 
+  function handleFileAttachmentsChange(questionId: string, attachmentIds: string[]) {
+    setAnswers((current) => {
+      const existing = Array.isArray(current[questionId]) ? current[questionId] as string[] : [];
+      if (existing.length === attachmentIds.length && existing.every((id, index) => id === attachmentIds[index])) {
+        return current;
+      }
+      return { ...current, [questionId]: attachmentIds };
+    });
+  }
+
   if (!ready) return <div className="empty-state">Preparando actividad...</div>;
 
   if (!attempt) {
@@ -357,6 +367,7 @@ export default function ActivityRunner({
   const canRepeat = Boolean(allowNewAttempts && finished && attempt.attempt_number < activity.max_attempts);
   const questionCount = activity.question_blocks?.length ?? 0;
   const safeQuestion = questionCount > 0 ? Math.min(currentQuestion, questionCount - 1) : 0;
+  const activeQuestion = questionCount > 0 ? activity.question_blocks[safeQuestion] : null;
   const atLastQuestion = questionCount === 0 || safeQuestion === questionCount - 1;
   const unanswered = activity.question_blocks.filter((question) => !hasAnswer(answers[question.id])).length;
   const reviewSummary = reviewed
@@ -451,7 +462,18 @@ export default function ActivityRunner({
             activeQuestionIndex={questionCount > 0 ? safeQuestion : null}
           />
 
-          <ActivityAttachments attemptId={attempt.id} editable={active} />
+          {activeQuestion?.type === "file_upload" && (
+            <ActivityAttachments
+              attemptId={attempt.id}
+              editable={active}
+              questionId={activeQuestion.id}
+              maxFiles={activeQuestion.maxFiles ?? 1}
+              accept={fileAcceptAttribute(activeQuestion.fileAccept)}
+              title={`Respuesta de la pregunta ${safeQuestion + 1}`}
+              description={activeQuestion.prompt || "Adjunta el archivo solicitado."}
+              onAttachmentsChange={active ? (ids) => handleFileAttachmentsChange(activeQuestion.id, ids) : undefined}
+            />
+          )}
 
           {questionCount > 1 && (
             <div className={styles.questionPager}>
