@@ -1,7 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useEffect, useRef, useState } from "react";
+import type { Session } from "@supabase/supabase-js";
 import { getAppBaseUrl, goTo } from "@/lib/navigation";
 import { supabase } from "@/lib/supabase";
 
@@ -13,16 +14,23 @@ export default function ResetPasswordForm() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const recoverySession = useRef<Session | null>(null);
 
   useEffect(() => {
     let mounted = true;
 
-    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+    function acceptSession(session: Session) {
+      recoverySession.current = session;
       if (!mounted) return;
-      if (event === "PASSWORD_RECOVERY" && session) {
-        setValidRecovery(true);
-        setReady(true);
-        setError(null);
+      setValidRecovery(true);
+      setReady(true);
+      setError(null);
+    }
+
+    const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
+      if (!session) return;
+      if (event === "PASSWORD_RECOVERY" || event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
+        acceptSession(session);
       }
     });
 
@@ -33,39 +41,36 @@ export default function ResetPasswordForm() {
         const errorDescription = search.get("error_description") || hash.get("error_description");
         if (errorDescription) throw new Error(errorDescription);
 
-        const code = search.get("code");
-        const tokenHash = search.get("token_hash");
-        const recoveryType = search.get("recovery") === "1" || search.get("type") === "recovery" || hash.get("type") === "recovery";
-        const accessToken = hash.get("access_token");
-        const refreshToken = hash.get("refresh_token");
+        const recoveryMarker =
+          search.get("recovery") === "1" ||
+          search.get("type") === "recovery" ||
+          hash.get("type") === "recovery";
 
-        if (tokenHash && recoveryType) {
-          const { error: verifyError } = await supabase.auth.verifyOtp({
-            token_hash: tokenHash,
-            type: "recovery",
-          });
-          if (verifyError) throw verifyError;
-        } else if (code) {
-          const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-          if (exchangeError) throw exchangeError;
-        } else if (accessToken && refreshToken && recoveryType) {
-          const { error: sessionError } = await supabase.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken,
-          });
-          if (sessionError) throw sessionError;
-        } else if (!recoveryType) {
+        if (!recoveryMarker) {
           throw new Error("Este enlace de recuperación no es válido o ya no contiene la información necesaria.");
         }
 
-        const { data, error: sessionError } = await supabase.auth.getSession();
-        if (sessionError) throw sessionError;
-        if (!data.session) throw new Error("El enlace de recuperación venció o ya fue utilizado. Solicita uno nuevo.");
+        // detectSessionInUrl está habilitado en el cliente de Supabase. No volvemos a
+        // procesar aquí los tokens del enlace porque hacerlo dos veces puede crear una
+        // carrera y dejar el formulario sin la sesión temporal de recuperación.
+        let session: Session | null = null;
 
-        if (!mounted) return;
-        setValidRecovery(true);
-        setReady(true);
-        window.history.replaceState({}, document.title, `${getAppBaseUrl()}/reset-password/`);
+        for (let attempt = 0; attempt < 3 && !session; attempt += 1) {
+          const { data, error: sessionError } = await supabase.auth.getSession();
+          if (sessionError) throw sessionError;
+          session = data.session;
+
+          if (!session && attempt < 2) {
+            await new Promise((resolve) => setTimeout(resolve, 300));
+          }
+        }
+
+        if (!session) {
+          throw new Error("El enlace de recuperación venció, ya fue utilizado o la sesión no pudo iniciarse. Solicita uno nuevo.");
+        }
+
+        acceptSession(session);
+        window.history.replaceState({}, document.title, `${getAppBaseUrl()}/reset-password/?recovery=1`);
       } catch (caughtError) {
         if (!mounted) return;
         const rawMessage = caughtError instanceof Error ? caughtError.message : "No se pudo validar el enlace de recuperación.";
@@ -100,12 +105,38 @@ export default function ResetPasswordForm() {
     setLoading(true);
 
     try {
+      let session = recoverySession.current;
+
+      if (!session) {
+        const { data, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError) throw sessionError;
+        session = data.session;
+      }
+
+      if (!session) {
+        setValidRecovery(false);
+        throw new Error("La sesión de recuperación ya no está disponible. Solicita un enlace nuevo.");
+      }
+
+      // Reinstala explícitamente la sesión que validó el enlace antes de actualizar la
+      // contraseña. Esto evita perderla si el navegador terminó de procesar el enlace
+      // entre la carga de la página y el envío del formulario.
+      const { data: restored, error: restoreError } = await supabase.auth.setSession({
+        access_token: session.access_token,
+        refresh_token: session.refresh_token,
+      });
+      if (restoreError) throw restoreError;
+      if (!restored.session) throw new Error("La sesión de recuperación ya no es válida. Solicita un enlace nuevo.");
+
+      recoverySession.current = restored.session;
+
       const { error: updateError } = await supabase.auth.updateUser({ password });
       if (updateError) throw updateError;
 
       setSuccess(true);
       setPassword("");
       setConfirmPassword("");
+      recoverySession.current = null;
       await supabase.auth.signOut();
     } catch (caughtError) {
       const rawMessage = caughtError instanceof Error ? caughtError.message : "No se pudo cambiar la contraseña.";
@@ -113,8 +144,14 @@ export default function ResetPasswordForm() {
 
       if (normalized.includes("same password")) {
         setError("Elige una contraseña diferente a la que usabas anteriormente.");
-      } else if (normalized.includes("expired") || normalized.includes("invalid")) {
-        setError("El enlace de recuperación venció o dejó de ser válido. Solicita uno nuevo.");
+      } else if (
+        normalized.includes("auth session missing") ||
+        normalized.includes("session") ||
+        normalized.includes("expired") ||
+        normalized.includes("invalid")
+      ) {
+        setValidRecovery(false);
+        setError("La sesión de recuperación venció o dejó de ser válida. Solicita un enlace nuevo.");
       } else {
         setError(rawMessage);
       }
