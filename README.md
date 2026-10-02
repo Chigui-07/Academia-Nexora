@@ -4,12 +4,12 @@
 
 ## 📌 Estado del proyecto
 
-**Fase actual: v0.13 — Revisión y calificación manual.**
+**Fase actual: v0.14 — Calificaciones, bloques e intentos configurables.**
 
 Frontend: Next.js + TypeScript + CSS, publicado con GitHub Pages.  
 Backend, autenticación y datos: Supabase.
 
-Ya existen registro, confirmación por correo, perfiles, Carné Nexora, roles, onboarding, solicitudes e inscripciones, diagnóstico funcional de Matemática, historial de diagnósticos, creador de clases y actividades para Profesor, preguntas configurables, Formación esencial, intentos persistentes, asignación individual y revisión manual firmada por Profesor.
+Ya existen registro, confirmación por correo, perfiles, Carné Nexora, roles, onboarding, solicitudes e inscripciones, diagnóstico funcional de Matemática, historial de diagnósticos, creador de clases y actividades para Profesor, preguntas configurables, Formación esencial, intentos persistentes, asignación individual, revisión manual firmada, calificaciones reales por bloque y promedio dinámico.
 
 ## 🧭 Navegación principal
 
@@ -66,7 +66,9 @@ Las clases publicadas aparecen en la pestaña **Clases** del curso. Los estudian
 
 Profesor puede crear y editar **Tareas de cuaderno**, **Tareas virtuales** y **Ejercicios prácticos**.
 
-Cada actividad puede configurar curso, título, punteo cuando corresponda, fecha/hora de apertura, fecha/hora de cierre, cronómetro opcional, estado Borrador/Publicada e instrucciones generales.
+Cada actividad puede configurar curso, título, punteo cuando corresponda, **Bloque 1–4**, **cantidad de intentos permitidos (1–20)**, fecha/hora de apertura, fecha/hora de cierre, cronómetro opcional, estado Borrador/Publicada e instrucciones generales.
+
+Las tareas calificables alimentan el bloque seleccionado y el promedio académico. Los ejercicios prácticos pueden organizarse por bloque y calificarse como retroalimentación, pero no afectan el promedio.
 
 La hoja en blanco funciona como editor. Antes de publicar puede usarse **👁️ Vista previa**. Al publicarse, el estudiante ve una hoja/cuaderno centrada inspirada en el estilo del diagnóstico.
 
@@ -94,11 +96,7 @@ En cada pregunta, Profesor ve la respuesta del estudiante y puede marcarla como:
 - ✅ **Correcta**;
 - ❌ **Incorrecta**.
 
-Al finalizar la revisión se coloca una calificación y existe un campo de **retroalimentación final** para explicar qué hizo bien el estudiante, qué debe corregir o qué debería practicar después.
-
-Cada revisión guarda automáticamente el nombre académico del profesor que la realizó. El estudiante ve la marca correcta/incorrecta después de cada respuesta y, al final de la actividad, su nota, la retroalimentación y la firma **Revisado y calificado por [nombre del profesor]**.
-
-La firma se genera en servidor a partir del perfil del usuario que calificó; el nombre no lo escribe manualmente el navegador.
+Al finalizar la revisión se coloca una calificación y existe un campo de **retroalimentación final**. Cada revisión guarda automáticamente el nombre académico del profesor que la realizó. El estudiante ve la marca correcta/incorrecta después de cada respuesta y, al final de la actividad, su nota, retroalimentación y firma del profesor.
 
 ## ✍️ Intentos y entregas del estudiante
 
@@ -106,9 +104,24 @@ Las actividades publicadas aparecen en **Tareas** o en las pestañas Tareas/Ejer
 
 El estudiante puede pulsar **Comenzar actividad**. Nexora crea un intento persistente en `activity_attempts` y, si existe un cronómetro, calcula su hora de vencimiento en el servidor.
 
-Durante un intento las respuestas se guardan automáticamente, recargar no reinicia el intento, el cronómetro continúa desde la hora original y **Entregar actividad** cierra el intento. Al llegar a cero se conserva lo respondido y el intento termina por tiempo. Las tareas normales quedan cerradas tras entregar y los ejercicios prácticos permiten nuevos intentos.
+Cada actividad tiene un límite configurable de intentos. Nexora muestra el intento actual (`1 de 3`, por ejemplo) y el servidor impide crear intentos por encima del máximo definido. Cada intento tiene su propio cronómetro cuando corresponde.
 
-Después de entregar, el intento queda pendiente de revisión. Cuando Profesor lo califica, la misma hoja muestra el resultado de cada respuesta y la retroalimentación final.
+Durante un intento las respuestas se guardan automáticamente, recargar no reinicia el intento y entregar lo cierra. Si aún quedan intentos disponibles, el estudiante puede iniciar el siguiente. Para el promedio académico se conserva la **mejor nota** obtenida en cada tarea calificable.
+
+Después de entregar, cada intento queda pendiente de revisión. Cuando Profesor lo califica, la misma hoja muestra el resultado de cada respuesta y la retroalimentación final.
+
+## 📊 Calificaciones y promedio
+
+La sección **Calificaciones** ya usa datos reales.
+
+- Cada tarea calificable pertenece a uno de los 4 bloques.
+- Cada bloque muestra los puntos obtenidos sobre los puntos ya calificados disponibles, por ejemplo `35/40`.
+- Si una tarea tiene varios intentos revisados, se usa el de mejor porcentaje.
+- Los ejercicios prácticos no afectan el promedio.
+- El **Promedio actual** del Inicio se calcula con las mejores notas de las tareas ya calificadas.
+- **Tareas pendientes** del Inicio también proviene de las actividades actualmente disponibles.
+
+Cuando los cuatro bloques estén completos, cada curso podrá cerrar su nota final sobre la estructura de 4 bloques de hasta 100 puntos.
 
 ## 🌱 Formación esencial — primeros 365 días
 
@@ -131,12 +144,13 @@ La inscripción guarda `required_until`, calculado como 365 días desde la creac
 - Los intentos solo pueden ser leídos por su estudiante o por personal autorizado.
 - Las respuestas correctas del diagnóstico y de las actividades no se exponen al navegador.
 - Crear, guardar y entregar intentos pasa por funciones seguras del servidor.
-- La calificación manual también pasa por una RPC protegida y la firma del profesor se obtiene en servidor.
+- El límite de intentos también se comprueba en servidor.
+- La calificación manual pasa por una RPC protegida y la firma del profesor se obtiene en servidor.
 - Las cuentas de estudiante no reciben permisos directos para modificar calificaciones ni revisiones.
 
 ## 🔁 PMA
 
-El PMA será un segundo intento opcional de una tarea, con el mismo valor de puntos. La nota oficial será automáticamente la mayor entre ambos intentos.
+El PMA seguirá siendo una modalidad especial de segundo intento. El nuevo sistema de múltiples intentos ya permite conservar la mejor nota; más adelante PMA añadirá sus reglas y ventana propias.
 
 ## 🏆 Sistema académico
 
@@ -174,11 +188,10 @@ Cada curso tendrá 4 bloques de hasta 100 puntos.
 ## 🚧 Próximos objetivos
 
 1. Añadir **recuperación de contraseña** y cerrar la preparación mínima de la Beta para amigos.
-2. Convertir las tarjetas superiores de Administración en apartados funcionales para catálogo e inscripciones.
-3. Conectar las calificaciones manuales con **Calificaciones**, promedios por curso, bloques y Dashboard.
-4. Implementar PMA.
-5. Añadir el **Profesor IA únicamente para la cuenta principal**, usando el mismo sistema de cursos, clases, actividades y calificaciones.
-6. Añadir presencia opcional **Conectados ahora**, XP Nexora, ligas y ranking semanal opcional.
+2. Convertir las tarjetas superiores de Administración en apartados funcionales para catálogo e inscripciones manuales.
+3. Completar reglas de cierre de los 4 bloques y PMA.
+4. Añadir el **Profesor IA únicamente para la cuenta principal**, usando el mismo sistema de cursos, clases, actividades y calificaciones.
+5. Añadir presencia opcional **Conectados ahora**, XP Nexora, ligas y ranking semanal opcional.
 
 ---
 
@@ -246,7 +259,6 @@ Cada curso tendrá 4 bloques de hasta 100 puntos.
 - Las clases publicadas aparecen dentro de cada curso.
 - Se creó `activity_attempts` para conservar el trabajo de cada estudiante.
 - Se añadió **Comenzar actividad**, guardado automático, **Entregar actividad** y cronómetro persistente.
-- Los ejercicios prácticos permiten iniciar nuevos intentos.
 
 ## 1 de octubre de 2026 — v0.12: asignación individual
 
@@ -255,7 +267,6 @@ Cada curso tendrá 4 bloques de hasta 100 puntos.
 - El selector muestra nombre académico y Carné de los estudiantes activos del curso.
 - RLS oculta una actividad individual a quienes no estén asignados.
 - La función de iniciar intentos comprueba también la asignación en servidor.
-- El flujo de guardado de asignaciones se probó dentro de una transacción y se revirtió después de la comprobación.
 
 ## 1 de octubre de 2026 — v0.13: revisión y calificación manual
 
@@ -264,7 +275,17 @@ Cada curso tendrá 4 bloques de hasta 100 puntos.
 - Se añadió calificación numérica y retroalimentación final.
 - Cada revisión queda firmada automáticamente con el nombre académico del profesor.
 - El estudiante ve la corrección después de cada respuesta y la retroalimentación al final de la hoja.
-- El flujo de calificación se probó en una transacción real y luego se revirtió.
+
+## 1 de octubre de 2026 — v0.14: calificaciones, bloques e intentos
+
+- Cada actividad puede configurar entre 1 y 20 intentos.
+- El límite de intentos se valida en Supabase y no puede saltarse desde el navegador.
+- Cada tarea puede asignarse a Bloque 1, 2, 3 o 4.
+- Calificaciones muestra puntos reales por curso y bloque.
+- El mejor intento de cada tarea es el que cuenta para el promedio.
+- Los ejercicios prácticos quedan fuera del promedio académico.
+- Inicio calcula **Tareas pendientes** y **Promedio actual** con datos reales.
+- El flujo de límite de intentos se probó dentro de una transacción y luego se revirtió.
 
 ---
 
