@@ -2,6 +2,8 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import LessonSheet from "./LessonSheet";
+import LessonTableEditor from "./LessonTableEditor";
+import { decodeLessonContent, encodeLessonContent, LessonTable } from "@/lib/lessonTables";
 import { supabase } from "@/lib/supabase";
 import styles from "./TeacherLessonManager.module.css";
 
@@ -50,6 +52,7 @@ export default function TeacherLessonManager() {
   const [unitTitle, setUnitTitle] = useState("");
   const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
+  const [tables, setTables] = useState<LessonTable[]>([]);
   const [examples, setExamples] = useState("");
   const [resources, setResources] = useState("");
   const [position, setPosition] = useState("1");
@@ -116,6 +119,7 @@ export default function TeacherLessonManager() {
     }
 
     let cancelled = false;
+
     async function loadStudents() {
       setStudentsLoading(true);
       try {
@@ -143,6 +147,7 @@ export default function TeacherLessonManager() {
     setUnitTitle("");
     setTitle("");
     setContent("");
+    setTables([]);
     setExamples("");
     setResources("");
     setPosition("1");
@@ -159,12 +164,15 @@ export default function TeacherLessonManager() {
   }
 
   async function editLesson(lesson: Lesson) {
+    const decoded = decodeLessonContent(lesson.lesson_content);
+
     setEditingId(lesson.id);
     setCourseId(lesson.course_id);
     setAssignmentMode(lesson.assignment_mode ?? "course");
     setUnitTitle(lesson.unit_title);
     setTitle(lesson.title);
-    setContent(lesson.lesson_content);
+    setContent(decoded.text);
+    setTables(decoded.tables);
     setExamples(lesson.examples);
     setResources(lesson.resources);
     setPosition(String(lesson.position));
@@ -202,8 +210,12 @@ export default function TeacherLessonManager() {
       if (!session) throw new Error("Tu sesión terminó. Inicia sesión nuevamente.");
       if (!courseId) throw new Error("Selecciona un curso.");
       if (title.trim().length < 2) throw new Error("Escribe un título para la clase.");
-      if (status === "published" && !content.trim()) throw new Error("Una clase publicada necesita una explicación.");
-      if (assignmentMode === "selected" && selectedUserIds.length === 0) throw new Error("Selecciona al menos un estudiante para esta clase.");
+      if (status === "published" && !content.trim() && tables.length === 0) {
+        throw new Error("Una clase publicada necesita una explicación o al menos una tabla.");
+      }
+      if (assignmentMode === "selected" && selectedUserIds.length === 0) {
+        throw new Error("Selecciona al menos un estudiante para esta clase.");
+      }
 
       const positionValue = Number(position);
       if (!Number.isInteger(positionValue) || positionValue < 1 || positionValue > 999) {
@@ -215,7 +227,7 @@ export default function TeacherLessonManager() {
         p_course_id: courseId,
         p_unit_title: unitTitle.trim(),
         p_title: title.trim(),
-        p_lesson_content: content.trim(),
+        p_lesson_content: encodeLessonContent(content.trim(), tables),
         p_examples: examples.trim(),
         p_resources: resources.trim(),
         p_position: positionValue,
@@ -244,6 +256,7 @@ export default function TeacherLessonManager() {
   if (!isTeacher) return null;
 
   const previewCourse = courseMap.get(courseId);
+  const previewContent = encodeLessonContent(content, tables);
 
   return (
     <section className={styles.wrapper}>
@@ -251,7 +264,7 @@ export default function TeacherLessonManager() {
         <div>
           <p className="eyebrow">Profesor</p>
           <h2>📖 Crear y gestionar clases</h2>
-          <p className="muted-copy">Publica teoría, explicaciones y ejemplos, y decide si la clase será para todo el curso o solo para estudiantes concretos.</p>
+          <p className="muted-copy">Publica teoría, explicaciones, tablas y ejemplos, y decide si la clase será para todo el curso o solo para estudiantes concretos.</p>
         </div>
       </div>
 
@@ -362,6 +375,8 @@ export default function TeacherLessonManager() {
             />
           </label>
 
+          <LessonTableEditor tables={tables} onChange={setTables} />
+
           <label>
             Ejemplos guiados
             <textarea
@@ -392,7 +407,7 @@ export default function TeacherLessonManager() {
             courseIcon={previewCourse?.icon ?? "📚"}
             unitTitle={unitTitle}
             title={title}
-            content={content}
+            content={previewContent}
             examples={examples}
             resources={resources}
             preview
@@ -414,6 +429,7 @@ export default function TeacherLessonManager() {
           <div className={styles.lessonList}>
             {lessons.map((lesson) => {
               const course = courseMap.get(lesson.course_id);
+              const tableCount = decodeLessonContent(lesson.lesson_content).tables.length;
               return (
                 <article className={styles.lessonRow} key={lesson.id}>
                   <div>
@@ -421,6 +437,7 @@ export default function TeacherLessonManager() {
                     <strong>{lesson.title}</strong>
                     <small>
                       {lesson.unit_title || "Sin unidad"} · {lesson.status === "published" ? "Publicada" : "Borrador"} · {lesson.assignment_mode === "selected" ? "Estudiantes específicos" : "Todo el curso"}
+                      {tableCount > 0 ? ` · ${tableCount} ${tableCount === 1 ? "tabla" : "tablas"}` : ""}
                     </small>
                   </div>
                   <button className="secondary-button" type="button" onClick={() => void editLesson(lesson)}>Editar</button>
