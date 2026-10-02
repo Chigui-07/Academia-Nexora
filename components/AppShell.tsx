@@ -14,6 +14,7 @@ const studentNavItems = [
   ["🧠", "Diagnósticos", "/diagnostics"],
   ["📝", "Tareas", "/tasks"],
   ["📊", "Calificaciones", "/grades"],
+  ["🟢", "En línea", "/online"],
   ["🏅", "Perfil", "/profile"],
 ] as const;
 
