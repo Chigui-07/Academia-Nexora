@@ -2,8 +2,10 @@
 
 import {
   ActivityAnswerKey,
+  ActivityFileAccept,
   ActivityQuestionBlock,
   ActivityQuestionType,
+  activityFileAcceptLabels,
   activityQuestionTypeLabels,
   createQuestionBlock,
   createQuestionId,
@@ -110,7 +112,7 @@ export default function ActivityQuestionBuilder({
         <div>
           <p className="eyebrow">Preguntas interactivas</p>
           <h3>Construye la actividad por bloques</h3>
-          <p className="muted-copy">Puedes combinar varios tipos de pregunta en una misma tarea o ejercicio.</p>
+          <p className="muted-copy">Puedes combinar varios tipos de respuesta en una misma tarea o ejercicio.</p>
         </div>
       </div>
 
@@ -141,7 +143,13 @@ export default function ActivityQuestionBuilder({
                 <textarea
                   value={question.prompt}
                   onChange={(event) => updateQuestion(question.id, { prompt: event.target.value })}
-                  placeholder={question.type === "matching_pairs" ? "Ej. Relaciona cada concepto con su definición." : "Escribe la pregunta..."}
+                  placeholder={
+                    question.type === "matching_pairs"
+                      ? "Ej. Relaciona cada concepto con su definición."
+                      : question.type === "file_upload"
+                        ? "Ej. Sube el archivo .java de tu programa terminado."
+                        : "Escribe la pregunta..."
+                  }
                   rows={3}
                 />
               </label>
@@ -256,6 +264,36 @@ export default function ActivityQuestionBuilder({
                     </div>
                   ))}
                   <button className="secondary-button" type="button" onClick={() => addPair(question)}>+ Agregar pareja</button>
+                </div>
+              )}
+
+              {question.type === "file_upload" && (
+                <div className={styles.fileSettings}>
+                  <span className={styles.optionHelp}>Esta respuesta mostrará al estudiante un selector de archivos. No aparece en otras preguntas si tú no la agregas.</span>
+                  <label>
+                    Tipo de archivo permitido
+                    <select
+                      value={question.fileAccept ?? "any"}
+                      onChange={(event) => updateQuestion(question.id, { fileAccept: event.target.value as ActivityFileAccept })}
+                    >
+                      {(Object.keys(activityFileAcceptLabels) as ActivityFileAccept[]).map((value) => (
+                        <option value={value} key={value}>{activityFileAcceptLabels[value]}</option>
+                      ))}
+                    </select>
+                  </label>
+                  <label>
+                    Cantidad máxima de archivos
+                    <input
+                      type="number"
+                      min="1"
+                      max="5"
+                      value={question.maxFiles ?? 1}
+                      onChange={(event) => updateQuestion(question.id, {
+                        maxFiles: Math.max(1, Math.min(5, Number(event.target.value) || 1)),
+                      })}
+                    />
+                  </label>
+                  <div className={styles.fileNote}>📎 Cada archivo podrá pesar hasta 20 MB y quedará unido a esta pregunta específica.</div>
                 </div>
               )}
             </article>
