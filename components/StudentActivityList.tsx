@@ -66,10 +66,23 @@ export default function StudentActivityList({
 
   useEffect(() => {
     async function load() {
+      const { data: sessionData } = await supabase.auth.getSession();
+      const session = sessionData.session;
+      if (!session) { setReady(true); return; }
+
+      const { data: profile, error: profileError } = await supabase
+        .from("profiles")
+        .select("stage, level")
+        .eq("id", session.user.id)
+        .single();
+      if (profileError) throw profileError;
+
       let query = supabase
         .from("course_activities")
         .select("id, course_id, activity_type, title, worksheet_content, question_blocks, points, opens_at, closes_at, time_limit_minutes, max_attempts, block_number")
         .eq("status", "published")
+        .eq("academic_stage", profile.stage)
+        .eq("academic_level", profile.level)
         .in("activity_type", types)
         .order("opens_at", { ascending: true, nullsFirst: true });
 
@@ -90,33 +103,26 @@ export default function StudentActivityList({
 
       let loadedAttempts: AttemptSummary[] = [];
       if (visible.length > 0) {
-        const { data: sessionData } = await supabase.auth.getSession();
-        const session = sessionData.session;
+        const activityIds = visible.map((activity) => activity.id);
+        const { data: attemptData, error: attemptError } = await supabase
+          .from("activity_attempts")
+          .select("activity_id, status, attempt_number, grade_value, grade_max, reviewed_at")
+          .eq("user_id", session.user.id)
+          .in("activity_id", activityIds);
 
-        if (session) {
-          const activityIds = visible.map((activity) => activity.id);
-          const { data: attemptData, error: attemptError } = await supabase
-            .from("activity_attempts")
-            .select("activity_id, status, attempt_number, grade_value, grade_max, reviewed_at")
-            .eq("user_id", session.user.id)
-            .in("activity_id", activityIds);
+        if (attemptError) throw attemptError;
+        const latestAttempt = new Map<string, AttemptSummary>();
+        for (const row of (attemptData ?? []) as AttemptSummary[]) {
+          const current = latestAttempt.get(row.activity_id);
+          if (!current || row.attempt_number > current.attempt_number) latestAttempt.set(row.activity_id, row);
+        }
+        loadedAttempts = Array.from(latestAttempt.values());
 
-          if (attemptError) throw attemptError;
-          const latestAttempt = new Map<string, AttemptSummary>();
-          for (const row of (attemptData ?? []) as AttemptSummary[]) {
-            const current = latestAttempt.get(row.activity_id);
-            if (!current || row.attempt_number > current.attempt_number) {
-              latestAttempt.set(row.activity_id, row);
-            }
-          }
-          loadedAttempts = Array.from(latestAttempt.values());
-
-          if (hideFinished) {
-            visible = visible.filter((activity) => {
-              const latest = latestAttempt.get(activity.id);
-              return !latest || latest.status === "in_progress";
-            });
-          }
+        if (hideFinished) {
+          visible = visible.filter((activity) => {
+            const latest = latestAttempt.get(activity.id);
+            return !latest || latest.status === "in_progress";
+          });
         }
       }
 
