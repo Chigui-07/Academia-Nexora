@@ -1,0 +1,153 @@
+.wrapper {
+  display: grid;
+  gap: 14px;
+  padding: 18px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--surface) 94%, var(--primary) 6%);
+}
+
+.heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.heading > div {
+  display: grid;
+  gap: 4px;
+}
+
+.heading strong {
+  font-size: 1rem;
+}
+
+.heading small,
+.empty {
+  color: var(--muted);
+}
+
+.tableList {
+  display: grid;
+  gap: 16px;
+}
+
+.card {
+  display: grid;
+  gap: 14px;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.cardTop {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 12px;
+  align-items: end;
+}
+
+.cardTop label {
+  display: grid;
+  gap: 7px;
+  font-weight: 750;
+}
+
+.cardTop input,
+.editorTable input,
+.editorTable textarea {
+  width: 100%;
+}
+
+.deleteButton {
+  min-height: 42px;
+  padding: 0 12px;
+  border: 1px solid color-mix(in srgb, #ef4444 45%, var(--border));
+  border-radius: 10px;
+  background: color-mix(in srgb, #ef4444 7%, var(--surface));
+  color: #ef4444;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.tableScroller {
+  overflow-x: auto;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.editorTable {
+  width: 100%;
+  min-width: 520px;
+  border-collapse: collapse;
+}
+
+.editorTable th,
+.editorTable td {
+  padding: 10px;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  vertical-align: top;
+}
+
+.editorTable th {
+  background: color-mix(in srgb, var(--surface) 88%, var(--primary) 12%);
+}
+
+.editorTable tr:last-child td {
+  border-bottom: 0;
+}
+
+.editorTable th:last-child,
+.editorTable td:last-child {
+  border-right: 0;
+}
+
+.editorTable textarea {
+  min-width: 150px;
+  resize: vertical;
+}
+
+.rowActionHeader,
+.rowActionCell {
+  width: 44px;
+  min-width: 44px;
+  text-align: center;
+}
+
+.rowActionCell button {
+  width: 30px;
+  height: 30px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--surface);
+  color: var(--muted);
+  font-size: 1.1rem;
+  cursor: pointer;
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.empty {
+  padding: 14px;
+  border: 1px dashed var(--border);
+  border-radius: 12px;
+  text-align: center;
+}
+
+@media (max-width: 680px) {
+  .cardTop {
+    grid-template-columns: 1fr;
+  }
+
+  .deleteButton {
+    width: 100%;
+  }
+}
