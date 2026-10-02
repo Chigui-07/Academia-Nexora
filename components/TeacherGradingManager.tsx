@@ -1,7 +1,8 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { ActivityAnswerKey, ActivityAnswerValue, ActivityQuestionBlock } from "@/lib/activityQuestions";
+import ActivityAttachments from "./ActivityAttachments";
+import { ActivityAnswerKey, ActivityAnswerValue, ActivityMatchingAnswer, ActivityQuestionBlock } from "@/lib/activityQuestions";
 import { supabase } from "@/lib/supabase";
 import styles from "./TeacherGradingManager.module.css";
 
@@ -40,8 +41,18 @@ type TeacherGradingManagerProps = {
   embedded?: boolean;
 };
 
+function isMatchingAnswer(value: ActivityAnswerValue | undefined): value is ActivityMatchingAnswer {
+  return typeof value === "object" && value !== null && !Array.isArray(value);
+}
+
 function answerText(question: ActivityQuestionBlock, value: ActivityAnswerValue | undefined) {
-  if (value === null || value === undefined || value === "" || (Array.isArray(value) && value.length === 0)) {
+  if (
+    value === null
+    || value === undefined
+    || value === ""
+    || (Array.isArray(value) && value.length === 0)
+    || (isMatchingAnswer(value) && Object.keys(value).length === 0)
+  ) {
     return "Sin respuesta";
   }
 
@@ -57,6 +68,16 @@ function answerText(question: ActivityQuestionBlock, value: ActivityAnswerValue 
   if (question.type === "multiple_choice" && Array.isArray(value)) {
     const labels = value.map((id) => (question.options ?? []).find((item) => item.id === id)?.label || id);
     return labels.join(", ");
+  }
+
+  if (question.type === "matching_pairs" && isMatchingAnswer(value)) {
+    const pairMap = new Map((question.pairs ?? []).map((pair) => [pair.id, pair]));
+    return (question.pairs ?? [])
+      .map((pair) => {
+        const selected = pairMap.get(value[pair.id]);
+        return `${pair.left || "Elemento"} → ${selected?.right || "Sin pareja"}`;
+      })
+      .join(" · ");
   }
 
   return String(value);
@@ -235,7 +256,7 @@ export default function TeacherGradingManager({
           <p className="muted-copy">
             {studentId
               ? "Aquí solo aparecen las actividades entregadas por el alumno seleccionado."
-              : "Marca cada respuesta como correcta o incorrecta, deja un comentario por pregunta y escribe la retroalimentación general al final."}
+              : "Marca cada respuesta como correcta o incorrecta, revisa sus archivos y escribe la retroalimentación general al final."}
           </p>
         </div>
         <div className={styles.headerActions}>
@@ -299,7 +320,7 @@ export default function TeacherGradingManager({
                     <article className={styles.questionCard} key={question.id}>
                       <div className={styles.questionTopline}>
                         <strong>Pregunta {index + 1}</strong>
-                        <span>{question.type === "written" ? "Respuesta escrita" : "Pregunta objetiva"}</span>
+                        <span>{question.type === "written" ? "Respuesta escrita" : question.type === "matching_pairs" ? "Relacionar parejas" : "Pregunta objetiva"}</span>
                       </div>
                       <p className={styles.prompt}>{question.prompt}</p>
 
@@ -356,6 +377,13 @@ export default function TeacherGradingManager({
                   );
                 })}
               </div>
+
+              <ActivityAttachments
+                attemptId={selected.attempt_id}
+                editable={false}
+                title="Archivos entregados por el estudiante"
+                description="Aquí aparecen fotografías del procedimiento, documentos y cualquier otro archivo adjuntado en este intento."
+              />
 
               <div className={styles.finalSection}>
                 <label>
