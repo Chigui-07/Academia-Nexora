@@ -11,6 +11,7 @@
 
 .settingsPanel,
 .sheetArea,
+.questionsPanel,
 .savedSection,
 .previewSection {
   background: var(--surface, #111827);
@@ -63,6 +64,11 @@
   padding: 16px;
 }
 
+.questionsPanel {
+  grid-column: 1 / -1;
+  padding-top: 0;
+}
+
 .sheetHeader,
 .previewHeading {
   display: flex;
@@ -101,7 +107,7 @@
 .paper {
   display: block;
   width: 100%;
-  min-height: 620px;
+  min-height: 420px;
   resize: vertical;
   border: 1px solid #d7dce3;
   border-radius: 8px;
@@ -179,8 +185,12 @@
     grid-template-columns: 1fr;
   }
 
+  .questionsPanel {
+    grid-column: auto;
+  }
+
   .paper {
-    min-height: 480px;
+    min-height: 360px;
   }
 }
 
@@ -197,7 +207,7 @@
   }
 
   .paper {
-    min-height: 420px;
+    min-height: 320px;
     padding: 24px 20px;
   }
 }
