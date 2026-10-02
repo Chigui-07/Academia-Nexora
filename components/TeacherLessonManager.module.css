@@ -1,0 +1,121 @@
+.wrapper {
+  margin-top: 24px;
+}
+
+.builder {
+  display: grid;
+  grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+
+.settingsPanel,
+.editorPanel,
+.savedSection,
+.previewSection {
+  padding: 20px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--surface);
+}
+
+.settingsPanel,
+.editorPanel {
+  display: grid;
+  gap: 14px;
+}
+
+.settingsPanel h3,
+.savedSection h3 {
+  margin: 0;
+}
+
+.settingsPanel label,
+.editorPanel label {
+  display: grid;
+  gap: 7px;
+  font-weight: 750;
+}
+
+.settingsPanel small {
+  color: var(--muted);
+  font-weight: 500;
+  line-height: 1.4;
+}
+
+.settingsPanel input,
+.settingsPanel select,
+.editorPanel textarea {
+  width: 100%;
+}
+
+.editorPanel textarea {
+  resize: vertical;
+  padding: 13px 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text);
+  background: var(--surface-soft);
+  font: inherit;
+  line-height: 1.6;
+}
+
+.editorPanel textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 12%, transparent);
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.previewSection,
+.savedSection {
+  margin-top: 20px;
+}
+
+.previewSection > p {
+  margin-top: 0;
+}
+
+.lessonList {
+  display: grid;
+  gap: 10px;
+}
+
+.lessonRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+
+.lessonRow > div {
+  display: grid;
+  gap: 4px;
+}
+
+.lessonRow span,
+.lessonRow small {
+  color: var(--muted);
+  font-size: 0.82rem;
+}
+
+@media (max-width: 900px) {
+  .builder {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 620px) {
+  .lessonRow {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
