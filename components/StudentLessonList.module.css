@@ -1,0 +1,104 @@
+.wrapper {
+  display: grid;
+  gap: 18px;
+}
+
+.toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+}
+
+.filters {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.filterButton,
+.filterActive,
+.bookmarkButton,
+.bookmarkActive {
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 9px 14px;
+  background: transparent;
+  color: var(--text);
+  font: inherit;
+  font-weight: 800;
+  cursor: pointer;
+  transition: 0.18s ease;
+}
+
+.filterButton:hover,
+.bookmarkButton:hover {
+  border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
+  background: color-mix(in srgb, var(--primary) 6%, var(--surface));
+}
+
+.filterActive {
+  border-color: color-mix(in srgb, var(--primary) 55%, var(--border));
+  background: color-mix(in srgb, var(--primary) 13%, var(--surface));
+  color: var(--primary);
+}
+
+.count {
+  color: var(--muted);
+  font-size: 0.86rem;
+  font-weight: 750;
+}
+
+.lessonEntry {
+  display: grid;
+  gap: 8px;
+}
+
+.lessonActions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.bookmarkButton,
+.bookmarkActive {
+  border-radius: 12px;
+  padding: 8px 12px;
+  font-size: 0.86rem;
+}
+
+.bookmarkActive {
+  border-color: color-mix(in srgb, #f5b942 60%, var(--border));
+  background: color-mix(in srgb, #f5b942 12%, var(--surface));
+  color: #f5b942;
+}
+
+.bookmarkButton:disabled,
+.bookmarkActive:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
+@media (max-width: 680px) {
+  .toolbar {
+    align-items: stretch;
+  }
+
+  .filters {
+    width: 100%;
+  }
+
+  .filterButton,
+  .filterActive {
+    flex: 1;
+    text-align: center;
+  }
+
+  .count {
+    width: 100%;
+  }
+}
