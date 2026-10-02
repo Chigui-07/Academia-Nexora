@@ -11,7 +11,8 @@
 
 .settingsPanel,
 .sheetArea,
-.savedSection {
+.savedSection,
+.previewSection {
   background: var(--surface, #111827);
   border: 1px solid var(--border, rgba(148, 163, 184, 0.18));
   border-radius: 18px;
@@ -24,7 +25,8 @@
 }
 
 .settingsPanel h3,
-.savedSection h3 {
+.savedSection h3,
+.previewSection h3 {
   margin: 0;
 }
 
@@ -61,15 +63,20 @@
   padding: 16px;
 }
 
-.sheetHeader {
+.sheetHeader,
+.previewHeading {
   display: flex;
   justify-content: space-between;
   gap: 16px;
   align-items: flex-start;
+}
+
+.sheetHeader {
   margin-bottom: 12px;
 }
 
-.sheetHeader div {
+.sheetHeader div,
+.previewHeading div {
   display: grid;
   gap: 3px;
 }
@@ -115,6 +122,18 @@
 
 .paper::placeholder {
   color: #7c8799;
+}
+
+.previewSection {
+  margin-top: 20px;
+}
+
+.previewHeading {
+  margin-bottom: 16px;
+}
+
+.previewHeading p {
+  margin-bottom: 4px;
 }
 
 .savedSection {
@@ -171,6 +190,7 @@
   }
 
   .sheetHeader,
+  .previewHeading,
   .activityCard {
     align-items: stretch;
     flex-direction: column;
