@@ -171,11 +171,19 @@ export default function CoursePage() {
       )}
 
       {activeTab === "ejercicios" && (
-        <StudentActivityList
-          courseId={course.id}
-          types={["practice"]}
-          emptyMessage="Todavía no hay ejercicios disponibles en este curso."
-        />
+        <>
+          <article className="panel" style={{ marginBottom: 18 }}>
+            <p className="eyebrow">Práctica del curso</p>
+            <h2>✏️ Ejercicios</h2>
+            <p className="muted-copy">Aquí se conservan también tus ejercicios cerrados para que puedas volver a ver respuestas, revisión y calificación.</p>
+          </article>
+          <StudentActivityList
+            courseId={course.id}
+            types={["practice"]}
+            includeClosed
+            emptyMessage="Todavía no hay ejercicios publicados en este curso."
+          />
+        </>
       )}
 
       {activeTab === "calificaciones" && (
