@@ -4,7 +4,7 @@
 
 ## 📌 Estado del proyecto
 
-**Fase actual: v0.31 — base académica pública con contenido organizado en hojas navegables.**
+**Fase actual: v0.31.1 — base académica pública con contenido en hojas navegables y parejas aleatorias.**
 
 - Frontend: Next.js + TypeScript + CSS.
 - Publicación: GitHub Pages.
@@ -87,6 +87,8 @@ Los ejercicios prácticos se califican sobre 100 como retroalimentación, pero n
 - Verdadero o falso
 - Relacionar parejas
 - Subir archivo
+
+En las preguntas de **Relacionar parejas**, las opciones de la derecha se mezclan de forma distinta para cada fila y mantienen ese orden mientras el estudiante responde, evitando pistas por posición.
 
 Los archivos viven en el bucket privado `activity-submissions`, con hasta **20 MB por archivo** y entre **1 y 5 archivos** configurables por pregunta de subida.
 

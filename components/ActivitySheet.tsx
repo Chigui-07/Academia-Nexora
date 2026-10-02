@@ -64,6 +64,28 @@ function matchingValue(value: ActivityAnswerValue | undefined): ActivityMatching
   return {};
 }
 
+function seedFromText(value: string) {
+  let seed = 2166136261;
+  for (let index = 0; index < value.length; index += 1) {
+    seed ^= value.charCodeAt(index);
+    seed = Math.imul(seed, 16777619);
+  }
+  return seed >>> 0;
+}
+
+function shuffledMatchingOptions<T>(items: T[], seedText: string) {
+  const shuffled = [...items];
+  let seed = seedFromText(seedText) || 1;
+
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    seed = (Math.imul(seed, 1664525) + 1013904223) >>> 0;
+    const target = seed % (index + 1);
+    [shuffled[index], shuffled[target]] = [shuffled[target], shuffled[index]];
+  }
+
+  return shuffled;
+}
+
 const neutralReviewStyle = {
   border: "1px solid rgba(148, 163, 184, 0.5)",
   background: "rgba(148, 163, 184, 0.11)",
@@ -231,7 +253,10 @@ export default function ActivitySheet({
                   {question.type === "matching_pairs" && (
                     <div className={styles.choiceList}>
                       {(question.pairs ?? []).map((pair) => {
-                        const rightOptions = [...(question.pairs ?? [])].reverse();
+                        const rightOptions = shuffledMatchingOptions(
+                          question.pairs ?? [],
+                          `${question.id}:${pair.id}`,
+                        );
                         return (
                           <label key={pair.id} className={selectedMatching[pair.id] ? styles.choiceSelected : undefined}>
                             <span>{pair.left || "Elemento sin texto"}</span>
@@ -254,7 +279,7 @@ export default function ActivitySheet({
                         );
                       })}
                       <small className={styles.choiceHint}>
-                        Relaciona cada elemento de la izquierda con una sola opción de la derecha.
+                        Relaciona cada elemento de la izquierda con una sola opción de la derecha. Las opciones aparecen mezcladas en cada fila.
                       </small>
                     </div>
                   )}
