@@ -27,7 +27,7 @@ export default function StudentActivityList({ courseId, types, emptyMessage }: S
     async function load() {
       let query = supabase
         .from("course_activities")
-        .select("id, course_id, activity_type, title, worksheet_content, question_blocks, points, opens_at, closes_at, time_limit_minutes")
+        .select("id, course_id, activity_type, title, worksheet_content, question_blocks, points, opens_at, closes_at, time_limit_minutes, max_attempts, block_number")
         .eq("status", "published")
         .in("activity_type", types)
         .order("opens_at", { ascending: true, nullsFirst: true });
