@@ -1,4 +1,4 @@
-export type ActivityQuestionType = "written" | "single_choice" | "multiple_choice" | "true_false" | "matching_pairs";
+export type ActivityQuestionType = "written" | "single_choice" | "multiple_choice" | "true_false" | "matching_pairs" | "file_upload";
 
 export type ActivityQuestionOption = {
   id: string;
@@ -11,6 +11,8 @@ export type ActivityMatchingPair = {
   right: string;
 };
 
+export type ActivityFileAccept = "any" | "image" | "pdf" | "document" | "archive";
+
 export type ActivityQuestionBlock = {
   id: string;
   type: ActivityQuestionType;
@@ -18,6 +20,8 @@ export type ActivityQuestionBlock = {
   options?: ActivityQuestionOption[];
   pairs?: ActivityMatchingPair[];
   placeholder?: string;
+  fileAccept?: ActivityFileAccept;
+  maxFiles?: number;
 };
 
 export type ActivityMatchingAnswer = Record<string, string>;
@@ -30,7 +34,24 @@ export const activityQuestionTypeLabels: Record<ActivityQuestionType, string> = 
   multiple_choice: "Selección múltiple",
   true_false: "Verdadero o falso",
   matching_pairs: "Relacionar parejas",
+  file_upload: "Subir archivo",
 };
+
+export const activityFileAcceptLabels: Record<ActivityFileAccept, string> = {
+  any: "Cualquier archivo",
+  image: "Solo imágenes",
+  pdf: "Solo PDF",
+  document: "Documentos",
+  archive: "Archivos comprimidos",
+};
+
+export function fileAcceptAttribute(value: ActivityFileAccept | undefined) {
+  if (value === "image") return "image/*";
+  if (value === "pdf") return "application/pdf,.pdf";
+  if (value === "document") return ".doc,.docx,.odt,.rtf,.txt,.pdf,application/msword,application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+  if (value === "archive") return ".zip,.rar,.7z,.tar,.gz,application/zip,application/x-7z-compressed";
+  return undefined;
+}
 
 export function createQuestionId(prefix = "q") {
   if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
@@ -63,6 +84,16 @@ export function createQuestionBlock(type: ActivityQuestionType): ActivityQuestio
         { id: createQuestionId("p"), left: "", right: "" },
         { id: createQuestionId("p"), left: "", right: "" },
       ],
+    };
+  }
+
+  if (type === "file_upload") {
+    return {
+      id,
+      type,
+      prompt: "",
+      fileAccept: "any",
+      maxFiles: 1,
     };
   }
 
