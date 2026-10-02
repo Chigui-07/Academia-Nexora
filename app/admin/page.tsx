@@ -1,3 +1,4 @@
+import AITeacherManager from "@/components/AITeacherManager";
 import AdminCourseManager from "@/components/AdminCourseManager";
 import AdminCourseRequests from "@/components/AdminCourseRequests";
 import AdminEnrollmentManager from "@/components/AdminEnrollmentManager";
@@ -6,6 +7,7 @@ import TeacherActivityManager from "@/components/TeacherActivityManager";
 import TeacherLessonManager from "@/components/TeacherLessonManager";
 
 const adminActions = [
+  ["🤖 Profesor IA", "Genera propuestas de clases, tareas y ejercicios para revisarlas antes de guardarlas."],
   ["📚 Gestionar cursos", "Crea, edita, activa o desactiva materias del catálogo."],
   ["👥 Alumnos", "Selecciona un alumno para ver sus cursos, asignaciones y entregas."],
   ["📩 Solicitudes", "Revisa las solicitudes de cursos enviadas por los estudiantes."],
@@ -42,6 +44,7 @@ export default function AdminPage() {
       </section>
 
       <div className="admin-management-stack">
+        <AITeacherManager />
         <AdminCourseManager />
         <AdminEnrollmentManager />
         <AdminCourseRequests />
