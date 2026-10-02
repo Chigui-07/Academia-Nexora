@@ -1,0 +1,160 @@
+.library {
+  display: grid;
+  gap: 22px;
+}
+
+.cardGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+  gap: 14px;
+}
+
+.activityCard {
+  display: grid;
+  gap: 10px;
+  min-height: 190px;
+  padding: 17px;
+  border: 1px solid var(--border);
+  border-radius: 17px;
+  background: var(--surface);
+  color: var(--text);
+  text-align: left;
+  cursor: pointer;
+  box-shadow: var(--shadow);
+  transition: transform 0.16s ease, border-color 0.16s ease, background 0.16s ease;
+}
+
+.activityCard:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--primary) 50%, var(--border));
+}
+
+.activityCardSelected {
+  border-color: color-mix(in srgb, var(--primary) 68%, var(--border));
+  background: color-mix(in srgb, var(--primary) 7%, var(--surface));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary) 10%, transparent);
+}
+
+.cardTopline {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.activityCard > strong {
+  font-size: 1.04rem;
+  line-height: 1.35;
+}
+
+.activityCard > small {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.status {
+  flex: 0 0 auto;
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  font-size: 0.7rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.status_active {
+  color: var(--primary);
+  border-color: color-mix(in srgb, var(--primary) 40%, var(--border));
+  background: color-mix(in srgb, var(--primary) 8%, var(--surface));
+}
+
+.status_done {
+  color: #c4b5fd;
+  border-color: rgba(139, 92, 246, 0.38);
+  background: rgba(139, 92, 246, 0.09);
+}
+
+.status_graded {
+  color: #86efac;
+  border-color: rgba(34, 197, 94, 0.42);
+  background: rgba(34, 197, 94, 0.1);
+}
+
+.status_closed {
+  color: var(--muted);
+  background: color-mix(in srgb, var(--muted) 7%, var(--surface));
+}
+
+.cardMeta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.cardMeta span {
+  padding: 5px 8px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  color: var(--muted);
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.openLabel {
+  margin-top: auto;
+  color: var(--primary);
+  font-size: 0.8rem;
+  font-weight: 900;
+}
+
+.selectionHint {
+  padding: 28px;
+  border: 1px dashed var(--border);
+  border-radius: 17px;
+  color: var(--muted);
+  text-align: center;
+}
+
+.detail {
+  display: grid;
+  gap: 14px;
+  padding-top: 4px;
+}
+
+.detailHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--border);
+  border-radius: 15px;
+  background: var(--surface);
+}
+
+.detailHeading h3 {
+  margin: 2px 0 0;
+}
+
+@media (max-width: 680px) {
+  .cardGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .detailHeading,
+  .cardTopline {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .detailHeading button {
+    width: 100%;
+  }
+
+  .status {
+    align-self: flex-start;
+  }
+}
