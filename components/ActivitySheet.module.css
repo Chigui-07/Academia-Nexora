@@ -1,6 +1,6 @@
 .paper {
   position: relative;
-  overflow: hidden;
+  overflow: visible;
   border: 1px solid color-mix(in srgb, var(--border) 75%, transparent);
   border-radius: 20px;
   background:
@@ -11,7 +11,10 @@
       color-mix(in srgb, var(--surface) 96%, #fff8e9) 43px,
       color-mix(in srgb, var(--primary) 13%, var(--surface)) 44px
     );
-  box-shadow: 0 22px 60px rgba(0, 0, 0, 0.13);
+  box-shadow:
+    7px 7px 0 color-mix(in srgb, var(--surface-soft) 92%, var(--border)),
+    14px 14px 0 color-mix(in srgb, var(--surface-soft) 78%, var(--border)),
+    0 22px 60px rgba(0, 0, 0, 0.13);
 }
 
 .paper::before {
@@ -19,13 +22,14 @@
   position: absolute;
   inset: 0;
   pointer-events: none;
+  border-radius: inherit;
   background: linear-gradient(135deg, rgba(255, 255, 255, 0.1), transparent 40%);
 }
 
 .paperContent {
   position: relative;
   z-index: 1;
-  min-height: 430px;
+  min-height: 520px;
   padding: 34px 42px 34px 92px;
 }
 
@@ -317,9 +321,14 @@
         color-mix(in srgb, var(--surface) 96%, #fff8e9) 43px,
         color-mix(in srgb, var(--primary) 13%, var(--surface)) 44px
       );
+    box-shadow:
+      4px 4px 0 color-mix(in srgb, var(--surface-soft) 92%, var(--border)),
+      8px 8px 0 color-mix(in srgb, var(--surface-soft) 78%, var(--border)),
+      0 18px 42px rgba(0, 0, 0, 0.12);
   }
 
   .paperContent {
+    min-height: 470px;
     padding: 26px 22px 30px;
   }
 
