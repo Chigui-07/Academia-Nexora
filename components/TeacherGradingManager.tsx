@@ -2,11 +2,16 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import ActivityAttachments from "./ActivityAttachments";
-import { ActivityAnswerKey, ActivityAnswerValue, ActivityMatchingAnswer, ActivityQuestionBlock } from "@/lib/activityQuestions";
+import {
+  ActivityAnswerKey,
+  ActivityAnswerValue,
+  ActivityMatchingAnswer,
+  ActivityQuestionBlock,
+} from "@/lib/activityQuestions";
 import { supabase } from "@/lib/supabase";
 import styles from "./TeacherGradingManager.module.css";
 
-type QuestionReview = "correct" | "incorrect";
+type QuestionReview = "correct" | "neutral" | "incorrect";
 type QuestionReviews = Record<string, QuestionReview>;
 type QuestionFeedback = Record<string, string>;
 
@@ -66,8 +71,9 @@ function answerText(question: ActivityQuestionBlock, value: ActivityAnswerValue 
   }
 
   if (question.type === "multiple_choice" && Array.isArray(value)) {
-    const labels = value.map((id) => (question.options ?? []).find((item) => item.id === id)?.label || id);
-    return labels.join(", ");
+    return value
+      .map((id) => (question.options ?? []).find((item) => item.id === id)?.label || id)
+      .join(", ");
   }
 
   if (question.type === "matching_pairs" && isMatchingAnswer(value)) {
@@ -93,6 +99,12 @@ function formatDate(value: string | null) {
     minute: "2-digit",
   }).format(new Date(value));
 }
+
+const neutralActiveStyle = {
+  border: "1px solid rgba(148, 163, 184, 0.62)",
+  background: "rgba(148, 163, 184, 0.14)",
+  color: "#cbd5e1",
+};
 
 export default function TeacherGradingManager({
   studentId = null,
@@ -125,11 +137,13 @@ export default function TeacherGradingManager({
     const loaded = studentId
       ? allAttempts.filter((attempt) => attempt.student_id === studentId)
       : allAttempts;
+
     setAttempts(loaded);
 
     const target = preferredId && loaded.some((item) => item.attempt_id === preferredId)
       ? preferredId
       : loaded.find((item) => !item.reviewed_at)?.attempt_id ?? loaded[0]?.attempt_id ?? null;
+
     setSelectedId(target);
     setReady(true);
   }
@@ -205,7 +219,9 @@ export default function TeacherGradingManager({
     try {
       for (const [index, question] of (selected.question_blocks ?? []).entries()) {
         if (!reviews[question.id]) {
-          throw new Error(`Marca la pregunta ${index + 1} como correcta o incorrecta.`);
+          throw new Error(
+            `Selecciona una decisión para la pregunta ${index + 1}: correcta, neutral o incorrecta.`,
+          );
         }
       }
 
@@ -256,7 +272,7 @@ export default function TeacherGradingManager({
           <p className="muted-copy">
             {studentId
               ? "Aquí solo aparecen las actividades entregadas por el alumno seleccionado."
-              : "Marca cada respuesta como correcta o incorrecta, revisa sus archivos y escribe la retroalimentación general al final."}
+              : "Marca cada respuesta como correcta, neutral o incorrecta, revisa sus archivos y escribe la retroalimentación general al final."}
           </p>
         </div>
         <div className={styles.headerActions}>
@@ -320,7 +336,13 @@ export default function TeacherGradingManager({
                     <article className={styles.questionCard} key={question.id}>
                       <div className={styles.questionTopline}>
                         <strong>Pregunta {index + 1}</strong>
-                        <span>{question.type === "written" ? "Respuesta escrita" : question.type === "matching_pairs" ? "Relacionar parejas" : "Pregunta objetiva"}</span>
+                        <span>
+                          {question.type === "written"
+                            ? "Respuesta escrita"
+                            : question.type === "matching_pairs"
+                              ? "Relacionar parejas"
+                              : "Pregunta objetiva"}
+                        </span>
                       </div>
                       <p className={styles.prompt}>{question.prompt}</p>
 
@@ -349,9 +371,13 @@ export default function TeacherGradingManager({
                               ...current,
                               [question.id]: event.target.value,
                             }))}
-                            placeholder={review === "incorrect"
-                              ? "Explícale qué se equivocó y, si ayuda, indícale la respuesta correcta..."
-                              : "Puedes felicitar la respuesta o aclarar un detalle específico..."}
+                            placeholder={
+                              review === "incorrect"
+                                ? "Explícale qué se equivocó y, si ayuda, indícale la respuesta correcta..."
+                                : review === "neutral"
+                                  ? "Explica por qué la respuesta queda como neutral o deja una observación..."
+                                  : "Puedes felicitar la respuesta o aclarar un detalle específico..."
+                            }
                           />
                           <small>Este comentario aparecerá en amarillo junto a esta pregunta.</small>
                         </label>
@@ -365,6 +391,16 @@ export default function TeacherGradingManager({
                         >
                           ✅ Correcta
                         </button>
+
+                        <button
+                          type="button"
+                          className={styles.reviewButton}
+                          style={review === "neutral" ? neutralActiveStyle : undefined}
+                          onClick={() => setReviews((current) => ({ ...current, [question.id]: "neutral" }))}
+                        >
+                          — Neutral
+                        </button>
+
                         <button
                           type="button"
                           className={review === "incorrect" ? styles.incorrectActive : styles.reviewButton}
@@ -400,7 +436,9 @@ export default function TeacherGradingManager({
                     />
                     <span>/ {selected.activity_points ?? 100}</span>
                   </div>
-                  {selected.activity_type === "practice" && <small>Los ejercicios prácticos siempre se califican sobre 100.</small>}
+                  {selected.activity_type === "practice" && (
+                    <small>Los ejercicios prácticos siempre se califican sobre 100.</small>
+                  )}
                 </label>
 
                 <label>
