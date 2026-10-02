@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import AppShell from "@/components/AppShell";
+import StudentActivityList from "@/components/StudentActivityList";
 import { goTo } from "@/lib/navigation";
 import { supabase } from "@/lib/supabase";
 
@@ -152,10 +153,35 @@ export default function CoursePage() {
         </section>
       )}
 
-      {activeTab === "clases" && <article className="panel"><h2>📖 Clases</h2><div className="empty-state">Todavía no hay clases publicadas en este curso.</div></article>}
-      {activeTab === "tareas" && <article className="panel"><h2>📝 Tareas</h2><div className="empty-state">Todavía no hay tareas publicadas en este curso.</div></article>}
-      {activeTab === "ejercicios" && <article className="panel"><h2>✏️ Ejercicios</h2><div className="empty-state">Todavía no hay ejercicios disponibles en este curso.</div></article>}
-      {activeTab === "calificaciones" && <article className="panel"><h2>📊 Calificaciones</h2><div className="empty-state">Las calificaciones aparecerán aquí cuando haya actividades calificadas.</div></article>}
+      {activeTab === "clases" && (
+        <article className="panel">
+          <h2>📖 Clases</h2>
+          <div className="empty-state">Todavía no hay clases publicadas en este curso.</div>
+        </article>
+      )}
+
+      {activeTab === "tareas" && (
+        <StudentActivityList
+          courseId={course.id}
+          types={["notebook_task", "virtual_task"]}
+          emptyMessage="Todavía no hay tareas disponibles en este curso."
+        />
+      )}
+
+      {activeTab === "ejercicios" && (
+        <StudentActivityList
+          courseId={course.id}
+          types={["practice"]}
+          emptyMessage="Todavía no hay ejercicios disponibles en este curso."
+        />
+      )}
+
+      {activeTab === "calificaciones" && (
+        <article className="panel">
+          <h2>📊 Calificaciones</h2>
+          <div className="empty-state">Las calificaciones aparecerán aquí cuando haya actividades calificadas.</div>
+        </article>
+      )}
     </AppShell>
   );
 }
