@@ -4,12 +4,12 @@
 
 ## 📌 Estado del proyecto
 
-**Fase actual: v0.20 — Gestión de cursos e interfaz ampliada.**
+**Fase actual: v0.21 — Profesor IA exclusivo y borradores inteligentes.**
 
 Frontend: Next.js + TypeScript + CSS, publicado con GitHub Pages.  
 Backend, autenticación y datos: Supabase.
 
-Ya existen registro, confirmación por correo, recuperación de contraseña, perfiles, Carné Nexora, roles, onboarding, solicitudes e inscripciones, diagnóstico funcional de Matemática, historial de diagnósticos, creador de clases y actividades, preguntas configurables, Formación esencial, intentos persistentes, asignación individual, revisión firmada con comentarios por pregunta, biblioteca de tareas/ejercicios, administración centrada en el alumno, calificaciones reales por curso, tablero de tareas en Inicio y gestión administrativa del catálogo.
+Ya existen registro, confirmación por correo, recuperación de contraseña, perfiles, Carné Nexora, roles, onboarding, solicitudes e inscripciones, diagnóstico funcional de Matemática, historial de diagnósticos, creador de clases y actividades, preguntas configurables, Formación esencial, intentos persistentes, asignación individual, revisión firmada con comentarios por pregunta, biblioteca de tareas/ejercicios, administración centrada en el alumno, calificaciones reales por curso, tablero de tareas en Inicio, gestión administrativa del catálogo y Profesor IA privado para generar borradores académicos.
 
 ## 🧭 Navegación principal
 
@@ -99,6 +99,24 @@ Cada respuesta puede marcarse como:
 
 También existe un **comentario amarillo independiente por pregunta**, además de la retroalimentación general final. Cada revisión queda firmada automáticamente con el nombre académico del profesor.
 
+### 🤖 Profesor IA exclusivo
+
+La cuenta autorizada dispone de un panel privado **Profesor IA** dentro de Administración.
+
+Flujo actual:
+
+- elegir curso;
+- elegir si se quiere generar una **Clase**, **Tarea de cuaderno**, **Tarea virtual** o **Ejercicio práctico**;
+- indicar tema y dificultad;
+- configurar preguntas, punteo, bloque, intentos y cronómetro cuando corresponda;
+- generar una propuesta estructurada;
+- revisar la propuesta antes de guardarla;
+- guardar únicamente como **Borrador** para terminar fechas, asignación y publicación con las herramientas manuales.
+
+El acceso está protegido también en Supabase mediante un único registro en `ai_teacher_access`; ocultar el panel en el frontend no es la única barrera. La Edge Function `nexora-ai-teacher` requiere sesión válida y vuelve a comprobar ese permiso antes de generar contenido.
+
+La conexión con OpenAI se realiza únicamente desde la Edge Function. La clave `OPENAI_API_KEY` debe vivir como secreto del servidor en Supabase y **nunca** en el frontend ni en GitHub. Si ese secreto todavía no está configurado, el panel indica **Conexión pendiente** y no intenta generar contenido.
+
 ## ✍️ Experiencia del estudiante
 
 Dentro de cada curso, Tareas y Ejercicios funcionan como bibliotecas de tarjetas acumulables. El estudiante selecciona una tarjeta para abrir la actividad.
@@ -174,7 +192,9 @@ La inscripción guarda `required_until`, calculado como 365 días desde la creac
 - El límite de intentos se comprueba también en servidor.
 - La calificación manual pasa por RPC protegida y la firma del profesor se obtiene en servidor.
 - La creación y edición del catálogo usa `admin_save_course`, que vuelve a comprobar el rol `admin` en Supabase.
-- Las cuentas de estudiante no reciben permisos directos para modificar calificaciones, revisiones ni el catálogo.
+- Profesor IA usa un acceso dedicado de un solo usuario, una Edge Function con JWT obligatorio y un RPC de guardado que vuelve a validar el permiso.
+- La IA solo guarda contenido como borrador; no publica automáticamente.
+- Las cuentas de estudiante no reciben permisos directos para modificar calificaciones, revisiones, el catálogo ni el Profesor IA.
 
 Pendiente de seguridad antes de una beta más amplia: activar **Leaked Password Protection** en Supabase Auth.
 
@@ -206,6 +226,7 @@ Cada curso tendrá 4 bloques de hasta 100 puntos.
 - `course_activity_assignments`
 - `activity_attempts`
 - `admin_notifications`
+- `ai_teacher_access`
 - `diagnostic_levels`
 - `diagnostic_question_pools`
 - `diagnostic_questions`
@@ -215,14 +236,15 @@ Cada curso tendrá 4 bloques de hasta 100 puntos.
 - `diagnostic_results`
 - `private.course_activity_answer_keys`
 
-La definición del RPC de gestión del catálogo también queda documentada en `supabase-notes/admin-course-management.sql`.
+Las funciones de gestión del catálogo y Profesor IA se documentan en `supabase-notes/admin-course-management.sql` y `supabase-notes/ai-teacher.sql`.
 
 ## 🚧 Próximos objetivos
 
 1. Completar reglas de cierre de los 4 bloques y PMA.
-2. Terminar la revisión de seguridad para la Beta de amigos.
-3. Añadir el **Profesor IA únicamente para la cuenta principal**.
-4. Después de la Beta: presencia opcional, XP Nexora, ligas, ranking, logros y minijuegos.
+2. Activar **Leaked Password Protection** y cerrar la revisión final de seguridad para la Beta de amigos.
+3. Conectar el secreto `OPENAI_API_KEY` en Supabase si el panel Profesor IA indica **Conexión pendiente**.
+4. Más adelante: ampliar Profesor IA con revisión asistida de entregas.
+5. Después de la Beta: presencia opcional, XP Nexora, ligas, ranking, logros y minijuegos.
 
 ---
 
@@ -303,6 +325,18 @@ La definición del RPC de gestión del catálogo también queda documentada en `
 - La edición se guarda mediante un RPC que comprueba el rol administrador en Supabase.
 - Se documentó la migración del gestor en `supabase-notes/admin-course-management.sql`.
 - Se amplió la barra lateral, el contenido, los paneles, formularios, tarjetas y la ficha de alumnos para mejorar la legibilidad.
+
+## 2 de octubre de 2026 — v0.21: Profesor IA exclusivo
+
+- Se reservó un único acceso de Profesor IA para la cuenta principal.
+- Se desplegó la Edge Function `nexora-ai-teacher` con JWT obligatorio y validación de acceso en servidor.
+- El panel puede preparar clases, tareas de cuaderno, tareas virtuales y ejercicios prácticos.
+- La generación usa salida estructurada para convertir la propuesta en el formato real de Nexora.
+- Las claves de respuestas permanecen en almacenamiento privado.
+- El profesor revisa la propuesta antes de guardarla.
+- El guardado siempre crea un **borrador**; publicación, fechas y asignación siguen bajo control manual.
+- Se probó el RPC de guardado dentro de una transacción y se revirtió la información temporal.
+- Si falta `OPENAI_API_KEY`, el panel queda visible únicamente para la cuenta autorizada pero muestra **Conexión pendiente**.
 
 ---
 
