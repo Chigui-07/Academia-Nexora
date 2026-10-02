@@ -40,14 +40,16 @@
 }
 
 .section,
-.exampleSection {
+.exampleSection,
+.tablesSection {
   display: grid;
   gap: 10px;
   margin-top: 22px;
 }
 
 .section h3,
-.exampleSection h3 {
+.exampleSection h3,
+.tableBlock h3 {
   margin: 0;
   font-size: 1rem;
 }
@@ -66,6 +68,52 @@
   line-height: 1.8;
 }
 
+.tablesSection {
+  gap: 20px;
+}
+
+.tableBlock {
+  display: grid;
+  gap: 10px;
+}
+
+.tableScroller {
+  overflow-x: auto;
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+}
+
+.lessonTable {
+  width: 100%;
+  min-width: 560px;
+  border-collapse: collapse;
+  color: var(--text);
+}
+
+.lessonTable th,
+.lessonTable td {
+  padding: 15px 14px;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+  vertical-align: top;
+  line-height: 1.55;
+  white-space: pre-wrap;
+}
+
+.lessonTable th {
+  color: var(--text);
+  font-size: 0.9rem;
+  font-weight: 850;
+}
+
+.lessonTable td {
+  color: color-mix(in srgb, var(--text) 86%, var(--muted));
+}
+
+.lessonTable tbody tr:last-child td {
+  border-bottom: 0;
+}
+
 @media (max-width: 680px) {
   .lesson {
     padding: 22px 18px;
@@ -73,5 +121,10 @@
 
   .topline {
     flex-direction: column;
+  }
+
+  .lessonTable th,
+  .lessonTable td {
+    padding: 12px 10px;
   }
 }
