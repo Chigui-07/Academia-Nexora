@@ -1,3 +1,4 @@
+import { decodeLessonContent } from "@/lib/lessonTables";
 import styles from "./LessonSheet.module.css";
 
 type LessonSheetProps = {
@@ -21,6 +22,10 @@ export default function LessonSheet({
   resources = "",
   preview = false,
 }: LessonSheetProps) {
+  const decoded = decodeLessonContent(content);
+  const explanation = decoded.text;
+  const tables = decoded.tables;
+
   return (
     <article className={styles.lesson}>
       <div className={styles.topline}>
@@ -33,10 +38,42 @@ export default function LessonSheet({
         <h2>{title || "Clase sin título"}</h2>
       </div>
 
-      <section className={styles.section}>
-        <h3>📖 Explicación</h3>
-        <div className={styles.text}>{content.trim() || "El contenido de la clase aparecerá aquí."}</div>
-      </section>
+      {(explanation.trim() || tables.length === 0) && (
+        <section className={styles.section}>
+          <h3>📖 Explicación</h3>
+          <div className={styles.text}>{explanation.trim() || "El contenido de la clase aparecerá aquí."}</div>
+        </section>
+      )}
+
+      {tables.length > 0 && (
+        <section className={styles.tablesSection}>
+          {tables.map((table, tableIndex) => (
+            <div className={styles.tableBlock} key={table.id || `table-${tableIndex}`}>
+              {table.title.trim() && <h3>{table.title}</h3>}
+              <div className={styles.tableScroller}>
+                <table className={styles.lessonTable}>
+                  <thead>
+                    <tr>
+                      {table.headers.map((header, columnIndex) => (
+                        <th key={`${table.id}-header-${columnIndex}`}>{header || `Columna ${columnIndex + 1}`}</th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {table.rows.map((row, rowIndex) => (
+                      <tr key={`${table.id}-row-${rowIndex}`}>
+                        {table.headers.map((_, columnIndex) => (
+                          <td key={`${table.id}-${rowIndex}-${columnIndex}`}>{row[columnIndex] ?? ""}</td>
+                        ))}
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          ))}
+        </section>
+      )}
 
       {examples.trim() && (
         <section className={styles.exampleSection}>
