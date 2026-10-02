@@ -1,3 +1,4 @@
+import AcademicStageBadge from "@/components/AcademicStageBadge";
 import AppShell from "@/components/AppShell";
 import DashboardTaskBoard from "@/components/DashboardTaskBoard";
 import DashboardWelcome from "@/components/DashboardWelcome";
@@ -13,7 +14,7 @@ export default function DashboardPage() {
           <DashboardWelcome />
           <p>Revisa qué tienes pendiente, qué viene después y cómo avanza tu rendimiento.</p>
         </div>
-        <span className="stage-badge">🌱 Fundamentos · Año 1</span>
+        <AcademicStageBadge />
       </div>
 
       <DashboardStats />
