@@ -11,13 +11,27 @@ type Course = {
   icon: string;
 };
 
+type AttemptSummary = {
+  activity_id: string;
+  status: "in_progress" | "submitted" | "timed_out";
+  attempt_number: number;
+};
+
 type StudentActivityListProps = {
   courseId?: string;
   types: ActivitySheetType[];
   emptyMessage: string;
+  includeClosed?: boolean;
+  hideFinished?: boolean;
 };
 
-export default function StudentActivityList({ courseId, types, emptyMessage }: StudentActivityListProps) {
+export default function StudentActivityList({
+  courseId,
+  types,
+  emptyMessage,
+  includeClosed = false,
+  hideFinished = false,
+}: StudentActivityListProps) {
   const [activities, setActivities] = useState<RunnableActivity[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [ready, setReady] = useState(false);
@@ -39,11 +53,56 @@ export default function StudentActivityList({ courseId, types, emptyMessage }: S
 
       const loaded = (data ?? []) as RunnableActivity[];
       const now = Date.now();
-      const visible = loaded.filter((activity) => {
+      let visible = loaded.filter((activity) => {
         const opens = activity.opens_at ? new Date(activity.opens_at).getTime() : null;
         const closes = activity.closes_at ? new Date(activity.closes_at).getTime() : null;
-        return (opens === null || opens <= now) && (closes === null || closes >= now);
+        const alreadyOpened = opens === null || opens <= now;
+        const stillOpen = closes === null || closes >= now;
+        return alreadyOpened && (includeClosed || stillOpen);
       });
+
+      if (hideFinished && visible.length > 0) {
+        const { data: sessionData } = await supabase.auth.getSession();
+        const session = sessionData.session;
+
+        if (session) {
+          const activityIds = visible.map((activity) => activity.id);
+          const { data: attemptData, error: attemptError } = await supabase
+            .from("activity_attempts")
+            .select("activity_id, status, attempt_number")
+            .eq("user_id", session.user.id)
+            .in("activity_id", activityIds);
+
+          if (attemptError) throw attemptError;
+
+          const latestAttempt = new Map<string, AttemptSummary>();
+          for (const row of (attemptData ?? []) as AttemptSummary[]) {
+            const current = latestAttempt.get(row.activity_id);
+            if (!current || row.attempt_number > current.attempt_number) {
+              latestAttempt.set(row.activity_id, row);
+            }
+          }
+
+          visible = visible.filter((activity) => {
+            const latest = latestAttempt.get(activity.id);
+            return !latest || latest.status === "in_progress";
+          });
+        }
+      }
+
+      if (includeClosed) {
+        visible.sort((a, b) => {
+          const aClose = a.closes_at ? new Date(a.closes_at).getTime() : Number.POSITIVE_INFINITY;
+          const bClose = b.closes_at ? new Date(b.closes_at).getTime() : Number.POSITIVE_INFINITY;
+          const aClosed = aClose < now;
+          const bClosed = bClose < now;
+          if (aClosed !== bClosed) return aClosed ? 1 : -1;
+          if (aClosed && bClosed) return bClose - aClose;
+          const aOpen = a.opens_at ? new Date(a.opens_at).getTime() : 0;
+          const bOpen = b.opens_at ? new Date(b.opens_at).getTime() : 0;
+          return aOpen - bOpen;
+        });
+      }
 
       setActivities(visible);
 
@@ -55,16 +114,20 @@ export default function StudentActivityList({ courseId, types, emptyMessage }: S
           .in("id", courseIds);
         if (courseError) throw courseError;
         setCourses((courseData ?? []) as Course[]);
+      } else {
+        setCourses([]);
       }
 
       setReady(true);
     }
 
+    setReady(false);
+    setError(null);
     load().catch((caughtError) => {
       setError(caughtError instanceof Error ? caughtError.message : "No se pudieron cargar las actividades.");
       setReady(true);
     });
-  }, [courseId, types.join("|")]);
+  }, [courseId, types.join("|"), includeClosed, hideFinished]);
 
   const courseMap = useMemo(() => new Map(courses.map((course) => [course.id, course])), [courses]);
 
@@ -76,12 +139,14 @@ export default function StudentActivityList({ courseId, types, emptyMessage }: S
     <div style={{ display: "grid", gap: 28 }}>
       {activities.map((activity) => {
         const course = courseMap.get(activity.course_id);
+        const closed = activity.closes_at ? new Date(activity.closes_at).getTime() < Date.now() : false;
         return (
           <ActivityRunner
             key={activity.id}
             activity={activity}
             courseName={course?.name ?? "Curso"}
             courseIcon={course?.icon ?? "📚"}
+            allowNewAttempts={!closed}
           />
         );
       })}
