@@ -22,7 +22,7 @@ export default function ForgotPasswordForm() {
       if (!cleanEmail) throw new Error("Escribe el correo de tu cuenta.");
 
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(cleanEmail, {
-        redirectTo: `${getAppBaseUrl()}/reset-password/`,
+        redirectTo: `${getAppBaseUrl()}/reset-password/?recovery=1`,
       });
 
       if (resetError) throw resetError;
