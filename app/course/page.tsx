@@ -43,7 +43,13 @@ export default function CoursePage() {
 
   useEffect(() => {
     async function load() {
-      const courseKey = new URLSearchParams(window.location.search).get("course");
+      const params = new URLSearchParams(window.location.search);
+      const courseKey = params.get("course");
+      const requestedTab = params.get("tab");
+      if (requestedTab && tabs.some((tab) => tab.key === requestedTab)) {
+        setActiveTab(requestedTab as Tab);
+      }
+
       if (!courseKey) {
         setError("No se indicó qué curso abrir.");
         setReady(true);
