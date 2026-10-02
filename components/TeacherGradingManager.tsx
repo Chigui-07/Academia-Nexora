@@ -34,6 +34,12 @@ type GradingAttempt = {
   reviewed_at: string | null;
 };
 
+type TeacherGradingManagerProps = {
+  studentId?: string | null;
+  studentName?: string | null;
+  embedded?: boolean;
+};
+
 function answerText(question: ActivityQuestionBlock, value: ActivityAnswerValue | undefined) {
   if (value === null || value === undefined || value === "" || (Array.isArray(value) && value.length === 0)) {
     return "Sin respuesta";
@@ -67,7 +73,11 @@ function formatDate(value: string | null) {
   }).format(new Date(value));
 }
 
-export default function TeacherGradingManager() {
+export default function TeacherGradingManager({
+  studentId = null,
+  studentName = null,
+  embedded = false,
+}: TeacherGradingManagerProps) {
   const [ready, setReady] = useState(false);
   const [attempts, setAttempts] = useState<GradingAttempt[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -90,7 +100,10 @@ export default function TeacherGradingManager() {
     const { data, error: queueError } = await supabase.rpc("get_teacher_grading_queue");
     if (queueError) throw queueError;
 
-    const loaded = (data ?? []) as GradingAttempt[];
+    const allAttempts = (data ?? []) as GradingAttempt[];
+    const loaded = studentId
+      ? allAttempts.filter((attempt) => attempt.student_id === studentId)
+      : allAttempts;
     setAttempts(loaded);
 
     const target = preferredId && loaded.some((item) => item.attempt_id === preferredId)
@@ -114,11 +127,13 @@ export default function TeacherGradingManager() {
   }
 
   useEffect(() => {
+    setReady(false);
+    setSelectedId(null);
     loadQueue().catch((caughtError) => {
       setError(caughtError instanceof Error ? caughtError.message : "No se pudieron cargar las entregas.");
       setReady(true);
     });
-  }, []);
+  }, [studentId]);
 
   useEffect(() => {
     function handleFocus() {
@@ -127,7 +142,7 @@ export default function TeacherGradingManager() {
 
     window.addEventListener("focus", handleFocus);
     return () => window.removeEventListener("focus", handleFocus);
-  }, [selectedId]);
+  }, [selectedId, studentId]);
 
   useEffect(() => {
     if (!selected) {
@@ -208,17 +223,24 @@ export default function TeacherGradingManager() {
   if (!ready) return <div className="empty-state">Cargando entregas...</div>;
 
   const pending = attempts.filter((attempt) => !attempt.reviewed_at).length;
+  const reviewed = attempts.length - pending;
+  const displayName = studentName?.trim() || selected?.student_name || "este alumno";
 
   return (
-    <section className={styles.wrapper}>
+    <section className={styles.wrapper} style={embedded ? { marginTop: 0 } : undefined}>
       <div className="section-heading">
         <div>
           <p className="eyebrow">Profesor</p>
-          <h2>✅ Revisar y calificar entregas</h2>
-          <p className="muted-copy">Marca cada respuesta como correcta o incorrecta, deja un comentario por pregunta y escribe la retroalimentación general al final.</p>
+          <h2>{studentId ? `✅ Entregas de ${displayName}` : "✅ Revisar y calificar entregas"}</h2>
+          <p className="muted-copy">
+            {studentId
+              ? "Aquí solo aparecen las actividades entregadas por el alumno seleccionado."
+              : "Marca cada respuesta como correcta o incorrecta, deja un comentario por pregunta y escribe la retroalimentación general al final."}
+          </p>
         </div>
         <div className={styles.headerActions}>
           <span className={styles.pendingBadge}>{pending} pendientes</span>
+          {studentId && <span className={styles.pendingBadge}>{reviewed} revisadas</span>}
           <button className="secondary-button" type="button" onClick={() => void refreshQueue()} disabled={refreshing}>
             {refreshing ? "Actualizando..." : "↻ Actualizar entregas"}
           </button>
@@ -228,7 +250,9 @@ export default function TeacherGradingManager() {
       {error && !selected && <div className="auth-message auth-error">{error}</div>}
 
       {attempts.length === 0 ? (
-        <div className="empty-state">Todavía no hay entregas terminadas para revisar.</div>
+        <div className="empty-state">
+          {studentId ? `${displayName} todavía no tiene entregas terminadas para revisar.` : "Todavía no hay entregas terminadas para revisar."}
+        </div>
       ) : (
         <div className={styles.layout}>
           <aside className={styles.queue}>
@@ -240,7 +264,7 @@ export default function TeacherGradingManager() {
                 onClick={() => setSelectedId(attempt.attempt_id)}
               >
                 <span>{attempt.course_icon} {attempt.course_name}</span>
-                <strong>{attempt.student_name}</strong>
+                {!studentId && <strong>{attempt.student_name}</strong>}
                 <small>{attempt.activity_title} · intento {attempt.attempt_number}</small>
                 <em>{attempt.reviewed_at ? "✅ Revisada" : "🟡 Pendiente"}</em>
               </button>
