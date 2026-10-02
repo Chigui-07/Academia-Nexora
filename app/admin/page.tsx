@@ -2,12 +2,11 @@ import AdminCourseRequests from "@/components/AdminCourseRequests";
 import AdminEnrollmentManager from "@/components/AdminEnrollmentManager";
 import AppShell from "@/components/AppShell";
 import TeacherActivityManager from "@/components/TeacherActivityManager";
-import TeacherGradingManager from "@/components/TeacherGradingManager";
 import TeacherLessonManager from "@/components/TeacherLessonManager";
 
 const adminActions = [
   ["📚 Gestionar cursos", "Administra el catálogo de materias de Academia Nexora."],
-  ["👥 Inscripciones", "Agrega o retira cursos de los usuarios y revisa sus asignaciones."],
+  ["👥 Alumnos", "Selecciona un alumno para ver sus cursos, asignaciones y entregas."],
   ["📩 Solicitudes", "Revisa las solicitudes de cursos enviadas por los estudiantes."],
 ] as const;
 
@@ -18,7 +17,7 @@ export default function AdminPage() {
         <div>
           <p className="eyebrow">Administración y Profesor</p>
           <h1>Panel de gestión</h1>
-          <p>Administración organiza cursos e inscripciones; Profesor prepara clases, actividades y revisa entregas.</p>
+          <p>Organiza primero por alumno: revisa sus cursos, asígnale materias y califica únicamente sus entregas.</p>
         </div>
       </div>
 
@@ -27,7 +26,7 @@ export default function AdminPage() {
           <div>
             <p className="eyebrow">Administración</p>
             <h2>⚙️ Cursos y usuarios</h2>
-            <p className="muted-copy">Esta parte se encarga del catálogo, las solicitudes y de asignar cursos a los estudiantes.</p>
+            <p className="muted-copy">La ficha de cada alumno concentra sus cursos y sus entregas para que no tengas información de usuarios distintos mezclada.</p>
           </div>
         </div>
 
@@ -49,7 +48,6 @@ export default function AdminPage() {
 
       <TeacherLessonManager />
       <TeacherActivityManager />
-      <TeacherGradingManager />
     </AppShell>
   );
 }
