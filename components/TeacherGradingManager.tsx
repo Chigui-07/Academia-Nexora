@@ -74,6 +74,7 @@ export default function TeacherGradingManager() {
   const [grade, setGrade] = useState("");
   const [feedback, setFeedback] = useState("");
   const [saving, setSaving] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -96,12 +97,34 @@ export default function TeacherGradingManager() {
     setReady(true);
   }
 
+  async function refreshQueue() {
+    setRefreshing(true);
+    setError(null);
+    try {
+      await loadQueue(selectedId);
+      setMessage("Entregas actualizadas.");
+    } catch (caughtError) {
+      setError(caughtError instanceof Error ? caughtError.message : "No se pudieron actualizar las entregas.");
+    } finally {
+      setRefreshing(false);
+    }
+  }
+
   useEffect(() => {
     loadQueue().catch((caughtError) => {
       setError(caughtError instanceof Error ? caughtError.message : "No se pudieron cargar las entregas.");
       setReady(true);
     });
   }, []);
+
+  useEffect(() => {
+    function handleFocus() {
+      void loadQueue(selectedId).catch(() => undefined);
+    }
+
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
+  }, [selectedId]);
 
   useEffect(() => {
     if (!selected) {
@@ -182,7 +205,12 @@ export default function TeacherGradingManager() {
           <h2>✅ Revisar y calificar entregas</h2>
           <p className="muted-copy">Marca cada respuesta como correcta o incorrecta, coloca la nota y deja retroalimentación general al final.</p>
         </div>
-        <span className={styles.pendingBadge}>{pending} pendientes</span>
+        <div className={styles.headerActions}>
+          <span className={styles.pendingBadge}>{pending} pendientes</span>
+          <button className="secondary-button" type="button" onClick={() => void refreshQueue()} disabled={refreshing}>
+            {refreshing ? "Actualizando..." : "↻ Actualizar entregas"}
+          </button>
+        </div>
       </div>
 
       {error && !selected && <div className="auth-message auth-error">{error}</div>}
