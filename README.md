@@ -4,7 +4,7 @@
 
 ## 📌 Estado del proyecto
 
-**Fase actual: v0.29 — base académica pública con clases enriquecidas y marcadores personales.**
+**Fase actual: v0.30 — base académica pública con clases en tarjetas y acceso directo a ejercicios.**
 
 - Frontend: Next.js + TypeScript + CSS.
 - Publicación: GitHub Pages.
@@ -62,6 +62,8 @@ Las clases admiten:
 - vista previa antes de publicar.
 
 Las tablas se guardan junto con el contenido de la clase sin romper las clases creadas anteriormente.
+
+En la vista del estudiante, las clases aparecen como **tarjetas compactas**, igual que los ejercicios. Al seleccionar una tarjeta se abre la clase completa y al final aparece el acceso **✏️ Haz el ejercicio para reforzar el tema**, que lleva a la pestaña de ejercicios del mismo curso.
 
 Cada estudiante puede marcar una clase con **🔖 Guardar clase**. Los marcadores se almacenan por cuenta en Supabase y la pestaña Clases permite alternar entre **Todas** y **Guardadas**. Quitar el marcador no elimina ni modifica la clase original.
 

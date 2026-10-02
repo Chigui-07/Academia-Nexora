@@ -54,21 +54,88 @@
   font-weight: 750;
 }
 
-.lessonEntry {
+.cardGrid {
   display: grid;
-  gap: 8px;
+  grid-template-columns: repeat(auto-fit, minmax(270px, 1fr));
+  gap: 14px;
 }
 
-.lessonActions {
+.lessonCard {
+  display: grid;
+  gap: 10px;
+  padding: 14px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: var(--surface);
+  transition: transform 0.18s ease, border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.lessonCard:hover {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--primary) 45%, var(--border));
+  box-shadow: 0 12px 30px color-mix(in srgb, var(--text) 7%, transparent);
+}
+
+.lessonCardSelected {
+  border-color: color-mix(in srgb, var(--primary) 68%, var(--border));
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--primary) 12%, transparent);
+}
+
+.cardOpen {
+  display: grid;
+  gap: 8px;
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--text);
+  text-align: left;
+  font: inherit;
+  cursor: pointer;
+}
+
+.cardOpen strong {
+  font-size: 1.03rem;
+  line-height: 1.3;
+}
+
+.cardOpen small {
+  min-height: 1.2em;
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.cardTopline {
   display: flex;
-  justify-content: flex-end;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  color: var(--muted);
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.lessonBadge {
+  flex: 0 0 auto;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--primary) 11%, var(--surface));
+  color: var(--primary);
+}
+
+.openLabel {
+  margin-top: 4px;
+  color: var(--primary);
+  font-size: 0.86rem;
+  font-weight: 850;
 }
 
 .bookmarkButton,
 .bookmarkActive {
+  justify-self: start;
   border-radius: 12px;
   padding: 8px 12px;
-  font-size: 0.86rem;
+  font-size: 0.82rem;
 }
 
 .bookmarkActive {
@@ -81,6 +148,82 @@
 .bookmarkActive:disabled {
   opacity: 0.6;
   cursor: wait;
+}
+
+.selectionHint {
+  padding: 16px;
+  border: 1px dashed var(--border);
+  border-radius: 16px;
+  color: var(--muted);
+  text-align: center;
+  font-weight: 700;
+}
+
+.detail {
+  display: grid;
+  gap: 16px;
+  margin-top: 2px;
+}
+
+.detailHeading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 14px;
+  flex-wrap: wrap;
+  padding: 16px 18px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+}
+
+.detailHeading h3,
+.detailHeading p {
+  margin: 0;
+}
+
+.reinforcementBox {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  flex-wrap: wrap;
+  padding: 18px;
+  border: 1px solid color-mix(in srgb, var(--primary) 35%, var(--border));
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--primary) 7%, var(--surface));
+}
+
+.reinforcementBox strong {
+  display: block;
+  margin-bottom: 4px;
+}
+
+.reinforcementBox p {
+  margin: 0;
+  color: var(--muted);
+}
+
+.exerciseLink {
+  border: 1px solid color-mix(in srgb, var(--primary) 60%, var(--border));
+  border-radius: 13px;
+  padding: 11px 15px;
+  background: var(--primary);
+  color: white;
+  font: inherit;
+  font-weight: 850;
+  cursor: pointer;
+  transition: 0.18s ease;
+}
+
+.exerciseLink:hover:not(:disabled) {
+  transform: translateY(-1px);
+  filter: brightness(1.04);
+}
+
+.exerciseLink:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
 }
 
 @media (max-width: 680px) {
@@ -99,6 +242,18 @@
   }
 
   .count {
+    width: 100%;
+  }
+
+  .cardGrid {
+    grid-template-columns: 1fr;
+  }
+
+  .reinforcementBox {
+    align-items: stretch;
+  }
+
+  .exerciseLink {
     width: 100%;
   }
 }
