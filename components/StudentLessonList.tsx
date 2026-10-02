@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import LessonSheet from "./LessonSheet";
+import { goTo } from "@/lib/navigation";
 import { supabase } from "@/lib/supabase";
 import styles from "./StudentLessonList.module.css";
 
@@ -28,7 +29,9 @@ export default function StudentLessonList({ courseId, courseName, courseIcon = "
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [savedLessonIds, setSavedLessonIds] = useState<string[]>([]);
   const [filter, setFilter] = useState<LessonFilter>("all");
+  const [selectedId, setSelectedId] = useState<string | null>(null);
   const [savingLessonId, setSavingLessonId] = useState<string | null>(null);
+  const [courseKey, setCourseKey] = useState("");
   const [userId, setUserId] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -50,7 +53,11 @@ export default function StudentLessonList({ courseId, courseName, courseIcon = "
         .single();
       if (profileError) throw profileError;
 
-      const [{ data: lessonData, error: loadError }, { data: bookmarkData, error: bookmarkError }] = await Promise.all([
+      const [
+        { data: lessonData, error: loadError },
+        { data: bookmarkData, error: bookmarkError },
+        { data: courseData, error: courseError },
+      ] = await Promise.all([
         supabase
           .from("course_lessons")
           .select("id, course_id, unit_title, title, lesson_content, examples, resources, position")
@@ -64,13 +71,21 @@ export default function StudentLessonList({ courseId, courseName, courseIcon = "
           .from("lesson_bookmarks")
           .select("lesson_id")
           .eq("user_id", currentUserId),
+        supabase
+          .from("courses")
+          .select("course_key")
+          .eq("id", courseId)
+          .single(),
       ]);
 
       if (loadError) throw loadError;
       if (bookmarkError) throw bookmarkError;
+      if (courseError) throw courseError;
 
       setLessons((lessonData ?? []) as Lesson[]);
       setSavedLessonIds((bookmarkData ?? []).map((row: { lesson_id: string }) => row.lesson_id));
+      setCourseKey(courseData?.course_key ?? "");
+      setSelectedId(null);
       setReady(true);
     }
 
@@ -89,6 +104,7 @@ export default function StudentLessonList({ courseId, courseName, courseIcon = "
     () => lessons.filter((lesson) => savedSet.has(lesson.id)).length,
     [lessons, savedSet],
   );
+  const selectedLesson = visibleLessons.find((lesson) => lesson.id === selectedId) ?? null;
 
   async function toggleSaved(lessonId: string) {
     if (!userId || savingLessonId) return;
@@ -118,6 +134,11 @@ export default function StudentLessonList({ courseId, courseName, courseIcon = "
     }
   }
 
+  function openExercises() {
+    if (!courseKey) return;
+    goTo(`/course/?course=${encodeURIComponent(courseKey)}&tab=ejercicios`);
+  }
+
   if (!ready) return <div className="empty-state">Cargando clases...</div>;
   if (error && lessons.length === 0) return <div className="auth-message auth-error">{error}</div>;
   if (lessons.length === 0) return <div className="empty-state">Todavía no hay clases publicadas para tu etapa y nivel actual.</div>;
@@ -129,14 +150,20 @@ export default function StudentLessonList({ courseId, courseName, courseIcon = "
           <button
             type="button"
             className={filter === "all" ? styles.filterActive : styles.filterButton}
-            onClick={() => setFilter("all")}
+            onClick={() => {
+              setFilter("all");
+              setSelectedId(null);
+            }}
           >
             📚 Todas
           </button>
           <button
             type="button"
             className={filter === "saved" ? styles.filterActive : styles.filterButton}
-            onClick={() => setFilter("saved")}
+            onClick={() => {
+              setFilter("saved");
+              setSelectedId(null);
+            }}
           >
             🔖 Guardadas ({savedInCourse})
           </button>
@@ -151,11 +178,26 @@ export default function StudentLessonList({ courseId, courseName, courseIcon = "
       {visibleLessons.length === 0 ? (
         <div className="empty-state">Todavía no has guardado ninguna clase de este curso. Pulsa 🔖 Guardar clase en la que quieras conservar a mano.</div>
       ) : (
-        visibleLessons.map((lesson) => {
-          const isSaved = savedSet.has(lesson.id);
-          return (
-            <div className={styles.lessonEntry} key={lesson.id}>
-              <div className={styles.lessonActions}>
+        <div className={styles.cardGrid}>
+          {visibleLessons.map((lesson) => {
+            const isSaved = savedSet.has(lesson.id);
+            const selected = selectedId === lesson.id;
+            return (
+              <article className={`${styles.lessonCard} ${selected ? styles.lessonCardSelected : ""}`} key={lesson.id}>
+                <button
+                  type="button"
+                  className={styles.cardOpen}
+                  onClick={() => setSelectedId(lesson.id)}
+                >
+                  <div className={styles.cardTopline}>
+                    <span>{courseIcon} {courseName}</span>
+                    <span className={styles.lessonBadge}>Clase {lesson.position}</span>
+                  </div>
+                  <strong>{lesson.title}</strong>
+                  <small>{lesson.unit_title || "Clase del curso"}</small>
+                  <span className={styles.openLabel}>Abrir clase →</span>
+                </button>
+
                 <button
                   type="button"
                   className={isSaved ? styles.bookmarkActive : styles.bookmarkButton}
@@ -169,19 +211,46 @@ export default function StudentLessonList({ courseId, courseName, courseIcon = "
                       ? "🔖 Guardada"
                       : "🔖 Guardar clase"}
                 </button>
-              </div>
-              <LessonSheet
-                courseName={courseName}
-                courseIcon={courseIcon}
-                unitTitle={lesson.unit_title}
-                title={lesson.title}
-                content={lesson.lesson_content}
-                examples={lesson.examples}
-                resources={lesson.resources}
-              />
+              </article>
+            );
+          })}
+        </div>
+      )}
+
+      {!selectedLesson && visibleLessons.length > 0 && (
+        <div className={styles.selectionHint}>Selecciona una tarjeta para abrir la clase.</div>
+      )}
+
+      {selectedLesson && (
+        <section className={styles.detail}>
+          <div className={styles.detailHeading}>
+            <div>
+              <p className="eyebrow">Clase seleccionada</p>
+              <h3>{selectedLesson.title}</h3>
             </div>
-          );
-        })
+            <button className="secondary-button" type="button" onClick={() => setSelectedId(null)}>Cerrar vista</button>
+          </div>
+
+          <LessonSheet
+            courseName={courseName}
+            courseIcon={courseIcon}
+            unitTitle={selectedLesson.unit_title}
+            title={selectedLesson.title}
+            content={selectedLesson.lesson_content}
+            examples={selectedLesson.examples}
+            resources={selectedLesson.resources}
+          />
+
+          <div className={styles.reinforcementBox}>
+            <div>
+              <strong>¿Terminaste la clase?</strong>
+              <p>Practica el tema con los ejercicios de este curso.</p>
+            </div>
+            <button className={styles.exerciseLink} type="button" onClick={openExercises} disabled={!courseKey}>
+              ✏️ Haz el ejercicio para reforzar el tema →
+            </button>
+          </div>
+        </section>
       )}
     </div>
   );
