@@ -4,12 +4,12 @@
 
 ## 📌 Estado del proyecto
 
-**Fase actual: v0.8 — Panel Profesor y creador de actividades.**
+**Fase actual: v0.9 — Vista publicada de actividades y previsualización.**
 
 Frontend: Next.js + TypeScript + CSS, publicado con GitHub Pages.  
 Backend, autenticación y datos: Supabase.
 
-Ya existen registro, confirmación por correo, inicio/cierre de sesión, perfiles, Carné Nexora, roles, onboarding, solicitudes de cursos, diagnóstico funcional de Matemática, historial de diagnósticos, catálogo persistente de materias, inscripciones reales y una primera herramienta funcional para que Profesor cree actividades.
+Ya existen registro, confirmación por correo, inicio/cierre de sesión, perfiles, Carné Nexora, roles, onboarding, solicitudes de cursos, diagnóstico funcional de Matemática, historial de diagnósticos, catálogo persistente de materias, inscripciones reales, creador de actividades para Profesor y visualización de tareas/ejercicios publicados.
 
 ## 🧭 Navegación principal
 
@@ -26,11 +26,7 @@ Ya existen registro, confirmación por correo, inicio/cierre de sesión, perfile
 
 ## 👤 Identidad y roles
 
-Cada cuenta usa:
-
-- nombre y apellido reales para espacios académicos;
-- Carné Nexora único y permanente;
-- nombre de usuario personal/decorativo.
+Cada cuenta usa nombre y apellido reales para espacios académicos, Carné Nexora único y permanente y nombre de usuario personal/decorativo.
 
 Los roles disponibles son `student`, `teacher` y `admin`. Una cuenta puede tener varios roles al mismo tiempo.
 
@@ -80,6 +76,8 @@ Cada curso dispone de:
 
 Si existe resultado de diagnóstico, el curso guarda también el nivel y tema recomendado para comenzar.
 
+Las pestañas **Tareas** y **Ejercicios** ya muestran actividades publicadas que se encuentran dentro de su ventana de disponibilidad.
+
 ## ⚙️ Administración
 
 Administración se concentra en la estructura de la academia:
@@ -101,24 +99,27 @@ Profesor puede crear y editar:
 - **Tareas virtuales**;
 - **Ejercicios prácticos**.
 
-Cada actividad puede configurar:
-
-- curso;
-- título;
-- punteo cuando corresponda;
-- fecha y hora de apertura;
-- fecha y hora de cierre;
-- cronómetro opcional entre 1 y 1440 minutos;
-- estado `draft` o `published`;
-- contenido completo de la actividad.
+Cada actividad puede configurar curso, título, punteo cuando corresponda, fecha/hora de apertura, fecha/hora de cierre, cronómetro opcional entre 1 y 1440 minutos, estado `draft` o `published` y contenido completo.
 
 El cronómetro está diseñado para comenzar cuando el estudiante pulse **Comenzar actividad**, no simplemente al abrir la página.
 
-### Hoja de actividad
+### Hoja de actividad y vista previa
 
-El creador incluye una **hoja en blanco** grande con apariencia de papel. Profesor puede escribir directamente allí el enunciado, instrucciones, ejercicios, problemas y preguntas de la actividad.
+El creador incluye una **hoja en blanco** grande que funciona como editor. Profesor puede escribir directamente allí el enunciado, instrucciones, ejercicios, problemas y preguntas.
 
-Las actividades se almacenan en `course_activities` y pueden volver a abrirse para modificar el contenido, fechas, punteo, tiempo o estado.
+Antes de publicar existe **👁️ Vista previa**, que muestra cómo verá el estudiante la actividad.
+
+Al publicarse, el textarea del editor no se muestra al estudiante. El contenido se transforma a una **hoja/cuaderno centrada** con líneas, margen, metadatos, punteo, fechas y tiempo, siguiendo el lenguaje visual usado en el diagnóstico de Matemática.
+
+Las actividades se almacenan en `course_activities` y pueden volver a abrirse para modificar contenido, fechas, punteo, tiempo o estado.
+
+## 📝 Tareas del estudiante
+
+La pestaña general **Tareas** consulta actividades publicadas de los cursos en los que el estudiante está inscrito.
+
+Solo aparecen tareas cuya apertura ya ocurrió y cuyo cierre todavía no pasó. Las tareas de cuaderno y virtuales se muestran con el formato de hoja/cuaderno. Los ejercicios prácticos se muestran en la pestaña **Ejercicios** del curso.
+
+Todavía falta implementar la sesión de resolución, respuestas persistentes, entregas y ejecución real del cronómetro.
 
 ## 🔐 Seguridad
 
@@ -168,13 +169,13 @@ Cada curso tendrá 4 bloques de hasta 100 puntos.
 
 ## 🚧 Próximos objetivos
 
-1. Mostrar las actividades publicadas al estudiante dentro de Tareas y de cada curso.
-2. Implementar **Comenzar actividad** y el cronómetro real durante el intento.
-3. Crear respuestas/entregas persistentes de estudiantes.
-4. Añadir clases y contenido por temas/unidades.
-5. Implementar calificaciones por bloques y PMA.
-6. Hacer que Tareas pendientes y Promedio actual del Dashboard provengan de datos reales.
-7. Añadir Formación esencial, recuperación de contraseña e IA educativa segura.
+1. Implementar **Comenzar actividad** y el cronómetro real durante el intento.
+2. Crear respuestas, intentos y entregas persistentes de estudiantes.
+3. Crear el editor y publicación de **Clases**, organizadas por unidades/temas.
+4. Implementar calificaciones por bloques y PMA.
+5. Hacer que Tareas pendientes y Promedio actual del Dashboard provengan de datos reales.
+6. Añadir recuperación de contraseña y terminar pruebas de seguridad/errores antes de invitar más usuarios.
+7. Añadir Formación esencial e IA educativa segura.
 
 ---
 
@@ -227,8 +228,17 @@ Cada curso tendrá 4 bloques de hasta 100 puntos.
 - Profesor puede crear tareas de cuaderno, tareas virtuales y ejercicios prácticos.
 - Se añadieron apertura, cierre, punteo y cronómetro opcional.
 - Se añadió estado Borrador/Publicada.
-- Se creó una **hoja en blanco** para redactar el contenido completo de cada actividad.
+- Se creó una hoja en blanco para redactar el contenido completo de cada actividad.
 - Las actividades guardadas pueden volver a editarse.
+
+## 1 de octubre de 2026 — v0.9: vista publicada de actividades
+
+- Se añadió **Vista previa** al editor del Profesor.
+- La actividad publicada se transforma a una hoja/cuaderno con el estilo visual del diagnóstico.
+- Se muestran curso, tipo de actividad, puntos, apertura, cierre y límite de tiempo.
+- La pestaña general Tareas ahora carga tareas publicadas y disponibles.
+- Las pestañas Tareas y Ejercicios de cada curso cargan actividades reales.
+- Las actividades fuera de su ventana de apertura/cierre no aparecen como disponibles.
 
 ---
 
