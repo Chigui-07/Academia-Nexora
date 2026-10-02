@@ -4,12 +4,12 @@
 
 ## 📌 Estado del proyecto
 
-**Fase actual: v0.9 — Vista publicada de actividades y previsualización.**
+**Fase actual: v0.10 — Preguntas configurables y Formación esencial.**
 
 Frontend: Next.js + TypeScript + CSS, publicado con GitHub Pages.  
 Backend, autenticación y datos: Supabase.
 
-Ya existen registro, confirmación por correo, inicio/cierre de sesión, perfiles, Carné Nexora, roles, onboarding, solicitudes de cursos, diagnóstico funcional de Matemática, historial de diagnósticos, catálogo persistente de materias, inscripciones reales, creador de actividades para Profesor y visualización de tareas/ejercicios publicados.
+Ya existen registro, confirmación por correo, perfiles, Carné Nexora, roles, onboarding, solicitudes e inscripciones, diagnóstico funcional de Matemática, historial de diagnósticos, creador de actividades para Profesor, vista publicada tipo cuaderno, preguntas interactivas configurables y cursos obligatorios de Formación esencial.
 
 ## 🧭 Navegación principal
 
@@ -22,31 +22,23 @@ Ya existen registro, confirmación por correo, inicio/cierre de sesión, perfile
 - 🏅 Perfil
 - ⚙️ Administración, cuando la cuenta tiene permisos
 
-**Cursos** muestra únicamente materias ya asignadas. Las solicitudes y diagnósticos viven en sus propias secciones para evitar confusiones.
-
 ## 👤 Identidad y roles
 
 Cada cuenta usa nombre y apellido reales para espacios académicos, Carné Nexora único y permanente y nombre de usuario personal/decorativo.
 
 Los roles disponibles son `student`, `teacher` y `admin`. Una cuenta puede tener varios roles al mismo tiempo.
 
-## 📚 Catálogo y solicitudes
+## 📚 Catálogo, solicitudes e inscripciones
 
-Supabase contiene un catálogo persistente en `courses`. El catálogo inicial incluye Matemática, Física, Inglés, Programación básica, Historia, Geografía, Química y Biología.
+El catálogo persistente vive en `courses`. Una solicitud aceptada crea una inscripción real en `course_enrollments`.
 
-El estudiante entra a **Solicitar curso**, busca una materia y envía una solicitud indicando su grado/nivel actual y cuánto considera que conoce del tema.
-
-Los estados actuales son `pending`, `in_review`, `handled` y `rejected`.
-
-Una solicitud aceptada crea una inscripción real en `course_enrollments`. Una solicitud rechazada no crea inscripción y puede volver a solicitarse posteriormente.
+Los cursos normales se solicitan desde **Solicitar curso** y Administración puede revisarlos, aceptarlos o rechazarlos. Cada curso dispone de Resumen, Clases, Tareas, Ejercicios y Calificaciones.
 
 ## 🧠 Diagnósticos
 
 El diagnóstico inicial es opcional, no da puntos y se realiza una sola vez por materia.
 
-Actualmente Matemática dispone de diagnóstico funcional con **194 preguntas permanentes** distribuidas en 6 niveles. Las preguntas se seleccionan de grupos equilibrados y permanecen fijas durante el intento.
-
-La interfaz muestra una pregunta a la vez, navegación lateral numerada, botones **Siguiente** y **Mi límite**, y guarda las respuestas sin mostrar durante la prueba si fueron correctas.
+Actualmente Matemática dispone de **194 preguntas permanentes** distribuidas en 6 niveles:
 
 | Nivel | Contenido | Banco | Selección |
 |---|---|---:|---:|
@@ -58,40 +50,11 @@ La interfaz muestra una pregunta a la vez, navegación lateral numerada, botones
 | 6 | Razonamiento avanzado | 24 | 8 |
 | **Total** | | **194** | **64 máximo** |
 
-Al finalizar se genera `diagnostic_results`, que conserva ubicación estimada, nivel dominado de forma consecutiva, temas dominados, temas a reforzar, resumen por nivel y forma de finalización. Se usa un criterio de referencia del **70 %** para considerar dominado un nivel completo.
-
-La sección **Diagnósticos** es el lugar permanente para iniciar, continuar y consultar diagnósticos.
-
-## 📘 Cursos activos
-
-`course_enrollments` relaciona cada estudiante con sus materias aceptadas.
-
-Cada curso dispone de:
-
-- Resumen
-- Clases
-- Tareas
-- Ejercicios
-- Calificaciones
-
-Si existe resultado de diagnóstico, el curso guarda también el nivel y tema recomendado para comenzar.
-
-Las pestañas **Tareas** y **Ejercicios** ya muestran actividades publicadas que se encuentran dentro de su ventana de disponibilidad.
-
-## ⚙️ Administración
-
-Administración se concentra en la estructura de la academia:
-
-- catálogo de cursos;
-- solicitudes;
-- inscripciones;
-- asignar o retirar cursos de los usuarios.
-
-No es el área responsable de redactar tareas o ejercicios académicos.
+Al finalizar se genera `diagnostic_results` con ubicación estimada, temas dominados y temas a reforzar. Las respuestas correctas permanecen protegidas del navegador.
 
 ## 👨‍🏫 Profesor
 
-Dentro del área de gestión existe un apartado exclusivo para cuentas con rol `teacher`.
+Dentro de Administración existe un apartado Profesor para cuentas con rol `teacher`.
 
 Profesor puede crear y editar:
 
@@ -99,44 +62,57 @@ Profesor puede crear y editar:
 - **Tareas virtuales**;
 - **Ejercicios prácticos**.
 
-Cada actividad puede configurar curso, título, punteo cuando corresponda, fecha/hora de apertura, fecha/hora de cierre, cronómetro opcional entre 1 y 1440 minutos, estado `draft` o `published` y contenido completo.
+Cada actividad puede configurar curso, título, punteo cuando corresponda, fecha/hora de apertura, fecha/hora de cierre, cronómetro opcional, estado Borrador/Publicada e instrucciones generales.
 
-El cronómetro está diseñado para comenzar cuando el estudiante pulse **Comenzar actividad**, no simplemente al abrir la página.
+### Hoja de actividad
 
-### Hoja de actividad y vista previa
+La hoja en blanco funciona únicamente como **editor**. Antes de publicar puede usarse **👁️ Vista previa**. Al publicarse, el estudiante ve una hoja/cuaderno centrada inspirada en el estilo del diagnóstico.
 
-El creador incluye una **hoja en blanco** grande que funciona como editor. Profesor puede escribir directamente allí el enunciado, instrucciones, ejercicios, problemas y preguntas.
+### Constructor de preguntas
 
-Antes de publicar existe **👁️ Vista previa**, que muestra cómo verá el estudiante la actividad.
+Profesor puede combinar varios bloques dentro de una misma actividad:
 
-Al publicarse, el textarea del editor no se muestra al estudiante. El contenido se transforma a una **hoja/cuaderno centrada** con líneas, margen, metadatos, punteo, fechas y tiempo, siguiendo el lenguaje visual usado en el diagnóstico de Matemática.
+- **Respuesta escrita** — caja de texto para que el estudiante redacte;
+- **Elección única** — varias opciones y una sola correcta;
+- **Selección múltiple** — varias opciones y más de una respuesta correcta;
+- **Verdadero o falso**.
 
-Las actividades se almacenan en `course_activities` y pueden volver a abrirse para modificar contenido, fechas, punteo, tiempo o estado.
+Las claves correctas no se guardan dentro del contenido visible. Se almacenan en `private.course_activity_answer_keys` y se administran mediante RPC seguras para Profesor/Admin.
 
-## 📝 Tareas del estudiante
+La columna pública `course_activities.question_blocks` contiene únicamente el contenido que el estudiante necesita ver: enunciados, tipo de pregunta y opciones.
 
-La pestaña general **Tareas** consulta actividades publicadas de los cursos en los que el estudiante está inscrito.
+## 📝 Vista del estudiante
 
-Solo aparecen tareas cuya apertura ya ocurrió y cuyo cierre todavía no pasó. Las tareas de cuaderno y virtuales se muestran con el formato de hoja/cuaderno. Los ejercicios prácticos se muestran en la pestaña **Ejercicios** del curso.
+Las actividades publicadas aparecen en **Tareas** o en las pestañas Tareas/Ejercicios de cada curso cuando están dentro de su ventana de disponibilidad.
 
-Todavía falta implementar la sesión de resolución, respuestas persistentes, entregas y ejecución real del cronómetro.
+La hoja ya puede mostrar cajas de respuesta, botones de opción, casillas múltiples y verdadero/falso. El siguiente paso es crear el sistema de **Comenzar actividad**, guardado persistente, entrega y cronómetro real.
+
+## 🌱 Formación esencial — primeros 365 días
+
+Cada usuario queda inscrito automáticamente durante su primer año en seis cursos breves:
+
+- ✍️ Caligrafía y escritura clara
+- 📖 Comprensión y expresión lectora
+- 📝 Ortografía y redacción
+- 🧮 Cálculo mental y agilidad numérica
+- 🧩 Lógica y razonamiento
+- 📅 Organización y hábitos de estudio
+
+La inscripción guarda `required_until`, calculado como 365 días desde la creación del perfil. Después de esa fecha estos cursos dejan de ser obligatorios y podrán mantenerse de forma opcional.
+
+Las actividades de Formación esencial deben ser ligeras, normalmente de 10–15 minutos, y no se diseñan como castigo ni como una racha obligatoria.
 
 ## 🔐 Seguridad
 
 - Supabase Auth gestiona las cuentas.
-- RLS limita perfiles, solicitudes, inscripciones, diagnósticos y actividades según usuario y rol.
-- Solo Profesor puede crear o modificar `course_activities`.
-- Los estudiantes únicamente pueden leer actividades publicadas de cursos en los que estén inscritos.
-- Las claves correctas del diagnóstico no se envían al navegador.
-- La corrección del diagnóstico se realiza en lógica segura del servidor.
+- RLS limita perfiles, solicitudes, inscripciones, diagnósticos y actividades.
+- El estudiante solo puede leer actividades publicadas de cursos en los que está inscrito.
+- Las respuestas correctas del diagnóstico y de las nuevas preguntas configurables no se exponen al navegador.
+- La lógica sensible usa funciones seguras del servidor cuando corresponde.
 
 ## 🔁 PMA
 
 El PMA será un segundo intento opcional de una tarea, con el mismo valor de puntos. La nota oficial será automáticamente la mayor entre ambos intentos.
-
-## 🌱 Formación esencial
-
-Durante los primeros 365 días se planean actividades breves de Caligrafía y escritura clara, Comprensión y expresión lectora, Ortografía y redacción, Cálculo mental y agilidad numérica, Lógica y razonamiento y Organización y hábitos de estudio. Después del primer año pasarán a ser opcionales.
 
 ## 🏆 Sistema académico
 
@@ -166,16 +142,18 @@ Cada curso tendrá 4 bloques de hasta 100 puntos.
 - `diagnostic_attempt_questions`
 - `diagnostic_answers`
 - `diagnostic_results`
+- `private.course_activity_answer_keys`
 
 ## 🚧 Próximos objetivos
 
-1. Implementar **Comenzar actividad** y el cronómetro real durante el intento.
-2. Crear respuestas, intentos y entregas persistentes de estudiantes.
+1. Crear **Comenzar actividad**, intentos, respuestas persistentes y Entregar.
+2. Ejecutar el cronómetro real y conservarlo aunque se recargue la página.
 3. Crear el editor y publicación de **Clases**, organizadas por unidades/temas.
 4. Implementar calificaciones por bloques y PMA.
 5. Hacer que Tareas pendientes y Promedio actual del Dashboard provengan de datos reales.
-6. Añadir recuperación de contraseña y terminar pruebas de seguridad/errores antes de invitar más usuarios.
-7. Añadir Formación esencial e IA educativa segura.
+6. Añadir recuperación de contraseña y completar pruebas multiusuario antes de abrir la beta a amigos.
+7. Añadir presencia opcional **Conectados ahora**, XP Nexora, ligas y ranking semanal opcional.
+8. Añadir IA educativa segura más adelante.
 
 ---
 
@@ -214,31 +192,31 @@ Cada curso tendrá 4 bloques de hasta 100 puntos.
 
 ## 1 de octubre de 2026 — v0.7: catálogo, cursos e inscripciones
 
-- Se separó **Solicitar curso** de **Cursos**.
-- Se creó el catálogo persistente `courses` y `course_enrollments`.
+- Se separó Solicitar curso de Cursos.
+- Se creó el catálogo persistente y `course_enrollments`.
 - Administración puede aceptar o rechazar solicitudes.
 - Cada curso dispone de Resumen, Clases, Tareas, Ejercicios y Calificaciones.
-- Los resultados de diagnóstico se sincronizan con el punto de inicio del curso.
 
 ## 1 de octubre de 2026 — v0.8: Panel Profesor
 
-- Administración quedó enfocada en cursos, solicitudes e inscripciones de usuarios.
-- Se añadió un apartado Profesor dentro del panel de gestión.
-- Se creó `course_activities` con RLS.
-- Profesor puede crear tareas de cuaderno, tareas virtuales y ejercicios prácticos.
-- Se añadieron apertura, cierre, punteo y cronómetro opcional.
-- Se añadió estado Borrador/Publicada.
-- Se creó una hoja en blanco para redactar el contenido completo de cada actividad.
-- Las actividades guardadas pueden volver a editarse.
+- Administración quedó enfocada en cursos e inscripciones.
+- Se añadió Profesor dentro del panel de gestión.
+- Profesor puede crear tareas y ejercicios con fechas, punteo y cronómetro opcional.
 
 ## 1 de octubre de 2026 — v0.9: vista publicada de actividades
 
-- Se añadió **Vista previa** al editor del Profesor.
-- La actividad publicada se transforma a una hoja/cuaderno con el estilo visual del diagnóstico.
-- Se muestran curso, tipo de actividad, puntos, apertura, cierre y límite de tiempo.
-- La pestaña general Tareas ahora carga tareas publicadas y disponibles.
-- Las pestañas Tareas y Ejercicios de cada curso cargan actividades reales.
-- Las actividades fuera de su ventana de apertura/cierre no aparecen como disponibles.
+- Se añadió Vista previa.
+- Las actividades publicadas usan una hoja/cuaderno inspirada en el diagnóstico.
+- Tareas y Ejercicios cargan actividades reales y respetan apertura/cierre.
+
+## 1 de octubre de 2026 — v0.10: preguntas y Formación esencial
+
+- Se añadió constructor por bloques para respuesta escrita, elección única, selección múltiple y verdadero/falso.
+- Las claves correctas se separaron del contenido visible y se guardan en esquema privado.
+- Las hojas publicadas renderizan el control de respuesta correspondiente a cada pregunta.
+- Se crearon seis cursos de Formación esencial.
+- Todos los perfiles actuales quedaron inscritos automáticamente y los nuevos perfiles también lo harán.
+- Cada inscripción esencial conserva la fecha hasta la que es obligatoria durante los primeros 365 días.
 
 ---
 
