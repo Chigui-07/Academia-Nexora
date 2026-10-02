@@ -227,6 +227,11 @@ export default function AuthForm({ mode }: { mode: AuthMode }) {
           minLength={8}
           required
         />
+        {!isRegister && (
+          <small className="muted-copy">
+            <Link href="/forgot-password/"><strong>¿Olvidaste tu contraseña?</strong></Link>
+          </small>
+        )}
       </div>
 
       {isRegister && (
