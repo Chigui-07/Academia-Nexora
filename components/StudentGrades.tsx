@@ -53,9 +53,12 @@ export default function StudentGrades() {
       const session = sessionData.session;
       if (!session) { if (!cancelled) setReady(true); return; }
 
-      const { data: enrollmentData, error: enrollmentError } = await supabase
-        .from("course_enrollments").select("course_id").eq("user_id", session.user.id).eq("status", "active");
+      const [{ data: enrollmentData, error: enrollmentError }, { data: profile, error: profileError }] = await Promise.all([
+        supabase.from("course_enrollments").select("course_id").eq("user_id", session.user.id).eq("status", "active"),
+        supabase.from("profiles").select("stage, level").eq("id", session.user.id).single(),
+      ]);
       if (enrollmentError) throw enrollmentError;
+      if (profileError) throw profileError;
 
       const courseIds = Array.from(new Set((enrollmentData ?? []).map((row) => row.course_id as string)));
       if (courseIds.length === 0) { if (!cancelled) { setCourses([]); setGrades([]); setReady(true); } return; }
@@ -65,6 +68,8 @@ export default function StudentGrades() {
         supabase.from("course_activities")
           .select("id, course_id, title, activity_type, points, block_number, pma_source_activity_id")
           .in("course_id", courseIds)
+          .eq("academic_stage", profile.stage)
+          .eq("academic_level", profile.level)
           .neq("activity_type", "practice")
           .not("points", "is", null),
       ]);
@@ -79,6 +84,8 @@ export default function StudentGrades() {
           .from("activity_attempts")
           .select("id, activity_id, attempt_number, grade_value, grade_max, reviewer_name, reviewed_at")
           .eq("user_id", session.user.id)
+          .eq("stage_snapshot", profile.stage)
+          .eq("level_snapshot", profile.level)
           .in("activity_id", activityIds)
           .not("reviewed_at", "is", null);
         if (attemptError) throw attemptError;
@@ -143,7 +150,7 @@ export default function StudentGrades() {
 
       <section className="panel">
         <div className="section-heading"><div><p className="eyebrow">Detalle</p><h2>📝 Actividades calificadas</h2><p className="muted-copy">PMA y tarea original ocupan el mismo espacio académico: Nexora conserva automáticamente la nota más alta.</p></div></div>
-        {grades.length === 0 ? <div className="empty-state">Todavía no tienes actividades calificadas.</div> : (
+        {grades.length === 0 ? <div className="empty-state">Todavía no tienes actividades calificadas en tu nivel actual.</div> : (
           <div style={{ display: "grid", gap: 10 }}>
             {grades.slice().sort((a,b) => new Date(b.attempt.reviewed_at ?? 0).getTime() - new Date(a.attempt.reviewed_at ?? 0).getTime()).map((grade) => {
               const course = courses.find((item) => item.id === grade.activity.course_id);
