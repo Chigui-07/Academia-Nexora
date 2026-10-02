@@ -1,15 +1,15 @@
 # 🎓 Academia Nexora
 
-**Academia Nexora** es una plataforma educativa multiusuario para aprender desde cero, avanzar por etapas y organizar cursos, clases, tareas, ejercicios, calificaciones, diagnósticos y logros.
+**Academia Nexora** es una plataforma educativa multiusuario para aprender desde cero, avanzar por etapas y organizar cursos, clases, tareas, ejercicios, calificaciones y diagnósticos.
 
 ## 📌 Estado del proyecto
 
-**Fase actual: v0.14 — Calificaciones, bloques e intentos configurables.**
+**Fase actual: v0.18 — Calificaciones por curso y administración por alumno.**
 
 Frontend: Next.js + TypeScript + CSS, publicado con GitHub Pages.  
 Backend, autenticación y datos: Supabase.
 
-Ya existen registro, confirmación por correo, perfiles, Carné Nexora, roles, onboarding, solicitudes e inscripciones, diagnóstico funcional de Matemática, historial de diagnósticos, creador de clases y actividades para Profesor, preguntas configurables, Formación esencial, intentos persistentes, asignación individual, revisión manual firmada, calificaciones reales por bloque y promedio dinámico.
+Ya existen registro, confirmación por correo, recuperación de contraseña, perfiles, Carné Nexora, roles, onboarding, solicitudes e inscripciones, diagnóstico funcional de Matemática, historial de diagnósticos, creador de clases y actividades, preguntas configurables, Formación esencial, intentos persistentes, asignación individual, revisión firmada con comentarios por pregunta, biblioteca de tareas/ejercicios, administración centrada en el alumno y calificaciones reales por curso y bloque.
 
 ## 🧭 Navegación principal
 
@@ -32,7 +32,9 @@ Los roles disponibles son `student`, `teacher` y `admin`. Una cuenta puede tener
 
 El catálogo persistente vive en `courses`. Una solicitud aceptada crea una inscripción real en `course_enrollments`.
 
-Los cursos normales se solicitan desde **Solicitar curso** y Administración puede revisarlos, aceptarlos o rechazarlos. Cada curso dispone de Resumen, Clases, Tareas, Ejercicios y Calificaciones.
+Los cursos normales pueden solicitarse desde **Solicitar curso**. Además, Administración puede seleccionar un alumno y asignarle o retirarle materias directamente. Retirar un curso lo pausa y conserva su historial.
+
+Cada curso dispone de **Resumen, Clases, Tareas, Ejercicios y Calificaciones**.
 
 ## 🧠 Diagnósticos
 
@@ -54,32 +56,19 @@ Al finalizar se genera `diagnostic_results` con ubicación estimada, temas domin
 
 ## 👨‍🏫 Profesor
 
-Dentro de Administración existe un apartado Profesor para cuentas con rol `teacher`.
-
 ### Clases
 
 Profesor puede crear clases vinculadas a cualquier curso. Cada clase puede guardar unidad o tema, título, explicación, ejemplos guiados, recursos o notas, posición para ordenar y estado Borrador/Publicada.
-
-Las clases publicadas aparecen en la pestaña **Clases** del curso. Los estudiantes únicamente pueden leer clases publicadas de cursos en los que están inscritos.
 
 ### Actividades
 
 Profesor puede crear y editar **Tareas de cuaderno**, **Tareas virtuales** y **Ejercicios prácticos**.
 
-Cada actividad puede configurar curso, título, punteo cuando corresponda, **Bloque 1–4**, **cantidad de intentos permitidos (1–20)**, fecha/hora de apertura, fecha/hora de cierre, cronómetro opcional, estado Borrador/Publicada e instrucciones generales.
+Cada actividad puede configurar curso, título, punteo cuando corresponda, **Bloque 1–4**, **1–20 intentos**, apertura, cierre, cronómetro opcional, estado Borrador/Publicada e instrucciones generales.
 
-Las tareas calificables alimentan el bloque seleccionado y el promedio académico. Los ejercicios prácticos pueden organizarse por bloque y calificarse como retroalimentación, pero no afectan el promedio.
+Las tareas calificables alimentan el bloque y el promedio académico. Los ejercicios prácticos se califican sobre **100 puntos** como retroalimentación, pero no afectan el promedio académico.
 
-La hoja en blanco funciona como editor. Antes de publicar puede usarse **👁️ Vista previa**. Al publicarse, el estudiante ve una hoja/cuaderno centrada inspirada en el estilo del diagnóstico.
-
-### Asignación de estudiantes
-
-Cada actividad puede enviarse de dos maneras:
-
-- **Todo el curso**: la reciben todos los estudiantes activos inscritos en esa materia.
-- **Estudiantes específicos**: Profesor selecciona una o varias personas inscritas y únicamente ellas pueden verla e iniciarla.
-
-La selección individual se almacena en `course_activity_assignments`. La protección también se aplica en RLS y en la función que inicia los intentos, por lo que otro estudiante del mismo curso no puede abrir una actividad individual aunque conozca su identificador.
+Cada actividad puede enviarse a **todo el curso** o a **estudiantes específicos**. La selección individual se almacena en `course_activity_assignments` y también se valida en servidor.
 
 ### Constructor de preguntas
 
@@ -87,45 +76,47 @@ Profesor puede combinar **Respuesta escrita**, **Elección única**, **Selecció
 
 Las claves correctas se almacenan en `private.course_activity_answer_keys` y no se envían al estudiante.
 
-### Revisión y calificación manual
+### Revisión y calificación
 
-Las entregas terminadas aparecen en **Profesor → Revisar y calificar entregas**.
+Administración está organizada por alumno. Al seleccionar un estudiante se pueden ver sus cursos y únicamente sus entregas.
 
-En cada pregunta, Profesor ve la respuesta del estudiante y puede marcarla como:
+Cada respuesta puede marcarse como:
 
 - ✅ **Correcta**;
 - ❌ **Incorrecta**.
 
-Al finalizar la revisión se coloca una calificación y existe un campo de **retroalimentación final**. Cada revisión guarda automáticamente el nombre académico del profesor que la realizó. El estudiante ve la marca correcta/incorrecta después de cada respuesta y, al final de la actividad, su nota, retroalimentación y firma del profesor.
+También existe un **comentario amarillo independiente por pregunta**, además de la retroalimentación general final. Cada revisión queda firmada automáticamente con el nombre académico del profesor.
 
-## ✍️ Intentos y entregas del estudiante
+## ✍️ Experiencia del estudiante
 
-Las actividades publicadas aparecen en **Tareas** o en las pestañas Tareas/Ejercicios de cada curso durante su ventana de disponibilidad y únicamente cuando fueron asignadas al estudiante.
+Dentro de cada curso, Tareas y Ejercicios funcionan como bibliotecas de tarjetas acumulables. El estudiante selecciona una tarjeta para abrir la actividad.
 
-El estudiante puede pulsar **Comenzar actividad**. Nexora crea un intento persistente en `activity_attempts` y, si existe un cronómetro, calcula su hora de vencimiento en el servidor.
+Al comenzar un intento:
 
-Cada actividad tiene un límite configurable de intentos. Nexora muestra el intento actual (`1 de 3`, por ejemplo) y el servidor impide crear intentos por encima del máximo definido. Cada intento tiene su propio cronómetro cuando corresponde.
+- las preguntas se muestran **una por una**;
+- existe navegación lateral numerada inspirada en el diagnóstico;
+- las respuestas se guardan automáticamente;
+- el cronómetro es persistente y se controla en servidor;
+- el botón de finalizar aparece al llegar al final del ejercicio o tarea.
 
-Durante un intento las respuestas se guardan automáticamente, recargar no reinicia el intento y entregar lo cierra. Si aún quedan intentos disponibles, el estudiante puede iniciar el siguiente. Para el promedio académico se conserva la **mejor nota** obtenida en cada tarea calificable.
-
-Después de entregar, cada intento queda pendiente de revisión. Cuando Profesor lo califica, la misma hoja muestra el resultado de cada respuesta y la retroalimentación final.
+Los ejercicios cerrados permanecen accesibles dentro del curso para consultar respuestas, revisión y calificación.
 
 ## 📊 Calificaciones y promedio
 
-La sección **Calificaciones** ya usa datos reales.
+La sección global **Calificaciones** y la pestaña **Calificaciones de cada curso** usan datos reales.
 
 - Cada tarea calificable pertenece a uno de los 4 bloques.
-- Cada bloque muestra los puntos obtenidos sobre los puntos ya calificados disponibles, por ejemplo `35/40`.
-- Si una tarea tiene varios intentos revisados, se usa el de mejor porcentaje.
+- Cada bloque muestra puntos obtenidos sobre los puntos ya calificados, por ejemplo `35/40`.
+- Si una tarea tiene varios intentos revisados, cuenta el intento con mejor porcentaje.
 - Los ejercicios prácticos no afectan el promedio.
-- El **Promedio actual** del Inicio se calcula con las mejores notas de las tareas ya calificadas.
-- **Tareas pendientes** del Inicio también proviene de las actividades actualmente disponibles.
+- Dentro de cada materia se muestra **Promedio actual**, cuatro tarjetas de bloque y el detalle de tareas calificadas.
+- El **Promedio actual** del Inicio usa las mejores notas de las tareas ya calificadas.
 
-Cuando los cuatro bloques estén completos, cada curso podrá cerrar su nota final sobre la estructura de 4 bloques de hasta 100 puntos.
+El cierre definitivo de bloques y el promedio final de los cuatro bloques todavía se implementarán como reglas académicas separadas.
 
 ## 🌱 Formación esencial — primeros 365 días
 
-Cada usuario queda inscrito automáticamente durante su primer año en seis cursos breves:
+Cada usuario queda inscrito automáticamente durante su primer año en:
 
 - ✍️ Caligrafía y escritura clara
 - 📖 Comprensión y expresión lectora
@@ -134,23 +125,24 @@ Cada usuario queda inscrito automáticamente durante su primer año en seis curs
 - 🧩 Lógica y razonamiento
 - 📅 Organización y hábitos de estudio
 
-La inscripción guarda `required_until`, calculado como 365 días desde la creación del perfil. Después de esa fecha estos cursos dejan de ser obligatorios y podrán mantenerse de forma opcional.
+La inscripción guarda `required_until`, calculado como 365 días desde la creación del perfil.
 
 ## 🔐 Seguridad
 
-- Supabase Auth gestiona las cuentas.
+- Supabase Auth gestiona las cuentas y recuperación de contraseña.
 - RLS limita perfiles, solicitudes, inscripciones, clases, diagnósticos, actividades, asignaciones e intentos.
 - El estudiante solo puede leer contenido publicado que le corresponda.
-- Los intentos solo pueden ser leídos por su estudiante o por personal autorizado.
-- Las respuestas correctas del diagnóstico y de las actividades no se exponen al navegador.
+- Las respuestas correctas del diagnóstico y de actividades no se exponen al estudiante.
 - Crear, guardar y entregar intentos pasa por funciones seguras del servidor.
-- El límite de intentos también se comprueba en servidor.
-- La calificación manual pasa por una RPC protegida y la firma del profesor se obtiene en servidor.
+- El límite de intentos se comprueba también en servidor.
+- La calificación manual pasa por RPC protegida y la firma del profesor se obtiene en servidor.
 - Las cuentas de estudiante no reciben permisos directos para modificar calificaciones ni revisiones.
+
+Pendiente de seguridad antes de una beta más amplia: activar **Leaked Password Protection** en Supabase Auth.
 
 ## 🔁 PMA
 
-El PMA seguirá siendo una modalidad especial de segundo intento. El nuevo sistema de múltiples intentos ya permite conservar la mejor nota; más adelante PMA añadirá sus reglas y ventana propias.
+PMA será una modalidad especial basada sobre el sistema actual de múltiples intentos. Más adelante añadirá reglas, ventana y etiqueta propias sin duplicar el almacenamiento de intentos.
 
 ## 🏆 Sistema académico
 
@@ -187,11 +179,12 @@ Cada curso tendrá 4 bloques de hasta 100 puntos.
 
 ## 🚧 Próximos objetivos
 
-1. Añadir **recuperación de contraseña** y cerrar la preparación mínima de la Beta para amigos.
-2. Convertir las tarjetas superiores de Administración en apartados funcionales para catálogo e inscripciones manuales.
+1. Mostrar **Tareas disponibles** en Inicio con estados claros.
+2. Hacer funcional **Gestionar cursos** para crear, editar, activar/desactivar y configurar diagnóstico.
 3. Completar reglas de cierre de los 4 bloques y PMA.
-4. Añadir el **Profesor IA únicamente para la cuenta principal**, usando el mismo sistema de cursos, clases, actividades y calificaciones.
-5. Añadir presencia opcional **Conectados ahora**, XP Nexora, ligas y ranking semanal opcional.
+4. Terminar la revisión de seguridad para la Beta de amigos.
+5. Añadir el **Profesor IA únicamente para la cuenta principal**.
+6. Después de la Beta: presencia opcional, XP Nexora, ligas, ranking, logros y minijuegos.
 
 ---
 
@@ -203,89 +196,57 @@ Cada curso tendrá 4 bloques de hasta 100 puntos.
 - Se definieron cursos, tareas, ejercicios, calificaciones, PMA y etapas académicas.
 - Se configuraron GitHub Pages y Supabase.
 
-## 1 de octubre de 2026 — v0.3: cuentas y onboarding
+## 1 de octubre de 2026 — v0.3 a v0.7
 
-- Registro, login y confirmación por correo.
-- Identidad con nombre real, usuario y Carné Nexora.
-- Roles, reglas, onboarding y solicitudes persistentes.
+- Registro, login, confirmación, identidad académica, Carné Nexora y roles.
+- Banco permanente de 194 preguntas de Matemática.
+- Diagnóstico funcional, resultados e historial.
+- Catálogo persistente, solicitudes e inscripciones.
 
-## 1 de octubre de 2026 — v0.4: banco de Matemática
+## 1 de octubre de 2026 — v0.8 a v0.10
 
-- Banco permanente de 194 preguntas en 6 niveles.
-- Respuestas correctas protegidas del frontend.
+- Panel Profesor y creador de tareas/ejercicios.
+- Vista previa y hoja publicada.
+- Constructor de preguntas.
+- Formación esencial automática durante el primer año.
 
-## 1 de octubre de 2026 — v0.5: diagnóstico funcional
+## 1 de octubre de 2026 — v0.11 a v0.14
 
-- Intento único por materia.
-- Preguntas sorteadas persistentes.
-- Navegación por tarjetas numeradas.
-- Siguiente y Mi límite.
-- Corrección segura en Supabase.
+- Creador y publicación de clases.
+- Intentos persistentes, autosave, entrega y cronómetro.
+- Asignación individual de actividades.
+- Revisión manual firmada.
+- Bloques 1–4, múltiples intentos y mejor intento para promedio.
+- Calificaciones globales y estadísticas reales de Inicio.
 
-## 1 de octubre de 2026 — v0.6: resultados e historial
+## 2 de octubre de 2026 — v0.15: recuperación de contraseña
 
-- Resultados persistentes con ubicación estimada.
-- Temas dominados y temas a reforzar.
-- Nueva sección Diagnósticos.
+- Se añadió flujo completo de recuperación por correo con Supabase Auth.
+- Se corrigió el manejo de la sesión temporal de recuperación.
 
-## 1 de octubre de 2026 — v0.7: catálogo, cursos e inscripciones
+## 2 de octubre de 2026 — v0.16: biblioteca y corrección detallada
 
-- Se separó Solicitar curso de Cursos.
-- Se creó el catálogo persistente y `course_enrollments`.
-- Administración puede aceptar o rechazar solicitudes.
-- Cada curso dispone de Resumen, Clases, Tareas, Ejercicios y Calificaciones.
+- Tareas y Ejercicios se acumulan como tarjetas dentro del curso.
+- Las preguntas se resuelven una por una con navegación lateral numerada.
+- Los ejercicios cerrados conservan su historial y calificación.
+- Se añadió comentario amarillo persistente por pregunta.
+- Los ejercicios prácticos se califican sobre 100.
+- Inscripciones manuales permiten asignar o pausar cursos sin borrar historial.
 
-## 1 de octubre de 2026 — v0.8: Panel Profesor
+## 2 de octubre de 2026 — v0.17: administración por alumno
 
-- Administración quedó enfocada en cursos e inscripciones.
-- Se añadió Profesor dentro del panel de gestión.
-- Profesor puede crear tareas y ejercicios con fechas, punteo y cronómetro opcional.
+- Administración se reorganizó alrededor de la ficha de cada estudiante.
+- La lista muestra cursos activos y entregas pendientes.
+- Cada alumno dispone de pestañas Cursos y Entregas.
+- La cola de calificación puede filtrarse por estudiante.
 
-## 1 de octubre de 2026 — v0.9: vista publicada de actividades
+## 2 de octubre de 2026 — v0.18: calificaciones dentro del curso
 
-- Se añadió Vista previa.
-- Las actividades publicadas usan una hoja/cuaderno inspirada en el diagnóstico.
-- Tareas y Ejercicios cargan actividades reales y respetan apertura/cierre.
-
-## 1 de octubre de 2026 — v0.10: preguntas y Formación esencial
-
-- Se añadió constructor por bloques para respuesta escrita, elección única, selección múltiple y verdadero/falso.
-- Las claves correctas se separaron del contenido visible y se guardan en esquema privado.
-- Se crearon seis cursos de Formación esencial y se asignan durante los primeros 365 días.
-
-## 1 de octubre de 2026 — v0.11: clases e intentos
-
-- Profesor puede crear, ordenar, previsualizar y publicar clases.
-- Las clases publicadas aparecen dentro de cada curso.
-- Se creó `activity_attempts` para conservar el trabajo de cada estudiante.
-- Se añadió **Comenzar actividad**, guardado automático, **Entregar actividad** y cronómetro persistente.
-
-## 1 de octubre de 2026 — v0.12: asignación individual
-
-- Profesor puede enviar una actividad a todo un curso o a estudiantes específicos.
-- Se añadió `course_activity_assignments`.
-- El selector muestra nombre académico y Carné de los estudiantes activos del curso.
-- RLS oculta una actividad individual a quienes no estén asignados.
-- La función de iniciar intentos comprueba también la asignación en servidor.
-
-## 1 de octubre de 2026 — v0.13: revisión y calificación manual
-
-- Profesor dispone de una cola de entregas terminadas.
-- Cada respuesta puede marcarse como correcta o incorrecta.
-- Se añadió calificación numérica y retroalimentación final.
-- Cada revisión queda firmada automáticamente con el nombre académico del profesor.
-- El estudiante ve la corrección después de cada respuesta y la retroalimentación al final de la hoja.
-
-## 1 de octubre de 2026 — v0.14: calificaciones, bloques e intentos
-
-- Cada actividad puede configurar entre 1 y 20 intentos.
-- El límite de intentos se valida en Supabase y no puede saltarse desde el navegador.
-- Cada tarea puede asignarse a Bloque 1, 2, 3 o 4.
-- Calificaciones muestra puntos reales por curso y bloque.
-- El mejor intento de cada tarea es el que cuenta para el promedio.
-- Los ejercicios prácticos quedan fuera del promedio académico.
-- Inicio calcula **Tareas pendientes** y **Promedio actual** con datos reales.
-- El flujo de límite de intentos se probó dentro de una transacción y luego se revirtió.
+- La pestaña Calificaciones de cada materia muestra el promedio actual.
+- Se añadieron cuatro tarjetas para Bloque 1–4.
+- Cada bloque muestra puntos obtenidos, puntos calificados y porcentaje actual.
+- Se añadió detalle de tareas calificadas, mejor intento, profesor y fecha de revisión.
+- Los ejercicios prácticos permanecen fuera del promedio académico.
 
 ---
 
