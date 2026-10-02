@@ -35,7 +35,7 @@ export default function ResetPasswordForm() {
 
         const code = search.get("code");
         const tokenHash = search.get("token_hash");
-        const recoveryType = search.get("type") === "recovery" || hash.get("type") === "recovery";
+        const recoveryType = search.get("recovery") === "1" || search.get("type") === "recovery" || hash.get("type") === "recovery";
         const accessToken = hash.get("access_token");
         const refreshToken = hash.get("refresh_token");
 
