@@ -1,6 +1,7 @@
 import AdminCourseRequests from "@/components/AdminCourseRequests";
 import AppShell from "@/components/AppShell";
 import TeacherActivityManager from "@/components/TeacherActivityManager";
+import TeacherGradingManager from "@/components/TeacherGradingManager";
 import TeacherLessonManager from "@/components/TeacherLessonManager";
 
 const adminActions = [
@@ -16,7 +17,7 @@ export default function AdminPage() {
         <div>
           <p className="eyebrow">Administración y Profesor</p>
           <h1>Panel de gestión</h1>
-          <p>Administración organiza cursos e inscripciones; Profesor prepara clases y actividades.</p>
+          <p>Administración organiza cursos e inscripciones; Profesor prepara clases, actividades y revisa entregas.</p>
         </div>
       </div>
 
@@ -45,6 +46,7 @@ export default function AdminPage() {
 
       <TeacherLessonManager />
       <TeacherActivityManager />
+      <TeacherGradingManager />
     </AppShell>
   );
 }
