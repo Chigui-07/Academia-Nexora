@@ -4,12 +4,12 @@
 
 ## 📌 Estado del proyecto
 
-**Fase actual: v0.18 — Calificaciones por curso y administración por alumno.**
+**Fase actual: v0.19 — Tareas organizadas en Inicio.**
 
 Frontend: Next.js + TypeScript + CSS, publicado con GitHub Pages.  
 Backend, autenticación y datos: Supabase.
 
-Ya existen registro, confirmación por correo, recuperación de contraseña, perfiles, Carné Nexora, roles, onboarding, solicitudes e inscripciones, diagnóstico funcional de Matemática, historial de diagnósticos, creador de clases y actividades, preguntas configurables, Formación esencial, intentos persistentes, asignación individual, revisión firmada con comentarios por pregunta, biblioteca de tareas/ejercicios, administración centrada en el alumno y calificaciones reales por curso y bloque.
+Ya existen registro, confirmación por correo, recuperación de contraseña, perfiles, Carné Nexora, roles, onboarding, solicitudes e inscripciones, diagnóstico funcional de Matemática, historial de diagnósticos, creador de clases y actividades, preguntas configurables, Formación esencial, intentos persistentes, asignación individual, revisión firmada con comentarios por pregunta, biblioteca de tareas/ejercicios, administración centrada en el alumno, calificaciones reales por curso y un tablero de tareas en Inicio.
 
 ## 🧭 Navegación principal
 
@@ -101,6 +101,18 @@ Al comenzar un intento:
 
 Los ejercicios cerrados permanecen accesibles dentro del curso para consultar respuestas, revisión y calificación.
 
+### Tareas en Inicio
+
+Inicio incluye un tablero real de tareas con cinco estados:
+
+- **Pendientes**: disponibles o en curso;
+- **Próximas**: publicadas pero todavía no abiertas;
+- **Entregadas**: terminadas y esperando revisión;
+- **Calificadas**: ya revisadas por Profesor;
+- **Vencidas**: cerradas sin entrega.
+
+Cada tarjeta muestra materia, bloque, puntos, intentos, cronómetro cuando existe y fecha relevante. Desde la tarjeta se puede abrir directamente la pestaña **Tareas** de la materia correspondiente.
+
 ## 📊 Calificaciones y promedio
 
 La sección global **Calificaciones** y la pestaña **Calificaciones de cada curso** usan datos reales.
@@ -111,6 +123,7 @@ La sección global **Calificaciones** y la pestaña **Calificaciones de cada cur
 - Los ejercicios prácticos no afectan el promedio.
 - Dentro de cada materia se muestra **Promedio actual**, cuatro tarjetas de bloque y el detalle de tareas calificadas.
 - El **Promedio actual** del Inicio usa las mejores notas de las tareas ya calificadas.
+- Las tareas entregadas dejan de contarse como pendientes en Inicio.
 
 El cierre definitivo de bloques y el promedio final de los cuatro bloques todavía se implementarán como reglas académicas separadas.
 
@@ -179,12 +192,11 @@ Cada curso tendrá 4 bloques de hasta 100 puntos.
 
 ## 🚧 Próximos objetivos
 
-1. Mostrar **Tareas disponibles** en Inicio con estados claros.
-2. Hacer funcional **Gestionar cursos** para crear, editar, activar/desactivar y configurar diagnóstico.
-3. Completar reglas de cierre de los 4 bloques y PMA.
-4. Terminar la revisión de seguridad para la Beta de amigos.
-5. Añadir el **Profesor IA únicamente para la cuenta principal**.
-6. Después de la Beta: presencia opcional, XP Nexora, ligas, ranking, logros y minijuegos.
+1. Hacer funcional **Gestionar cursos** para crear, editar, activar/desactivar y configurar diagnóstico.
+2. Completar reglas de cierre de los 4 bloques y PMA.
+3. Terminar la revisión de seguridad para la Beta de amigos.
+4. Añadir el **Profesor IA únicamente para la cuenta principal**.
+5. Después de la Beta: presencia opcional, XP Nexora, ligas, ranking, logros y minijuegos.
 
 ---
 
@@ -247,6 +259,14 @@ Cada curso tendrá 4 bloques de hasta 100 puntos.
 - Cada bloque muestra puntos obtenidos, puntos calificados y porcentaje actual.
 - Se añadió detalle de tareas calificadas, mejor intento, profesor y fecha de revisión.
 - Los ejercicios prácticos permanecen fuera del promedio académico.
+
+## 2 de octubre de 2026 — v0.19: tareas organizadas en Inicio
+
+- Inicio muestra un tablero real de tareas por estado.
+- Se separan Pendientes, Próximas, Entregadas, Calificadas y Vencidas.
+- Las tarjetas muestran materia, bloque, puntos, intentos, cronómetro y fechas.
+- Las tareas entregadas dejan de aparecer como pendientes.
+- Desde Inicio se puede saltar directamente a la pestaña Tareas del curso correspondiente.
 
 ---
 
