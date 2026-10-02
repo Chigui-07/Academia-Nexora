@@ -1,0 +1,72 @@
+.runner {
+  display: grid;
+  gap: 14px;
+}
+
+.controlBar {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  padding: 15px 16px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.controlBar > div:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.controlBar strong {
+  font-size: 0.98rem;
+}
+
+.controlBar small {
+  color: var(--muted);
+  line-height: 1.45;
+}
+
+.controlActions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.timer {
+  min-width: 102px;
+  padding: 9px 12px;
+  border: 1px solid color-mix(in srgb, var(--primary) 38%, var(--border));
+  border-radius: 999px;
+  color: var(--primary);
+  background: color-mix(in srgb, var(--primary) 8%, var(--surface));
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  font-weight: 900;
+}
+
+.timerWarning {
+  color: var(--warning);
+  border-color: color-mix(in srgb, var(--warning) 55%, var(--border));
+  background: color-mix(in srgb, var(--warning) 9%, var(--surface));
+}
+
+@media (max-width: 720px) {
+  .controlBar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .controlActions {
+    justify-content: stretch;
+  }
+
+  .controlActions button,
+  .timer {
+    width: 100%;
+  }
+}

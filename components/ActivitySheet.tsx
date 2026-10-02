@@ -1,4 +1,4 @@
-import { ActivityQuestionBlock, activityQuestionTypeLabels } from "@/lib/activityQuestions";
+import { ActivityAnswerKey, ActivityAnswerValue, ActivityQuestionBlock, activityQuestionTypeLabels } from "@/lib/activityQuestions";
 import styles from "./ActivitySheet.module.css";
 
 export type ActivitySheetType = "notebook_task" | "virtual_task" | "practice";
@@ -15,6 +15,9 @@ type ActivitySheetProps = {
   timeLimitMinutes?: number | null;
   questionBlocks?: ActivityQuestionBlock[];
   preview?: boolean;
+  answers?: ActivityAnswerKey;
+  responsesDisabled?: boolean;
+  onAnswerChange?: (questionId: string, value: ActivityAnswerValue) => void;
 };
 
 const typeLabels: Record<ActivitySheetType, string> = {
@@ -46,9 +49,13 @@ export default function ActivitySheet({
   timeLimitMinutes = null,
   questionBlocks = [],
   preview = false,
+  answers = {},
+  responsesDisabled = false,
+  onAnswerChange,
 }: ActivitySheetProps) {
   const opensLabel = formatDate(opensAt);
   const closesLabel = formatDate(closesAt);
+  const inputDisabled = preview || responsesDisabled;
 
   return (
     <article className={styles.paper}>
@@ -78,72 +85,104 @@ export default function ActivitySheet({
 
         {questionBlocks.length > 0 && (
           <section className={styles.questions}>
-            {questionBlocks.map((question, index) => (
-              <div className={styles.question} key={question.id}>
-                <div className={styles.questionHeading}>
-                  <span>Pregunta {index + 1}</span>
-                  <small>{activityQuestionTypeLabels[question.type]}</small>
+            {questionBlocks.map((question, index) => {
+              const current = answers[question.id];
+              const selectedMultiple = Array.isArray(current) ? current : [];
+
+              return (
+                <div className={styles.question} key={question.id}>
+                  <div className={styles.questionHeading}>
+                    <span>Pregunta {index + 1}</span>
+                    <small>{activityQuestionTypeLabels[question.type]}</small>
+                  </div>
+                  <p>{question.prompt || "Pregunta sin enunciado"}</p>
+
+                  {question.type === "written" && (
+                    <textarea
+                      className={styles.writtenAnswer}
+                      placeholder={question.placeholder || "Escribe tu respuesta..."}
+                      rows={4}
+                      value={typeof current === "string" ? current : ""}
+                      disabled={inputDisabled}
+                      onChange={(event) => onAnswerChange?.(question.id, event.target.value)}
+                    />
+                  )}
+
+                  {question.type === "single_choice" && (
+                    <div className={styles.choiceList}>
+                      {(question.options ?? []).map((option) => (
+                        <label key={option.id} className={current === option.id ? styles.choiceSelected : undefined}>
+                          <input
+                            type="radio"
+                            name={`activity-${question.id}`}
+                            checked={current === option.id}
+                            disabled={inputDisabled}
+                            onChange={() => onAnswerChange?.(question.id, option.id)}
+                          />
+                          <span>{option.label || "Opción sin texto"}</span>
+                        </label>
+                      ))}
+                    </div>
+                  )}
+
+                  {question.type === "multiple_choice" && (
+                    <div className={styles.choiceList}>
+                      {(question.options ?? []).map((option) => {
+                        const checked = selectedMultiple.includes(option.id);
+                        return (
+                          <label key={option.id} className={checked ? styles.choiceSelected : undefined}>
+                            <input
+                              type="checkbox"
+                              checked={checked}
+                              disabled={inputDisabled}
+                              onChange={(event) => {
+                                const next = event.target.checked
+                                  ? [...selectedMultiple, option.id]
+                                  : selectedMultiple.filter((id) => id !== option.id);
+                                onAnswerChange?.(question.id, next);
+                              }}
+                            />
+                            <span>{option.label || "Opción sin texto"}</span>
+                          </label>
+                        );
+                      })}
+                      <small className={styles.choiceHint}>Puedes marcar más de una respuesta.</small>
+                    </div>
+                  )}
+
+                  {question.type === "true_false" && (
+                    <div className={styles.choiceList}>
+                      <label className={current === true ? styles.choiceSelected : undefined}>
+                        <input
+                          type="radio"
+                          name={`activity-${question.id}`}
+                          checked={current === true}
+                          disabled={inputDisabled}
+                          onChange={() => onAnswerChange?.(question.id, true)}
+                        />
+                        <span>Verdadero</span>
+                      </label>
+                      <label className={current === false ? styles.choiceSelected : undefined}>
+                        <input
+                          type="radio"
+                          name={`activity-${question.id}`}
+                          checked={current === false}
+                          disabled={inputDisabled}
+                          onChange={() => onAnswerChange?.(question.id, false)}
+                        />
+                        <span>Falso</span>
+                      </label>
+                    </div>
+                  )}
                 </div>
-                <p>{question.prompt || "Pregunta sin enunciado"}</p>
-
-                {question.type === "written" && (
-                  <textarea
-                    className={styles.writtenAnswer}
-                    placeholder={question.placeholder || "Escribe tu respuesta..."}
-                    rows={4}
-                    disabled={preview}
-                  />
-                )}
-
-                {question.type === "single_choice" && (
-                  <div className={styles.choiceList}>
-                    {(question.options ?? []).map((option) => (
-                      <label key={option.id}>
-                        <input type="radio" name={`activity-${question.id}`} disabled={preview} />
-                        <span>{option.label || "Opción sin texto"}</span>
-                      </label>
-                    ))}
-                  </div>
-                )}
-
-                {question.type === "multiple_choice" && (
-                  <div className={styles.choiceList}>
-                    {(question.options ?? []).map((option) => (
-                      <label key={option.id}>
-                        <input type="checkbox" disabled={preview} />
-                        <span>{option.label || "Opción sin texto"}</span>
-                      </label>
-                    ))}
-                    <small className={styles.choiceHint}>Puedes marcar más de una respuesta.</small>
-                  </div>
-                )}
-
-                {question.type === "true_false" && (
-                  <div className={styles.choiceList}>
-                    <label>
-                      <input type="radio" name={`activity-${question.id}`} disabled={preview} />
-                      <span>Verdadero</span>
-                    </label>
-                    <label>
-                      <input type="radio" name={`activity-${question.id}`} disabled={preview} />
-                      <span>Falso</span>
-                    </label>
-                  </div>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </section>
         )}
 
-        {timeLimitMinutes && (
+        {timeLimitMinutes && preview && (
           <div className={styles.timerNote}>
-            ⏱️ El cronómetro comenzará cuando el estudiante inicie la actividad.
-          </div>
-        )}
-
-        {!preview && questionBlocks.length > 0 && (
-          <div className={styles.draftAnswerNote}>
-            Las cajas de respuesta ya forman parte de la actividad. El guardado y la entrega persistente se habilitarán con el sistema de intentos.
+            ⏱️ El cronómetro comenzará cuando el estudiante pulse Comenzar actividad.
           </div>
         )}
       </div>

@@ -4,12 +4,12 @@
 
 ## 📌 Estado del proyecto
 
-**Fase actual: v0.10 — Preguntas configurables y Formación esencial.**
+**Fase actual: v0.11 — Clases e intentos de actividades.**
 
 Frontend: Next.js + TypeScript + CSS, publicado con GitHub Pages.  
 Backend, autenticación y datos: Supabase.
 
-Ya existen registro, confirmación por correo, perfiles, Carné Nexora, roles, onboarding, solicitudes e inscripciones, diagnóstico funcional de Matemática, historial de diagnósticos, creador de actividades para Profesor, vista publicada tipo cuaderno, preguntas interactivas configurables y cursos obligatorios de Formación esencial.
+Ya existen registro, confirmación por correo, perfiles, Carné Nexora, roles, onboarding, solicitudes e inscripciones, diagnóstico funcional de Matemática, historial de diagnósticos, creador de clases y actividades para Profesor, preguntas configurables, Formación esencial e intentos persistentes para estudiantes.
 
 ## 🧭 Navegación principal
 
@@ -56,6 +56,22 @@ Al finalizar se genera `diagnostic_results` con ubicación estimada, temas domin
 
 Dentro de Administración existe un apartado Profesor para cuentas con rol `teacher`.
 
+### Clases
+
+Profesor puede crear clases vinculadas a cualquier curso. Cada clase puede guardar:
+
+- unidad o tema;
+- título;
+- explicación;
+- ejemplos guiados;
+- recursos o notas;
+- posición para ordenar las clases;
+- estado Borrador/Publicada.
+
+Las clases publicadas aparecen en la pestaña **Clases** del curso. Los estudiantes únicamente pueden leer clases publicadas de cursos en los que están inscritos.
+
+### Actividades
+
 Profesor puede crear y editar:
 
 - **Tareas de cuaderno**;
@@ -64,28 +80,36 @@ Profesor puede crear y editar:
 
 Cada actividad puede configurar curso, título, punteo cuando corresponda, fecha/hora de apertura, fecha/hora de cierre, cronómetro opcional, estado Borrador/Publicada e instrucciones generales.
 
-### Hoja de actividad
-
-La hoja en blanco funciona únicamente como **editor**. Antes de publicar puede usarse **👁️ Vista previa**. Al publicarse, el estudiante ve una hoja/cuaderno centrada inspirada en el estilo del diagnóstico.
+La hoja en blanco funciona como editor. Antes de publicar puede usarse **👁️ Vista previa**. Al publicarse, el estudiante ve una hoja/cuaderno centrada inspirada en el estilo del diagnóstico.
 
 ### Constructor de preguntas
 
 Profesor puede combinar varios bloques dentro de una misma actividad:
 
-- **Respuesta escrita** — caja de texto para que el estudiante redacte;
-- **Elección única** — varias opciones y una sola correcta;
-- **Selección múltiple** — varias opciones y más de una respuesta correcta;
+- **Respuesta escrita**;
+- **Elección única**;
+- **Selección múltiple**;
 - **Verdadero o falso**.
 
-Las claves correctas no se guardan dentro del contenido visible. Se almacenan en `private.course_activity_answer_keys` y se administran mediante RPC seguras para Profesor/Admin.
+Las claves correctas se almacenan en `private.course_activity_answer_keys` y no se envían al estudiante.
 
-La columna pública `course_activities.question_blocks` contiene únicamente el contenido que el estudiante necesita ver: enunciados, tipo de pregunta y opciones.
+## ✍️ Intentos y entregas del estudiante
 
-## 📝 Vista del estudiante
+Las actividades publicadas aparecen en **Tareas** o en las pestañas Tareas/Ejercicios de cada curso durante su ventana de disponibilidad.
 
-Las actividades publicadas aparecen en **Tareas** o en las pestañas Tareas/Ejercicios de cada curso cuando están dentro de su ventana de disponibilidad.
+El estudiante puede pulsar **Comenzar actividad**. En ese momento Nexora crea un intento persistente en `activity_attempts` y, si existe un cronómetro, calcula su hora de vencimiento en el servidor.
 
-La hoja ya puede mostrar cajas de respuesta, botones de opción, casillas múltiples y verdadero/falso. El siguiente paso es crear el sistema de **Comenzar actividad**, guardado persistente, entrega y cronómetro real.
+Durante un intento:
+
+- las respuestas se guardan automáticamente;
+- recargar la página no reinicia el intento;
+- el cronómetro continúa desde la hora original;
+- **Entregar actividad** cierra el intento;
+- al llegar a cero, el intento se marca como terminado por tiempo y conserva las respuestas guardadas;
+- las tareas normales quedan cerradas después de entregarse;
+- los ejercicios prácticos pueden iniciar un nuevo intento para seguir practicando.
+
+La corrección automática, calificaciones y PMA se desarrollarán después de estabilizar la beta.
 
 ## 🌱 Formación esencial — primeros 365 días
 
@@ -105,10 +129,11 @@ Las actividades de Formación esencial deben ser ligeras, normalmente de 10–15
 ## 🔐 Seguridad
 
 - Supabase Auth gestiona las cuentas.
-- RLS limita perfiles, solicitudes, inscripciones, diagnósticos y actividades.
-- El estudiante solo puede leer actividades publicadas de cursos en los que está inscrito.
-- Las respuestas correctas del diagnóstico y de las nuevas preguntas configurables no se exponen al navegador.
-- La lógica sensible usa funciones seguras del servidor cuando corresponde.
+- RLS limita perfiles, solicitudes, inscripciones, clases, diagnósticos, actividades e intentos.
+- El estudiante solo puede leer contenido publicado de cursos en los que está inscrito.
+- Los intentos solo pueden ser leídos por su estudiante o por personal autorizado.
+- Las respuestas correctas del diagnóstico y de las actividades no se exponen al navegador.
+- Crear, guardar y entregar intentos pasa por funciones seguras del servidor.
 
 ## 🔁 PMA
 
@@ -133,7 +158,9 @@ Cada curso tendrá 4 bloques de hasta 100 puntos.
 - `courses`
 - `course_requests`
 - `course_enrollments`
+- `course_lessons`
 - `course_activities`
+- `activity_attempts`
 - `admin_notifications`
 - `diagnostic_levels`
 - `diagnostic_question_pools`
@@ -146,14 +173,13 @@ Cada curso tendrá 4 bloques de hasta 100 puntos.
 
 ## 🚧 Próximos objetivos
 
-1. Crear **Comenzar actividad**, intentos, respuestas persistentes y Entregar.
-2. Ejecutar el cronómetro real y conservarlo aunque se recargue la página.
-3. Crear el editor y publicación de **Clases**, organizadas por unidades/temas.
-4. Implementar calificaciones por bloques y PMA.
+1. Añadir **recuperación de contraseña**.
+2. Hacer una prueba completa con una segunda cuenta de estudiante y revisar aislamiento de datos/RLS.
+3. Preparar la **Beta para amigos** y crear las primeras clases según sus próximos exámenes.
+4. Implementar corrección, calificaciones por bloques y PMA.
 5. Hacer que Tareas pendientes y Promedio actual del Dashboard provengan de datos reales.
-6. Añadir recuperación de contraseña y completar pruebas multiusuario antes de abrir la beta a amigos.
-7. Añadir presencia opcional **Conectados ahora**, XP Nexora, ligas y ranking semanal opcional.
-8. Añadir IA educativa segura más adelante.
+6. Añadir presencia opcional **Conectados ahora**, XP Nexora, ligas y ranking semanal opcional.
+7. Añadir mejoras de contenido, recursos y posteriormente IA educativa segura.
 
 ---
 
@@ -213,10 +239,19 @@ Cada curso tendrá 4 bloques de hasta 100 puntos.
 
 - Se añadió constructor por bloques para respuesta escrita, elección única, selección múltiple y verdadero/falso.
 - Las claves correctas se separaron del contenido visible y se guardan en esquema privado.
-- Las hojas publicadas renderizan el control de respuesta correspondiente a cada pregunta.
-- Se crearon seis cursos de Formación esencial.
-- Todos los perfiles actuales quedaron inscritos automáticamente y los nuevos perfiles también lo harán.
-- Cada inscripción esencial conserva la fecha hasta la que es obligatoria durante los primeros 365 días.
+- Se crearon seis cursos de Formación esencial y se asignan durante los primeros 365 días.
+
+## 1 de octubre de 2026 — v0.11: clases e intentos
+
+- Profesor puede crear, ordenar, previsualizar y publicar clases.
+- Las clases publicadas aparecen dentro de cada curso.
+- Se creó `activity_attempts` para conservar el trabajo de cada estudiante.
+- Se añadió **Comenzar actividad**.
+- Las respuestas se guardan automáticamente durante el intento.
+- Se añadió **Entregar actividad** y cierre del intento.
+- El cronómetro utiliza una hora de vencimiento persistente y no se reinicia al recargar.
+- Los ejercicios prácticos permiten iniciar nuevos intentos.
+- Los flujos de iniciar, guardar y entregar se probaron dentro de una transacción segura y se revirtieron después de la comprobación.
 
 ---
 
