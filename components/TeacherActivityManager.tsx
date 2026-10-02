@@ -249,7 +249,10 @@ export default function TeacherActivityManager() {
       validatePublishedQuestions();
 
       const pointsValue = activityType === "practice" ? null : Number(points);
-      if (activityType !== "practice" && (!Number.isFinite(pointsValue) || pointsValue < 0 || pointsValue > 100)) {
+      if (
+        activityType !== "practice" &&
+        (pointsValue === null || !Number.isFinite(pointsValue) || pointsValue < 0 || pointsValue > 100)
+      ) {
         throw new Error("El punteo debe estar entre 0 y 100.");
       }
 
