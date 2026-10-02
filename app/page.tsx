@@ -18,11 +18,11 @@ export default function LoginPage() {
           <p className="eyebrow" style={{ color: "rgba(255,255,255,.72)" }}>Tu espacio de aprendizaje</p>
           <h1>Aprende. Avanza. Supera.</h1>
           <p>
-            Cursos, tareas, ejercicios, calificaciones, logros y una experiencia que crece contigo año tras año.
+            Cursos, clases, tareas, ejercicios, calificaciones y progreso académico por etapas y niveles, todo en un mismo lugar.
           </p>
         </div>
 
-        <small>Academia Nexora · Fundamentos Año 1</small>
+        <small>Academia Nexora · Etapas y niveles</small>
       </section>
 
       <section className="login-form-wrap">
