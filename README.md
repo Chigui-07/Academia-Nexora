@@ -4,7 +4,7 @@
 
 ## 📌 Estado del proyecto
 
-**Fase actual: v0.34 — panel de administración ordenado y sistema de diagnósticos eliminado.**
+**Fase actual: v0.34.1 — guardado fiable de clases, tareas y ejercicios.**
 
 - Frontend: Next.js + TypeScript + CSS.
 - Publicación: GitHub Pages.
@@ -82,6 +82,8 @@ Las actividades disponibles son:
 - ✏️ Ejercicio práctico
 
 Una actividad puede configurar curso, destinatarios, título, bloque, punteo, intentos, apertura, cierre, cronómetro, instrucciones, preguntas y estado Borrador/Publicada.
+
+Desde **v0.34.1**, la edición de clases vuelve a cargar correctamente los estudiantes específicos asignados. Las tareas y ejercicios se guardan mediante una sola operación atómica en Supabase: datos principales, preguntas, respuestas correctas y destinatarios se confirman juntos. Si algo falla, Nexora no deja un guardado parcial y muestra el error antes de limpiar el editor.
 
 Las tareas de cuaderno pueden cerrar con **✅ Enterado**. Las tareas virtuales y los ejercicios prácticos pueden cerrar con **✅ Revisado**. La confirmación guarda fecha y hora, pero no entrega la actividad ni modifica la calificación.
 
@@ -204,6 +206,7 @@ Cada sesión autenticada actualiza `user_presence`. Nexora distingue:
 - RLS protege perfiles, cursos, solicitudes, inscripciones, clases, marcadores, actividades, intentos, confirmaciones, historial y archivos.
 - El estudiante solo recibe contenido publicado que le corresponde.
 - Crear, guardar y entregar intentos pasa por funciones de servidor.
+- El guardado completo de una actividad pasa por un RPC que valida autenticación, rol, propiedad, curso, destinatarios y configuración antes de confirmar los cambios.
 - PMA valida servidor a servidor su relación con la tarea original.
 - El historial académico no admite escritura directa del estudiante.
 - El acceso visual a Administración no sustituye los controles reales de rol y RLS.
