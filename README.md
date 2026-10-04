@@ -4,26 +4,42 @@
 
 ## 📌 Estado del proyecto
 
-**Fase actual: v0.33 — Formación esencial como materia anual única de 2400 puntos.**
+**Fase actual: v0.34 — panel de administración ordenado y sistema de diagnósticos eliminado.**
 
 - Frontend: Next.js + TypeScript + CSS.
 - Publicación: GitHub Pages.
 - Backend, Auth, Storage y datos: Supabase.
 - El proyecto no depende de APIs de IA de pago.
 
-La base incluye registro, perfiles, Carné Nexora, roles, cursos, solicitudes e inscripciones, diagnósticos, clases, tablas dentro de clases, clases guardadas por estudiante, tareas, ejercicios, preguntas configurables, archivos privados, intentos persistentes, confirmaciones de lectura/revisión, revisión y calificación manual, presencia en línea, Formación esencial anual, PMA, etapas, niveles, bloques, historial académico y ascenso automático.
+La base incluye registro, perfiles, Carné Nexora, roles, cursos, solicitudes e inscripciones, clases, tablas dentro de clases, clases guardadas por estudiante, tareas, ejercicios, preguntas configurables, archivos privados, intentos persistentes, confirmaciones de lectura/revisión, revisión y calificación manual, presencia en línea, Formación esencial anual, PMA, etapas, niveles, bloques, historial académico y ascenso automático.
 
 ## 🧭 Navegación
 
 - 🏠 Inicio
 - 📚 Cursos
 - ➕ Solicitar curso
-- 🧠 Diagnósticos
 - 📝 Tareas
 - 📊 Calificaciones
 - 🟢 En línea
 - 🏅 Perfil
-- ⚙️ Administración, según permisos
+- ⚙️ Administración, para cuentas con permiso de profesor o administrador
+
+Las cuentas con permiso de gestión tienen acceso a **⚙️ Administración** tanto desde el menú lateral como desde la barra superior.
+
+## ⚙️ Administración
+
+Desde v0.34, Administración funciona como un menú de herramientas. Cada apartado es un botón y **solo una sección permanece abierta a la vez**.
+
+Secciones disponibles:
+
+- 📝 Tareas y ejercicios
+- 📖 Clases
+- 📚 Cursos
+- 👥 Alumnos
+- 📩 Solicitudes
+- 🎓 Progresión académica
+
+La sección **Tareas y ejercicios** se abre inicialmente para facilitar la creación rápida de actividades y archivos para los alumnos.
 
 ## 👤 Cuentas y roles
 
@@ -39,17 +55,7 @@ Administración puede crear, editar, activar o desactivar materias, aceptar soli
 
 Cada curso dispone de **Resumen, Clases, Tareas, Ejercicios y Calificaciones**.
 
-Las seis áreas de Formación esencial permanecen internamente como cursos del sistema para conservar diagnósticos, clases, actividades e historial, pero el estudiante las ve agrupadas como **una sola materia anual**.
-
-## 🧠 Diagnósticos
-
-El diagnóstico inicial es opcional, se realiza una vez por materia y no da puntos académicos.
-
-Nexora dispone de un motor universal de diagnósticos por niveles. Matemática conserva un banco amplio de 194 preguntas y los demás cursos activos pueden tener sus propios niveles y bancos de preguntas.
-
-Administración cuenta con un **Constructor de diagnósticos** para buscar cualquier curso creado, definir niveles, cantidad de preguntas, dificultad y respuestas aceptadas.
-
-Los intentos guardan progreso en Supabase y permiten continuar más tarde. Al completar las preguntas de un nivel, el diagnóstico avanza automáticamente al siguiente. También existe **Mi límite** para cerrar honestamente la prueba cuando el estudiante llega a contenido que ya no domina.
+Las seis áreas de Formación esencial permanecen internamente como cursos del sistema para conservar clases, actividades e historial, pero el estudiante las ve agrupadas como **una sola materia anual**.
 
 ## 👨‍🏫 Clases y actividades
 
@@ -58,18 +64,16 @@ Profesor puede crear clases y decidir si se publican para todo el curso o para e
 Las clases admiten:
 
 - explicación principal;
-- una o varias **tablas editables** con título, filas y columnas;
+- una o varias tablas editables;
 - ejemplos guiados;
 - recursos y notas adicionales;
 - vista previa antes de publicar.
 
-Las tablas se guardan junto con el contenido de la clase sin romper las clases creadas anteriormente.
+En la vista del estudiante, las clases aparecen como **tarjetas compactas**. Al abrir una clase se muestra su contenido y al final existe el acceso **✏️ Haz el ejercicio para reforzar el tema**.
 
-En la vista del estudiante, las clases aparecen como **tarjetas compactas**, igual que los ejercicios. Al seleccionar una tarjeta se abre la clase completa y al final aparece el acceso **✏️ Haz el ejercicio para reforzar el tema**, que lleva a la pestaña de ejercicios del mismo curso.
+El contenido usa un sistema de **hojas navegables**. Las clases separan explicación, tablas, ejemplos y recursos; las tareas y ejercicios muestran una pregunta por hoja mediante **Hoja X de Y**.
 
-Desde v0.31, el contenido usa un sistema de **hojas navegables**. Las clases separan explicación, cada tabla, ejemplos y recursos en hojas distintas; las tareas y ejercicios muestran una pregunta por hoja. La navegación indica **Hoja X de Y** y permite avanzar o retroceder sin cargar todo el contenido de golpe.
-
-Cada estudiante puede marcar una clase con **🔖 Guardar clase**. Los marcadores se almacenan por cuenta en Supabase y la pestaña Clases permite alternar entre **Todas** y **Guardadas**. Quitar el marcador no elimina ni modifica la clase original.
+Cada estudiante puede marcar una clase con **🔖 Guardar clase**. Los marcadores son personales por cuenta.
 
 Las actividades disponibles son:
 
@@ -79,7 +83,7 @@ Las actividades disponibles son:
 
 Una actividad puede configurar curso, destinatarios, título, bloque, punteo, intentos, apertura, cierre, cronómetro, instrucciones, preguntas y estado Borrador/Publicada.
 
-Desde v0.32, cada actividad académica puede cerrar con una **confirmación de lectura o revisión**. Las tareas de cuaderno muestran **✅ Enterado**, mientras que las tareas virtuales y los ejercicios prácticos muestran **✅ Revisado**. Al pulsarlo, Nexora guarda por estudiante la fecha y hora de la confirmación. Esta acción no entrega la actividad, no modifica intentos y no afecta la calificación.
+Las tareas de cuaderno pueden cerrar con **✅ Enterado**. Las tareas virtuales y los ejercicios prácticos pueden cerrar con **✅ Revisado**. La confirmación guarda fecha y hora, pero no entrega la actividad ni modifica la calificación.
 
 Los ejercicios prácticos se califican sobre 100 como retroalimentación, pero no afectan el promedio académico.
 
@@ -92,15 +96,13 @@ Los ejercicios prácticos se califican sobre 100 como retroalimentación, pero n
 - Relacionar parejas
 - Subir archivo
 
-En las preguntas de **Relacionar parejas**, las opciones de la derecha se mezclan de forma distinta para cada fila y mantienen ese orden mientras el estudiante responde, evitando pistas por posición.
+En **Relacionar parejas**, las opciones de la derecha se mezclan de forma distinta para cada fila y mantienen su orden mientras el estudiante responde.
 
-Los archivos viven en el bucket privado `activity-submissions`, con hasta **20 MB por archivo** y entre **1 y 5 archivos** configurables por pregunta de subida.
-
-Las respuestas correctas objetivas permanecen protegidas en `private.course_activity_answer_keys`.
+Los archivos viven en el bucket privado `activity-submissions`, con hasta 20 MB por archivo y entre 1 y 5 archivos configurables por pregunta.
 
 ## ✍️ Intentos y revisión
 
-Los intentos son persistentes, guardan automáticamente las respuestas y pueden tener cronómetro. Al entregar, respuestas y archivos quedan bloqueados.
+Los intentos guardan automáticamente las respuestas y pueden tener cronómetro. Al entregar, respuestas y archivos quedan bloqueados.
 
 Profesor revisa cada pregunta con una de tres decisiones:
 
@@ -108,17 +110,17 @@ Profesor revisa cada pregunta con una de tres decisiones:
 - — Neutral
 - ❌ Incorrecta
 
-Neutral cuenta como decisión tomada y por tanto no deja la pregunta pendiente. El profesor puede escribir comentarios individuales y retroalimentación general, y decide manualmente la nota final del intento. Cada revisión queda firmada.
+Neutral cuenta como decisión tomada. El profesor puede dejar comentarios individuales, retroalimentación general y una nota final manual.
 
 Si una actividad permite varios intentos, Nexora conserva para el promedio el mejor resultado válido.
 
 ## 🏆 Sistema académico
 
-Nexora no usa años escolares como medida de progreso para las materias normales.
+Nexora usa:
 
 **Etapa → Nivel → Bloques → Materias**
 
-Existen **5 etapas de 10 niveles cada una**, para un total de **50 niveles académicos**:
+Existen 5 etapas de 10 niveles cada una:
 
 | Etapa | Niveles | Nota mínima |
 |---|---:|---:|
@@ -128,65 +130,66 @@ Existen **5 etapas de 10 niveles cada una**, para un total de **50 niveles acad�
 | 🎓 Superior | 1–10 | 75/100 |
 | 🏆 Dominio | 1–10 | 80/100 |
 
-En materias normales, cada clase y actividad pertenece a una **etapa y nivel concretos**. El estudiante recibe el contenido correspondiente a su progreso actual.
-
-Formación esencial es la excepción: funciona como una **materia anual independiente de los niveles** y no se reinicia al avanzar académicamente.
+En materias normales, cada clase y actividad pertenece a una etapa y nivel concretos.
 
 ### 📊 Bloques
 
-Cada materia normal tiene **4 bloques por nivel**, con exactamente **100 puntos publicados por bloque**.
+Cada materia normal tiene 4 bloques por nivel, con exactamente 100 puntos publicados por bloque.
 
 Formación esencial también usa 4 bloques, pero cada bloque reúne sus 6 áreas:
 
-- 100 puntos de cada área;
+- 100 puntos por área;
 - 600 puntos por bloque;
 - 2400 puntos durante todo el único año obligatorio.
 
-Cada área puede publicar como máximo 100 puntos calificables por bloque durante todo el año, sin volver a abrir otro cupo al cambiar de nivel.
-
 ### Nota final
 
-En materias normales, cuando los cuatro bloques están completos, la nota final se calcula automáticamente:
+En materias normales, cuando los cuatro bloques están completos:
 
 `(Bloque 1 + Bloque 2 + Bloque 3 + Bloque 4) / 4`
 
-Las notas siguen expresándose sobre 100 para mantener las notas mínimas de cada etapa.
+Las notas se expresan sobre 100.
 
 ## 🔁 PMA
 
-Administración puede escoger una tarea original y pulsar **Aplicar PMA**.
+Administración puede escoger una tarea original y aplicar PMA.
 
-Nexora crea un borrador de recuperación que conserva automáticamente materia, tipo de actividad, punteo, bloque, etapa, nivel y destinatarios.
+El PMA conserva materia, tipo de actividad, punteo, bloque, etapa, nivel y destinatarios. El profesor escribe ejercicios distintos del mismo tema.
 
-Profesor escribe ejercicios distintos del mismo tema y puede definir intentos, cronómetro, fechas e instrucciones antes de publicarlo.
-
-El PMA **no agrega puntos nuevos al bloque**. Original y PMA ocupan el mismo espacio académico y Nexora conserva automáticamente el resultado más alto.
+El PMA no agrega puntos nuevos al bloque: original y PMA ocupan el mismo espacio y se conserva el resultado más alto.
 
 ## ⬆️ Ascenso automático
 
-Después de cada calificación, Supabase vuelve a calcular el progreso académico de las materias normales.
+Después de cada calificación, Supabase recalcula el progreso académico de las materias normales.
 
 Para aprobar un nivel:
 
 1. cada materia normal activa debe tener sus cuatro bloques completos;
 2. Nexora calcula la nota final de cada materia;
-3. todas las materias normales deben alcanzar el mínimo de la etapa.
+3. todas deben alcanzar el mínimo de la etapa.
 
-**Formación esencial no se repite ni bloquea un nuevo nivel académico**; tiene su propio recorrido anual de 365 días.
+Formación esencial tiene su propio recorrido anual y no se repite ni bloquea un nuevo nivel académico.
 
-Si alguna materia normal queda debajo del mínimo, el nivel pasa a **Pendiente de aprobación**. Las materias aprobadas se conservan y solo la materia pendiente necesita recuperación.
+## 🌱 Formación esencial
 
-Cuando todas las materias normales quedan aprobadas, Nexora guarda el nivel en el historial y avanza automáticamente:
+Formación esencial es una sola materia obligatoria durante los primeros 365 días y se cursa una sola vez.
 
-- Nivel 1 → Nivel 2 → … → Nivel 10;
-- al superar Nivel 10, pasa a Nivel 1 de la siguiente etapa;
-- 🏆 Dominio · Nivel 10 es actualmente el máximo disponible.
+Áreas internas:
 
-## 📜 Historial y Perfil
+- ✍️ Caligrafía y escritura clara
+- 📖 Comprensión y expresión lectora
+- 📝 Ortografía y redacción
+- 🧮 Cálculo mental y agilidad numérica
+- 🧩 Lógica y razonamiento
+- 📅 Organización y hábitos de estudio
 
-`academic_level_history` conserva una fotografía permanente de cada nivel aprobado: etapa, nivel, mínimo requerido, resultados de materias y fecha de finalización.
+Peso anual:
 
-Perfil muestra automáticamente etapa y nivel actuales, progreso dentro de la etapa, nota mínima, estado académico, estado de cada materia normal y sus cuatro bloques, e historial de niveles completados.
+- 400 puntos por área;
+- 600 puntos por bloque;
+- 2400 puntos durante todo el año.
+
+Las clases, tareas, ejercicios y calificaciones permanecen disponibles durante ese año aunque el estudiante cambie de etapa o nivel. Al cumplirse `required_until`, la materia deja de ser obligatoria y no se vuelve a asignar.
 
 ## 🟢 Presencia
 
@@ -196,44 +199,14 @@ Cada sesión autenticada actualiza `user_presence`. Nexora distingue:
 - 🟡 Inactivo
 - ⚫ Desconectado
 
-La vista general no expone Carné Nexora ni datos administrativos.
-
-## 🌱 Formación esencial
-
-Formación esencial es **una sola materia obligatoria durante los primeros 365 días** y se cursa **una sola vez**. No existe opción para repetirla en años posteriores.
-
-Tiene seis áreas internas:
-
-- ✍️ Caligrafía y escritura clara
-- 📖 Comprensión y expresión lectora
-- 📝 Ortografía y redacción
-- 🧮 Cálculo mental y agilidad numérica
-- 🧩 Lógica y razonamiento
-- 📅 Organización y hábitos de estudio
-
-Su peso académico anual es:
-
-- **400 puntos por área**;
-- **600 puntos por bloque** entre las seis áreas;
-- **2400 puntos en todo el año**.
-
-Las áreas se conservan internamente como cursos del sistema para no perder diagnósticos, historial ni actividades existentes, pero en **Mis cursos** aparecen agrupadas dentro de una sola tarjeta de Formación esencial.
-
-Las clases, tareas, ejercicios y calificaciones de estas áreas permanecen accesibles durante el año aunque el estudiante cambie de etapa o nivel. Al cumplirse la fecha `required_until`, el acceso obligatorio termina y la inscripción no vuelve a reactivarse.
-
 ## 🔐 Seguridad
 
-- RLS protege perfiles, cursos, solicitudes, inscripciones, clases, marcadores personales, actividades, intentos, confirmaciones de lectura/revisión, historial y archivos.
+- RLS protege perfiles, cursos, solicitudes, inscripciones, clases, marcadores, actividades, intentos, confirmaciones, historial y archivos.
 - El estudiante solo recibe contenido publicado que le corresponde.
-- En Formación esencial, RLS permite contenido de sus áreas durante el período anual aunque cambie de nivel, pero lo bloquea al vencer `required_until`.
-- Cada usuario solo puede leer sus propias confirmaciones; profesor y administración pueden consultarlas.
-- Cada usuario solo puede leer, crear y quitar sus propios marcadores de clases.
-- Las claves correctas no se exponen al navegador del estudiante.
 - Crear, guardar y entregar intentos pasa por funciones de servidor.
-- Confirmar una tarea o ejercicio pasa por una función de servidor que valida autenticación, curso, período anual o nivel y asignación.
 - PMA valida servidor a servidor su relación con la tarea original.
 - El historial académico no admite escritura directa del estudiante.
-- Los RPC académicos públicos usan wrappers `SECURITY INVOKER`; las operaciones privilegiadas permanecen en funciones privadas con comprobaciones explícitas de autenticación y roles.
+- El acceso visual a Administración no sustituye los controles reales de rol y RLS.
 
 ## 🗄️ Datos principales
 
@@ -253,9 +226,8 @@ Las clases, tareas, ejercicios y calificaciones de estas áreas permanecen acces
 - `activity_acknowledgements`
 - `academic_level_history`
 - `admin_notifications`
-- tablas de diagnóstico
 - `private.course_activity_answer_keys`
 
 Storage privado: `activity-submissions`.
 
-Las migraciones y cambios de Supabase se documentan en `supabase-notes/`.
+Desde v0.34, el antiguo sistema de diagnósticos fue eliminado por completo del frontend y de Supabase.
