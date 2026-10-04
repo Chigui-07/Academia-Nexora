@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import ActivityRunner, { RunnableActivity } from "./ActivityRunner";
 import { ActivitySheetType } from "./ActivitySheet";
+import TaskAcknowledgement from "./TaskAcknowledgement";
 import { supabase } from "@/lib/supabase";
 import styles from "./StudentActivityList.module.css";
 
@@ -19,6 +20,10 @@ type AttemptSummary = {
   grade_value: number | null;
   grade_max: number | null;
   reviewed_at: string | null;
+};
+
+type StudentActivity = RunnableActivity & {
+  acknowledgement_label: "enterado" | "revisado" | null;
 };
 
 type StudentActivityListProps = {
@@ -57,7 +62,7 @@ export default function StudentActivityList({
   hideFinished = false,
   selectableCards = false,
 }: StudentActivityListProps) {
-  const [activities, setActivities] = useState<RunnableActivity[]>([]);
+  const [activities, setActivities] = useState<StudentActivity[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
   const [attempts, setAttempts] = useState<AttemptSummary[]>([]);
   const [selectedId, setSelectedId] = useState<string | null>(null);
@@ -79,7 +84,7 @@ export default function StudentActivityList({
 
       let query = supabase
         .from("course_activities")
-        .select("id, course_id, activity_type, title, worksheet_content, question_blocks, points, opens_at, closes_at, time_limit_minutes, max_attempts, block_number")
+        .select("id, course_id, activity_type, title, worksheet_content, question_blocks, points, opens_at, closes_at, time_limit_minutes, max_attempts, block_number, acknowledgement_label")
         .eq("status", "published")
         .eq("academic_stage", profile.stage)
         .eq("academic_level", profile.level)
@@ -91,7 +96,7 @@ export default function StudentActivityList({
       const { data, error: activityError } = await query;
       if (activityError) throw activityError;
 
-      const loaded = (data ?? []) as RunnableActivity[];
+      const loaded = (data ?? []) as StudentActivity[];
       const now = Date.now();
       let visible = loaded.filter((activity) => {
         const opens = activity.opens_at ? new Date(activity.opens_at).getTime() : null;
@@ -225,6 +230,9 @@ export default function StudentActivityList({
               courseIcon={courseMap.get(selectedActivity.course_id)?.icon ?? "📚"}
               allowNewAttempts={!selectedActivity.closes_at || new Date(selectedActivity.closes_at).getTime() >= Date.now()}
             />
+            {selectedActivity.acknowledgement_label && selectedActivity.activity_type !== "practice" && (
+              <TaskAcknowledgement activityId={selectedActivity.id} label={selectedActivity.acknowledgement_label} />
+            )}
           </div>
         )}
       </div>
@@ -237,13 +245,17 @@ export default function StudentActivityList({
         const course = courseMap.get(activity.course_id);
         const closed = activity.closes_at ? new Date(activity.closes_at).getTime() < Date.now() : false;
         return (
-          <ActivityRunner
-            key={activity.id}
-            activity={activity}
-            courseName={course?.name ?? "Curso"}
-            courseIcon={course?.icon ?? "📚"}
-            allowNewAttempts={!closed}
-          />
+          <div key={activity.id}>
+            <ActivityRunner
+              activity={activity}
+              courseName={course?.name ?? "Curso"}
+              courseIcon={course?.icon ?? "📚"}
+              allowNewAttempts={!closed}
+            />
+            {activity.acknowledgement_label && activity.activity_type !== "practice" && (
+              <TaskAcknowledgement activityId={activity.id} label={activity.acknowledgement_label} />
+            )}
+          </div>
         );
       })}
     </div>
