@@ -29,6 +29,11 @@ export default function ActivityQuestionBuilder({
   onQuestionsChange,
   onAnswerKeyChange,
 }: Props) {
+  const assignedPoints = questions.reduce(
+    (total, question) => total + (typeof question.points === "number" && Number.isFinite(question.points) ? question.points : 0),
+    0,
+  );
+
   function updateQuestion(id: string, patch: Partial<ActivityQuestionBlock>) {
     onQuestionsChange(questions.map((question) => question.id === id ? { ...question, ...patch } : question));
   }
@@ -112,7 +117,9 @@ export default function ActivityQuestionBuilder({
         <div>
           <p className="eyebrow">Preguntas interactivas</p>
           <h3>Construye la actividad por bloques</h3>
-          <p className="muted-copy">Puedes combinar varios tipos de respuesta en una misma tarea o ejercicio.</p>
+          <p className="muted-copy">
+            Puedes combinar varios tipos de respuesta en una misma tarea o ejercicio. <strong>Puntos asignados: {assignedPoints}</strong>
+          </p>
         </div>
       </div>
 
@@ -152,6 +159,22 @@ export default function ActivityQuestionBuilder({
                   }
                   rows={3}
                 />
+              </label>
+
+              <label>
+                Valor de la pregunta
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  step="1"
+                  value={question.points ?? ""}
+                  onChange={(event) => updateQuestion(question.id, {
+                    points: event.target.value === "" ? undefined : Number(event.target.value),
+                  })}
+                  placeholder="Ej. 10"
+                />
+                <small>Se asigna manualmente. Al publicar, la suma debe coincidir con el valor total de la actividad.</small>
               </label>
 
               {question.type === "written" && (
