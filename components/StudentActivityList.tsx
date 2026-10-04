@@ -33,6 +33,7 @@ type StudentActivityListProps = {
   includeClosed?: boolean;
   hideFinished?: boolean;
   selectableCards?: boolean;
+  isEssentialCourse?: boolean;
 };
 
 const typeLabels: Record<ActivitySheetType, string> = {
@@ -61,6 +62,7 @@ export default function StudentActivityList({
   includeClosed = false,
   hideFinished = false,
   selectableCards = false,
+  isEssentialCourse = false,
 }: StudentActivityListProps) {
   const [activities, setActivities] = useState<StudentActivity[]>([]);
   const [courses, setCourses] = useState<Course[]>([]);
@@ -86,10 +88,14 @@ export default function StudentActivityList({
         .from("course_activities")
         .select("id, course_id, activity_type, title, worksheet_content, question_blocks, points, opens_at, closes_at, time_limit_minutes, max_attempts, block_number, acknowledgement_label")
         .eq("status", "published")
-        .eq("academic_stage", profile.stage)
-        .eq("academic_level", profile.level)
         .in("activity_type", types)
         .order("opens_at", { ascending: true, nullsFirst: true });
+
+      if (!isEssentialCourse) {
+        query = query
+          .eq("academic_stage", profile.stage)
+          .eq("academic_level", profile.level);
+      }
 
       if (courseId) query = query.eq("course_id", courseId);
 
@@ -170,7 +176,7 @@ export default function StudentActivityList({
       setError(caughtError instanceof Error ? caughtError.message : "No se pudieron cargar las actividades.");
       setReady(true);
     });
-  }, [courseId, types.join("|"), includeClosed, hideFinished]);
+  }, [courseId, types.join("|"), includeClosed, hideFinished, isEssentialCourse]);
 
   const courseMap = useMemo(() => new Map(courses.map((course) => [course.id, course])), [courses]);
   const attemptMap = useMemo(() => new Map(attempts.map((attempt) => [attempt.activity_id, attempt])), [attempts]);
@@ -183,6 +189,9 @@ export default function StudentActivityList({
   if (selectableCards) {
     return (
       <div className={styles.library}>
+        {isEssentialCourse && (
+          <div className="security-note">🌱 Estas actividades pertenecen al único año de Formación esencial y no se reinician cuando cambias de nivel.</div>
+        )}
         <div className={styles.cardGrid}>
           {activities.map((activity) => {
             const course = courseMap.get(activity.course_id);
@@ -245,6 +254,9 @@ export default function StudentActivityList({
 
   return (
     <div style={{ display: "grid", gap: 28 }}>
+      {isEssentialCourse && (
+        <div className="security-note">🌱 Estas actividades forman parte del único año obligatorio de Formación esencial.</div>
+      )}
       {activities.map((activity) => {
         const course = courseMap.get(activity.course_id);
         const closed = activity.closes_at ? new Date(activity.closes_at).getTime() < Date.now() : false;
