@@ -25,10 +25,10 @@ type Enrollment = {
   starting_level: number | null;
   starting_title: string | null;
   enrolled_at: string;
+  required_until: string | null;
 };
 
 type EssentialAreaEnrollment = Enrollment & {
-  required_until: string | null;
   courses: Course | null;
 };
 
@@ -47,6 +47,10 @@ function formatRequiredUntil(value: string | null) {
     month: "long",
     year: "numeric",
   }).format(new Date(value));
+}
+
+function isExpired(value: string | null) {
+  return Boolean(value && new Date(value).getTime() <= Date.now());
 }
 
 export default function CoursePage() {
@@ -89,9 +93,11 @@ export default function CoursePage() {
           .order("enrolled_at", { ascending: true });
 
         if (essentialError) throw essentialError;
-        const loadedAreas = (data ?? []) as unknown as EssentialAreaEnrollment[];
+        const loadedAreas = ((data ?? []) as unknown as EssentialAreaEnrollment[])
+          .filter((item) => !isExpired(item.required_until));
+
         if (loadedAreas.length === 0) {
-          setError("Formación esencial todavía no está asignada a tu cuenta.");
+          setError("Tu único año de Formación esencial ya terminó o todavía no está asignado a tu cuenta.");
           setReady(true);
           return;
         }
@@ -116,7 +122,7 @@ export default function CoursePage() {
 
       const { data: enrollmentData, error: enrollmentError } = await supabase
         .from("course_enrollments")
-        .select("id, starting_level, starting_title, enrolled_at")
+        .select("id, starting_level, starting_title, enrolled_at, required_until")
         .eq("user_id", session.user.id)
         .eq("course_id", courseData.id)
         .eq("status", "active")
@@ -125,6 +131,12 @@ export default function CoursePage() {
       if (enrollmentError) throw enrollmentError;
       if (!enrollmentData) {
         setError("Este curso todavía no está asignado a tu cuenta.");
+        setReady(true);
+        return;
+      }
+
+      if (courseData.is_essential && isExpired(enrollmentData.required_until)) {
+        setError("Tu único año obligatorio de Formación esencial ya terminó. Esta área no se vuelve a cursar.");
         setReady(true);
         return;
       }
@@ -155,11 +167,11 @@ export default function CoursePage() {
       <AppShell>
         <div className="page-header">
           <div>
-            <p className="eyebrow">Materia obligatoria · primer año</p>
+            <p className="eyebrow">Materia obligatoria · único año</p>
             <h1>🌱 Formación esencial</h1>
-            <p>Una sola materia anual formada por seis áreas básicas que acompañan tu progreso durante los primeros 365 días.</p>
+            <p>Una sola materia anual formada por seis áreas básicas. Se cursa únicamente durante tus primeros 365 días en Nexora.</p>
           </div>
-          <span className="status-pill status-open">Obligatoria</span>
+          <span className="status-pill status-open">Obligatoria una sola vez</span>
         </div>
 
         <section className="dashboard-grid" style={{ marginBottom: 24 }}>
@@ -174,9 +186,9 @@ export default function CoursePage() {
             <p className="muted-copy">Cada bloque reúne 100 puntos de cada área. Son 4 bloques en total.</p>
           </article>
           <article className="panel">
-            <p className="eyebrow">Duración</p>
+            <p className="eyebrow">Duración única</p>
             <h2>📅 365 días</h2>
-            <p className="muted-copy">{requiredUntil ? `Obligatoria hasta ${requiredUntil}.` : "Obligatoria durante tu primer año en Nexora."}</p>
+            <p className="muted-copy">{requiredUntil ? `Obligatoria hasta ${requiredUntil}. Después queda finalizada y no se repite.` : "Después del primer año queda finalizada y no se vuelve a asignar."}</p>
           </article>
         </section>
 
@@ -185,7 +197,7 @@ export default function CoursePage() {
             <div>
               <p className="eyebrow">Áreas internas</p>
               <h2>📚 Tus 6 áreas esenciales</h2>
-              <p className="muted-copy">Ya no aparecen como materias separadas. Entra al área que quieras estudiar, practicar o revisar.</p>
+              <p className="muted-copy">Son partes de una misma materia, no seis materias independientes. Sus clases, tareas y notas se conservan durante todo el año aunque avances de nivel.</p>
             </div>
           </div>
         </section>
@@ -239,14 +251,14 @@ export default function CoursePage() {
           <h1>{course.icon} {course.name}</h1>
           <p>{course.description}</p>
         </div>
-        <span className="status-pill status-open">{course.is_essential ? "Área esencial" : "Curso activo"}</span>
+        <span className="status-pill status-open">{course.is_essential ? "Área esencial anual" : "Curso activo"}</span>
       </div>
 
       {course.is_essential && (
         <article className="panel" style={{ marginBottom: 18 }}>
           <p className="eyebrow">Formación esencial</p>
-          <strong>Esta es una de las 6 áreas de la materia anual Formación esencial.</strong>
-          <p className="muted-copy">Aporta hasta 100 puntos por bloque y 400 puntos durante el año.</p>
+          <strong>Esta es una de las 6 áreas de tu única materia anual Formación esencial.</strong>
+          <p className="muted-copy">Aporta hasta 100 puntos por bloque y 400 puntos durante el año. No se reinicia al subir de nivel y no se repite en años posteriores.</p>
           <button className="secondary-button" type="button" onClick={() => goTo("/course/?course=essential-overview")}>← Volver a Formación esencial</button>
         </article>
       )}
@@ -278,7 +290,7 @@ export default function CoursePage() {
           <article className="panel">
             <p className="eyebrow">Estructura</p>
             <h2>4 bloques académicos</h2>
-            <p className="muted-copy">{course.is_essential ? "Esta área aporta hasta 100 puntos en cada bloque de Formación esencial." : "Las clases, tareas, ejercicios y calificaciones de esta materia se organizan aquí."}</p>
+            <p className="muted-copy">{course.is_essential ? "Esta área aporta hasta 100 puntos en cada bloque de Formación esencial, para 400 puntos anuales." : "Las clases, tareas, ejercicios y calificaciones de esta materia se organizan aquí."}</p>
           </article>
         </section>
       )}
@@ -288,6 +300,7 @@ export default function CoursePage() {
           courseId={course.id}
           courseName={course.name}
           courseIcon={course.icon}
+          isEssentialCourse={Boolean(course.is_essential)}
         />
       )}
 
@@ -303,6 +316,7 @@ export default function CoursePage() {
             types={["notebook_task", "virtual_task"]}
             includeClosed
             selectableCards
+            isEssentialCourse={Boolean(course.is_essential)}
             emptyMessage="Todavía no hay tareas publicadas en este curso."
           />
         </>
@@ -320,6 +334,7 @@ export default function CoursePage() {
             types={["practice"]}
             includeClosed
             selectableCards
+            isEssentialCourse={Boolean(course.is_essential)}
             emptyMessage="Todavía no hay ejercicios publicados en este curso."
           />
         </>
@@ -330,6 +345,7 @@ export default function CoursePage() {
           courseId={course.id}
           courseName={course.name}
           courseIcon={course.icon}
+          isEssentialCourse={Boolean(course.is_essential)}
         />
       )}
     </AppShell>
