@@ -32,6 +32,10 @@ function formatRequiredUntil(value: string | null) {
   }).format(new Date(value));
 }
 
+function isExpired(value: string | null) {
+  return Boolean(value && new Date(value).getTime() <= Date.now());
+}
+
 function CourseCards({ items }: { items: Enrollment[] }) {
   return (
     <section className="card-grid">
@@ -72,7 +76,7 @@ function EssentialSubjectCard({ items }: { items: Enrollment[] }) {
   return (
     <article className="course-card" style={{ maxWidth: 720 }}>
       <div className="course-icon">🌱</div>
-      <p className="eyebrow">Materia obligatoria · primer año</p>
+      <p className="eyebrow">Materia obligatoria · único año</p>
       <h3>Formación esencial</h3>
       <p>
         Una sola materia anual que reúne escritura clara, comprensión lectora, ortografía y redacción,
@@ -80,6 +84,7 @@ function EssentialSubjectCard({ items }: { items: Enrollment[] }) {
       </p>
       <small><strong>🏆 2400 pts anuales</strong> · 600 pts por bloque · 400 pts por cada una de sus 6 áreas.</small>
       {requiredUntil && <small>🌱 Obligatoria hasta {requiredUntil}</small>}
+      <small>🔒 Se cursa una sola vez: al terminar los 365 días no se vuelve a asignar ni se puede repetir.</small>
       <button className="primary-button" type="button" onClick={() => goTo("/course/?course=essential-overview")}>
         Entrar a Formación esencial
       </button>
@@ -122,7 +127,10 @@ export default function EnrolledCourses() {
   if (!ready) return <div className="empty-state">Cargando tus cursos...</div>;
   if (error) return <div className="auth-message auth-error">{error}</div>;
 
-  if (items.length === 0) {
+  const essential = items.filter((item) => item.courses?.is_essential && !isExpired(item.required_until));
+  const regular = items.filter((item) => !item.courses?.is_essential);
+
+  if (essential.length === 0 && regular.length === 0) {
     return (
       <article className="panel">
         <div className="course-icon">📚</div>
@@ -135,18 +143,15 @@ export default function EnrolledCourses() {
     );
   }
 
-  const essential = items.filter((item) => item.courses?.is_essential);
-  const regular = items.filter((item) => !item.courses?.is_essential);
-
   return (
     <div style={{ display: "grid", gap: 28 }}>
       {essential.length > 0 && (
         <section>
           <div className="section-heading">
             <div>
-              <p className="eyebrow">Primeros 365 días</p>
+              <p className="eyebrow">Únicos primeros 365 días</p>
               <h2>🌱 Formación esencial</h2>
-              <p className="muted-copy">Las seis áreas obligatorias ahora se presentan como una sola materia anual.</p>
+              <p className="muted-copy">Las seis áreas obligatorias se presentan como una sola materia anual y no se repiten en años posteriores.</p>
             </div>
           </div>
           <EssentialSubjectCard items={essential} />
