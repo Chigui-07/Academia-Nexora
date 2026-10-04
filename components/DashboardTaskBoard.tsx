@@ -25,6 +25,7 @@ type Task = {
   time_limit_minutes: number | null;
   max_attempts: number;
   block_number: number;
+  assignment_mode: "course" | "selected";
 };
 
 type Attempt = {
@@ -134,13 +135,32 @@ export default function DashboardTaskBoard() {
 
       const { data: taskData, error: taskError } = await supabase
         .from("course_activities")
-        .select("id, course_id, activity_type, title, points, opens_at, closes_at, time_limit_minutes, max_attempts, block_number")
+        .select("id, course_id, activity_type, title, points, opens_at, closes_at, time_limit_minutes, max_attempts, block_number, assignment_mode")
         .eq("status", "published")
         .in("activity_type", ["notebook_task", "virtual_task"])
         .order("opens_at", { ascending: true, nullsFirst: true });
 
       if (taskError) throw taskError;
-      const tasks = (taskData ?? []) as Task[];
+      const loadedTasks = (taskData ?? []) as Task[];
+      const selectedActivityIds = loadedTasks
+        .filter((task) => task.assignment_mode === "selected")
+        .map((task) => task.id);
+      const assignedActivityIds = new Set<string>();
+
+      if (selectedActivityIds.length > 0) {
+        const { data: assignmentData, error: assignmentError } = await supabase
+          .from("course_activity_assignments")
+          .select("activity_id")
+          .eq("user_id", session.user.id)
+          .in("activity_id", selectedActivityIds);
+
+        if (assignmentError) throw assignmentError;
+        for (const row of assignmentData ?? []) assignedActivityIds.add(row.activity_id);
+      }
+
+      const tasks = loadedTasks.filter((task) =>
+        task.assignment_mode === "course" || assignedActivityIds.has(task.id)
+      );
 
       if (tasks.length === 0) {
         if (!cancelled) {
