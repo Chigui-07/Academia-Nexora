@@ -6,6 +6,7 @@ import AdminEnrollmentManager from "@/components/AdminEnrollmentManager";
 import AppShell from "@/components/AppShell";
 import TeacherActivityManager from "@/components/TeacherActivityManager";
 import TeacherLessonManager from "@/components/TeacherLessonManager";
+import TeacherTaskFileManager from "@/components/TeacherTaskFileManager";
 
 const adminActions = [
   ["🎓 Progresión académica", "Organiza clases y actividades por etapa y nivel, controla bloques y crea PMA."],
@@ -54,6 +55,7 @@ export default function AdminPage() {
         <TeacherLessonManager />
         <div id="teacher-activities">
           <TeacherActivityManager />
+          <TeacherTaskFileManager />
         </div>
       </div>
     </AppShell>
