@@ -11,7 +11,6 @@ const studentNavItems = [
   ["🏠", "Inicio", "/dashboard"],
   ["📚", "Cursos", "/courses"],
   ["➕", "Solicitar curso", "/request-course"],
-  ["🧠", "Diagnósticos", "/diagnostics"],
   ["📝", "Tareas", "/tasks"],
   ["📊", "Calificaciones", "/grades"],
   ["🟢", "En línea", "/online"],
@@ -49,11 +48,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
     async function loadUser() {
       const { data: sessionData } = await supabase.auth.getSession();
       const session = sessionData.session;
-
-      if (!session) {
-        replaceWith("/");
-        return;
-      }
+      if (!session) { replaceWith("/"); return; }
 
       const [{ data: profileData }, { data: roleData }] = await Promise.all([
         supabase
@@ -68,14 +63,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
       ]);
 
       if (!mounted) return;
-
       const loadedRoles = (roleData ?? []).map((item) => item.role as string);
       const loadedProfile = profileData as Profile | null;
 
-      if (!loadedProfile?.onboarding_completed_at) {
-        replaceWith("/welcome/");
-        return;
-      }
+      if (!loadedProfile?.onboarding_completed_at) { replaceWith("/welcome/"); return; }
 
       setEmail(session.user.email ?? "");
       setProfile(loadedProfile);
@@ -86,11 +77,10 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
           .from("admin_notifications")
           .select("id", { count: "exact", head: true })
           .is("read_at", null);
-
         if (mounted) setAdminUnread(count ?? 0);
       }
 
-      if (loadedProfile?.theme) {
+      if (loadedProfile.theme) {
         localStorage.setItem("nexora-theme", loadedProfile.theme);
         document.documentElement.dataset.theme = loadedProfile.theme;
         document.documentElement.style.colorScheme = loadedProfile.theme;
@@ -98,21 +88,14 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
 
       const isAdminArea = window.location.pathname.includes("/admin");
       const canManage = loadedRoles.includes("admin") || loadedRoles.includes("teacher");
-
-      if (isAdminArea && !canManage) {
-        replaceWith("/dashboard/");
-        return;
-      }
+      if (isAdminArea && !canManage) { replaceWith("/dashboard/"); return; }
 
       setReady(true);
     }
 
     loadUser();
-
     const { data: listener } = supabase.auth.onAuthStateChange((event, session) => {
-      if (event === "SIGNED_OUT" || !session) {
-        replaceWith("/");
-      }
+      if (event === "SIGNED_OUT" || !session) replaceWith("/");
     });
 
     return () => {
@@ -195,14 +178,17 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
         <header className="topbar">
           <strong>Academia Nexora</strong>
           <div className="topbar-actions">
+            {canManage && (
+              <Link className="secondary-button" href="/admin" aria-label="Abrir Administración">
+                ⚙️ Administración{roles.includes("admin") && adminUnread > 0 ? ` (${adminUnread})` : ""}
+              </Link>
+            )}
             <ThemeToggle />
             <div className="user-chip">
               <span>{displayName}</span>
               <span className="avatar">{avatarLetter}</span>
             </div>
-            <button className="logout-button" type="button" onClick={handleLogout}>
-              Salir
-            </button>
+            <button className="logout-button" type="button" onClick={handleLogout}>Salir</button>
           </div>
         </header>
         <div className="page-content">{children}</div>

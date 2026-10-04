@@ -14,7 +14,6 @@ type Course = {
   description: string;
   icon: string;
   category: string;
-  diagnostic_available: boolean;
 };
 
 type CourseRequest = {
@@ -23,15 +22,11 @@ type CourseRequest = {
   course_name: string;
   grade_level: string;
   self_level: SelfLevel;
-  diagnostic_opt_in: boolean;
   status: RequestStatus;
   created_at: string;
 };
 
-type SubmittedRequest = {
-  id: string;
-  course: Course;
-};
+type SubmittedRequest = { id: string; course: Course };
 
 const levelLabels: Record<SelfLevel, string> = {
   casi_nada: "Casi nada",
@@ -64,37 +59,30 @@ export default function CourseRequestForm({ onboarding = false }: { onboarding?:
   const filteredCourses = useMemo(() => {
     const term = search.trim().toLowerCase();
     if (!term) return courses;
-    return courses.filter((course) =>
-      `${course.name} ${course.description} ${course.category}`.toLowerCase().includes(term)
-    );
+    return courses.filter((course) => `${course.name} ${course.description} ${course.category}`.toLowerCase().includes(term));
   }, [courses, search]);
 
   async function loadData() {
     const { data: sessionData } = await supabase.auth.getSession();
     const session = sessionData.session;
-
-    if (!session) {
-      goTo("/");
-      return;
-    }
+    if (!session) { goTo("/"); return; }
 
     const [courseResponse, requestResponse] = await Promise.all([
       supabase
         .from("courses")
-        .select("id, course_key, name, description, icon, category, diagnostic_available")
+        .select("id, course_key, name, description, icon, category")
         .eq("active", true)
         .neq("category", "Formación esencial")
         .order("name"),
       supabase
         .from("course_requests")
-        .select("id, course_id, course_name, grade_level, self_level, diagnostic_opt_in, status, created_at")
+        .select("id, course_id, course_name, grade_level, self_level, status, created_at")
         .eq("user_id", session.user.id)
         .order("created_at", { ascending: false }),
     ]);
 
     if (courseResponse.error) throw courseResponse.error;
     if (requestResponse.error) throw requestResponse.error;
-
     setCourses((courseResponse.data ?? []) as Course[]);
     setRequests((requestResponse.data ?? []) as CourseRequest[]);
     setReady(true);
@@ -117,22 +105,14 @@ export default function CourseRequestForm({ onboarding = false }: { onboarding?:
     }
 
     const duplicate = requests.find(
-      (request) =>
-        request.course_id === selectedCourse.id &&
-        ["pending", "in_review", "handled"].includes(request.status)
+      (request) => request.course_id === selectedCourse.id && ["pending", "in_review", "handled"].includes(request.status),
     );
-
     if (duplicate) {
-      setError(
-        duplicate.status === "handled"
-          ? "Este curso ya fue aceptado para tu cuenta."
-          : "Ya tienes una solicitud activa para este curso."
-      );
+      setError(duplicate.status === "handled" ? "Este curso ya fue aceptado para tu cuenta." : "Ya tienes una solicitud activa para este curso.");
       return;
     }
 
     setLoading(true);
-
     try {
       const { data: sessionData } = await supabase.auth.getSession();
       const session = sessionData.session;
@@ -146,15 +126,12 @@ export default function CourseRequestForm({ onboarding = false }: { onboarding?:
           course_name: selectedCourse.name,
           grade_level: gradeLevel.trim(),
           self_level: selfLevel,
-          diagnostic_opt_in: selectedCourse.diagnostic_available,
         })
         .select("id")
         .single();
 
       if (insertError) {
-        if (insertError.code === "23505") {
-          throw new Error("Ya tienes una solicitud activa para este curso.");
-        }
+        if (insertError.code === "23505") throw new Error("Ya tienes una solicitud activa para este curso.");
         throw insertError;
       }
 
@@ -163,7 +140,6 @@ export default function CourseRequestForm({ onboarding = false }: { onboarding?:
           .from("profiles")
           .update({ onboarding_completed_at: new Date().toISOString() })
           .eq("id", session.user.id);
-
         if (profileError) throw profileError;
       }
 
@@ -176,56 +152,25 @@ export default function CourseRequestForm({ onboarding = false }: { onboarding?:
     }
   }
 
-  if (!ready) {
-    return <div className="empty-state">Cargando catálogo de cursos...</div>;
-  }
+  if (!ready) return <div className="empty-state">Cargando catálogo de cursos...</div>;
 
   if (submitted) {
-    const canStartDiagnostic =
-      submitted.course.diagnostic_available && submitted.course.course_key === "matematica";
-
     return (
       <article className="panel" style={{ maxWidth: 760, margin: "0 auto" }}>
         <div className="course-icon" style={{ marginBottom: 12 }}>{submitted.course.icon}</div>
         <p className="eyebrow">Solicitud enviada</p>
         <h2>{submitted.course.name}</h2>
-        <p className="muted-copy">
-          Administración revisará tu solicitud. El curso aparecerá en <strong>Cursos</strong> cuando sea aceptado.
-        </p>
-
-        {canStartDiagnostic && (
-          <div className="diagnostic-honesty-note" style={{ marginTop: 18 }}>
-            🧠 <strong>Este curso tiene un diagnóstico inicial opcional.</strong> Puedes hacerlo ahora para que Nexora conozca mejor tu punto de partida, o dejarlo para después desde la sección Diagnósticos.
-          </div>
-        )}
-
+        <p className="muted-copy">Administración revisará tu solicitud. El curso aparecerá en <strong>Cursos</strong> cuando sea aceptado.</p>
         <div className="request-actions" style={{ marginTop: 18 }}>
-          {canStartDiagnostic && (
-            <button
-              className="primary-button"
-              type="button"
-              onClick={() => goTo(`/diagnostic/math/?request=${submitted.id}`)}
-            >
-              Comenzar diagnóstico
-            </button>
-          )}
-          <button className="secondary-button" type="button" onClick={() => goTo("/dashboard/")}>
-            Ir al inicio
-          </button>
+          <button className="primary-button" type="button" onClick={() => goTo("/dashboard/")}>Ir al inicio</button>
           {!onboarding && (
-            <button
-              className="secondary-button"
-              type="button"
-              onClick={() => {
-                setSubmitted(null);
-                setSelectedCourseId("");
-                setSearch("");
-                setGradeLevel("");
-                setSelfLevel("no_seguro");
-              }}
-            >
-              Solicitar otro curso
-            </button>
+            <button className="secondary-button" type="button" onClick={() => {
+              setSubmitted(null);
+              setSelectedCourseId("");
+              setSearch("");
+              setGradeLevel("");
+              setSelfLevel("no_seguro");
+            }}>Solicitar otro curso</button>
           )}
         </div>
       </article>
@@ -236,66 +181,43 @@ export default function CourseRequestForm({ onboarding = false }: { onboarding?:
     <div className="course-request-layout">
       <form className="panel course-request-form" onSubmit={handleSubmit}>
         <div className="section-heading">
-          <div>
-            <p className="eyebrow">Catálogo</p>
-            <h2>Busca tu curso</h2>
-          </div>
+          <div><p className="eyebrow">Catálogo</p><h2>Busca tu curso</h2></div>
           <span className="status-pill status-open">Administración lo revisará</span>
         </div>
 
-        <p className="muted-copy">
-          Elige una materia del catálogo. Los cursos de Formación esencial ya se asignan automáticamente durante el primer año.
-        </p>
+        <p className="muted-copy">Elige una materia del catálogo. Formación esencial se asigna automáticamente durante tu primer año.</p>
 
         <div className="form-group">
           <label htmlFor="course-search">Buscar materia</label>
-          <input
-            id="course-search"
-            value={search}
-            onChange={(event) => setSearch(event.target.value)}
-            placeholder="Ej. Matemática, Física, Inglés..."
-          />
+          <input id="course-search" value={search} onChange={(event) => setSearch(event.target.value)} placeholder="Ej. Matemática, Física, Inglés..." />
         </div>
 
         <div className="recommendation-list" style={{ marginBottom: 20 }}>
           {filteredCourses.length === 0 ? (
             <div className="empty-state">No encontramos ese curso en el catálogo actual.</div>
-          ) : (
-            filteredCourses.map((course) => {
-              const selected = course.id === selectedCourseId;
-              return (
-                <button
-                  className="recommendation-card"
-                  type="button"
-                  key={course.id}
-                  onClick={() => setSelectedCourseId(course.id)}
-                  style={selected ? { borderColor: "var(--primary)", boxShadow: "0 0 0 2px var(--primary)" } : undefined}
-                >
-                  <strong>{course.icon} {course.name}</strong>
-                  <span>{course.description}</span>
-                  <small>{course.category}{course.diagnostic_available ? " · 🧠 Diagnóstico disponible" : ""}</small>
-                </button>
-              );
-            })
-          )}
+          ) : filteredCourses.map((course) => {
+            const selected = course.id === selectedCourseId;
+            return (
+              <button
+                className="recommendation-card"
+                type="button"
+                key={course.id}
+                onClick={() => setSelectedCourseId(course.id)}
+                style={selected ? { borderColor: "var(--primary)", boxShadow: "0 0 0 2px var(--primary)" } : undefined}
+              >
+                <strong>{course.icon} {course.name}</strong>
+                <span>{course.description}</span>
+                <small>{course.category}</small>
+              </button>
+            );
+          })}
         </div>
 
-        {selectedCourse && (
-          <div className="auth-message auth-success">
-            Seleccionaste <strong>{selectedCourse.name}</strong>.
-          </div>
-        )}
+        {selectedCourse && <div className="auth-message auth-success">Seleccionaste <strong>{selectedCourse.name}</strong>.</div>}
 
         <div className="form-group">
           <label htmlFor="grade-level">¿En qué grado o nivel estudias actualmente?</label>
-          <input
-            id="grade-level"
-            value={gradeLevel}
-            onChange={(event) => setGradeLevel(event.target.value)}
-            placeholder="Ej. 3.º básico, diversificado, estudio por mi cuenta..."
-            maxLength={60}
-            required
-          />
+          <input id="grade-level" value={gradeLevel} onChange={(event) => setGradeLevel(event.target.value)} placeholder="Ej. 3.º básico, diversificado, estudio por mi cuenta..." maxLength={60} required />
         </div>
 
         <div className="form-group">
@@ -309,61 +231,29 @@ export default function CourseRequestForm({ onboarding = false }: { onboarding?:
           </select>
         </div>
 
-        {selectedCourse?.diagnostic_available && (
-          <div className="diagnostic-honesty-note">
-            🧠 <strong>Diagnóstico opcional disponible.</strong> Después de enviar la solicitud podrás decidir si quieres comenzarlo o ir al inicio. También seguirá disponible en <strong>Diagnósticos</strong>.
-          </div>
-        )}
-
         {error && <div className="auth-message auth-error">{error}</div>}
-
-        <button className="primary-button" type="submit" disabled={loading || !selectedCourse}>
-          {loading ? "Enviando..." : "Enviar solicitud"}
-        </button>
+        <button className="primary-button" type="submit" disabled={loading || !selectedCourse}>{loading ? "Enviando..." : "Enviar solicitud"}</button>
       </form>
 
       <aside className="panel recommendations-panel">
         <p className="eyebrow">Cómo funciona</p>
         <h2>De solicitud a curso</h2>
         <div className="recommendation-list">
-          <div className="recommendation-card">
-            <strong>1. 🔎 Elige una materia</strong>
-            <span>Busca en el catálogo y dinos tu nivel actual.</span>
-          </div>
-          <div className="recommendation-card">
-            <strong>2. 🧠 Diagnóstico opcional</strong>
-            <span>Si existe para esa materia, puedes hacerlo ahora o más tarde.</span>
-          </div>
-          <div className="recommendation-card">
-            <strong>3. ✅ Administración acepta</strong>
-            <span>Cuando la solicitud sea aprobada, la materia aparecerá en Cursos.</span>
-          </div>
+          <div className="recommendation-card"><strong>1. 🔎 Elige una materia</strong><span>Busca en el catálogo y dinos tu nivel actual.</span></div>
+          <div className="recommendation-card"><strong>2. 📩 Envía la solicitud</strong><span>Administración la revisará y decidirá si asigna el curso.</span></div>
+          <div className="recommendation-card"><strong>3. ✅ Administración acepta</strong><span>Cuando sea aprobada, la materia aparecerá en Cursos.</span></div>
         </div>
       </aside>
 
       {!onboarding && (
         <section className="panel requests-history">
-          <div className="section-heading">
-            <div>
-              <p className="eyebrow">Seguimiento</p>
-              <h2>Mis solicitudes</h2>
-            </div>
-          </div>
-
-          {requests.length === 0 ? (
-            <div className="empty-state">Todavía no has solicitado ningún curso.</div>
-          ) : (
+          <div className="section-heading"><div><p className="eyebrow">Seguimiento</p><h2>Mis solicitudes</h2></div></div>
+          {requests.length === 0 ? <div className="empty-state">Todavía no has solicitado ningún curso.</div> : (
             <div className="request-list">
               {requests.map((request) => (
                 <article className="request-row" key={request.id}>
-                  <div>
-                    <strong>{request.course_name}</strong>
-                    <span>{request.grade_level} · {levelLabels[request.self_level]}</span>
-                    {request.diagnostic_opt_in && <small>🧠 Diagnóstico disponible</small>}
-                  </div>
-                  <span className={`status-pill ${request.status === "handled" ? "status-open" : "status-soon"}`}>
-                    {statusLabels[request.status]}
-                  </span>
+                  <div><strong>{request.course_name}</strong><span>{request.grade_level} · {levelLabels[request.self_level]}</span></div>
+                  <span className={`status-pill ${request.status === "handled" ? "status-open" : "status-soon"}`}>{statusLabels[request.status]}</span>
                 </article>
               ))}
             </div>
