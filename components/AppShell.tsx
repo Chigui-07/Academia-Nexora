@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import PresenceHeartbeat from "./PresenceHeartbeat";
+import StudentNotificationBell from "./StudentNotificationBell";
 import ThemeToggle from "./ThemeToggle";
 import { replaceWith } from "@/lib/navigation";
 import { supabase } from "@/lib/supabase";
@@ -183,6 +184,7 @@ export default function AppShell({ children }: { children: React.ReactNode }) {
                 ⚙️ Administración{roles.includes("admin") && adminUnread > 0 ? ` (${adminUnread})` : ""}
               </Link>
             )}
+            <StudentNotificationBell />
             <ThemeToggle />
             <div className="user-chip">
               <span>{displayName}</span>
