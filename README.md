@@ -4,7 +4,7 @@
 
 ## 📌 Estado del proyecto
 
-**Fase actual: v0.40.1 — hotfix de compilación para separar Next.js de las Edge Functions de Supabase.**
+**Fase actual: v0.40.2 — protección reforzada para actividades con destinatarios específicos.**
 
 - Frontend: Next.js + TypeScript + CSS.
 - Publicación: GitHub Pages.
@@ -12,6 +12,8 @@
 - El proyecto no depende de APIs de IA de pago.
 
 Desde **v0.40.1**, el `tsconfig.json` excluye `supabase/functions/**/*` del type-check de Next.js. Las Edge Functions siguen desplegándose y ejecutándose en Supabase, pero ya no interfieren con el build estático de GitHub Pages.
+
+Desde **v0.40.2**, una tarea, ejercicio o Hoja de ejercicios con destinatarios específicos se vuelve a filtrar por el usuario actual en las vistas estudiantiles, incluso si la cuenta también tiene rol de profesor o administrador. El servidor también vuelve a validar la asignación al guardar o entregar un intento.
 
 La base incluye registro, perfiles, Carné Nexora, roles, cursos, solicitudes e inscripciones, clases, seguimiento de clases nuevas/revisadas, tablas dentro de clases, clases guardadas por estudiante, tareas, ejercicios, Hoja de ejercicios manual, preguntas configurables con valor manual, archivos privados, intentos persistentes, confirmaciones de lectura/revisión, revisión y calificación manual, notificaciones internas y push, presencia en línea, Formación esencial anual, PMA, etapas, niveles, bloques, historial académico y ascenso automático.
 
@@ -293,6 +295,7 @@ Cada sesión autenticada actualiza `user_presence`. Nexora distingue:
 - `student_push_deliveries` no admite acceso directo de `anon` ni `authenticated`; la cola la procesa únicamente el backend.
 - La clave privada VAPID y los tokens de cron permanecen fuera del repositorio, en configuración privada de Supabase.
 - El estudiante solo recibe contenido publicado que le corresponde.
+- Las actividades con `assignment_mode = 'selected'` se filtran por `course_activity_assignments` en RLS y nuevamente en las vistas estudiantiles; iniciar, guardar y entregar vuelve a comprobar el destinatario.
 - Crear, guardar y entregar intentos pasa por funciones de servidor.
 - La selección de una Hoja de ejercicios se valida contra los ejercicios realmente publicados y asignados al estudiante.
 - El guardado completo de una actividad pasa por un RPC que valida autenticación, rol, propiedad, curso, destinatarios, configuración y distribución de puntos antes de confirmar los cambios.
