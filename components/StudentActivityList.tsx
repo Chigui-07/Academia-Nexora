@@ -230,8 +230,12 @@ export default function StudentActivityList({
               courseIcon={courseMap.get(selectedActivity.course_id)?.icon ?? "📚"}
               allowNewAttempts={!selectedActivity.closes_at || new Date(selectedActivity.closes_at).getTime() >= Date.now()}
             />
-            {selectedActivity.acknowledgement_label && selectedActivity.activity_type !== "practice" && (
-              <TaskAcknowledgement activityId={selectedActivity.id} label={selectedActivity.acknowledgement_label} />
+            {selectedActivity.acknowledgement_label && (
+              <TaskAcknowledgement
+                activityId={selectedActivity.id}
+                label={selectedActivity.acknowledgement_label}
+                subject={selectedActivity.activity_type === "practice" ? "ejercicio" : "tarea"}
+              />
             )}
           </div>
         )}
@@ -252,8 +256,12 @@ export default function StudentActivityList({
               courseIcon={course?.icon ?? "📚"}
               allowNewAttempts={!closed}
             />
-            {activity.acknowledgement_label && activity.activity_type !== "practice" && (
-              <TaskAcknowledgement activityId={activity.id} label={activity.acknowledgement_label} />
+            {activity.acknowledgement_label && (
+              <TaskAcknowledgement
+                activityId={activity.id}
+                label={activity.acknowledgement_label}
+                subject={activity.activity_type === "practice" ? "ejercicio" : "tarea"}
+              />
             )}
           </div>
         );
