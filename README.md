@@ -4,14 +4,14 @@
 
 ## 📌 Estado del proyecto
 
-**Fase actual: v0.37.1 — Hoja de ejercicios automática y limpieza segura de actividades.**
+**Fase actual: v0.38 — Hoja de ejercicios manual y eliminación definitiva opcional.**
 
 - Frontend: Next.js + TypeScript + CSS.
 - Publicación: GitHub Pages.
 - Backend, Auth, Storage y datos: Supabase.
 - El proyecto no depende de APIs de IA de pago.
 
-La base incluye registro, perfiles, Carné Nexora, roles, cursos, solicitudes e inscripciones, clases, seguimiento de clases nuevas/revisadas, tablas dentro de clases, clases guardadas por estudiante, tareas, ejercicios, Hoja de ejercicios automática, preguntas configurables con valor manual, archivos privados, intentos persistentes, confirmaciones de lectura/revisión, revisión y calificación manual, presencia en línea, Formación esencial anual, PMA, etapas, niveles, bloques, historial académico y ascenso automático.
+La base incluye registro, perfiles, Carné Nexora, roles, cursos, solicitudes e inscripciones, clases, seguimiento de clases nuevas/revisadas, tablas dentro de clases, clases guardadas por estudiante, tareas, ejercicios, Hoja de ejercicios manual, preguntas configurables con valor manual, archivos privados, intentos persistentes, confirmaciones de lectura/revisión, revisión y calificación manual, presencia en línea, Formación esencial anual, PMA, etapas, niveles, bloques, historial académico y ascenso automático.
 
 ## 🧭 Navegación
 
@@ -43,7 +43,12 @@ Secciones disponibles:
 
 La sección **Tareas y ejercicios** se abre inicialmente para facilitar la creación rápida de actividades y archivos para los alumnos.
 
-Desde **v0.37.1**, esta sección también incluye **🗑️ Eliminar tareas y ejercicios** con filtros por curso y tipo. Las actividades nunca utilizadas pueden borrarse; los ejercicios con intentos pueden archivarse para conservar su historial; y las tareas con entregas quedan protegidas para evitar alterar notas ya registradas. Las Hojas de ejercicios automáticas no se eliminan manualmente.
+Desde **v0.38**, el eliminador ofrece dos acciones:
+
+- **📦 Quitar / archivar:** conserva historial cuando la actividad ya fue utilizada.
+- **🗑️ Eliminar definitivamente:** permite borrar una actividad incluso si tiene intentos, entregas o calificaciones. La interfaz exige una confirmación explícita porque ese historial también se elimina.
+
+Las eliminaciones pasan por un RPC protegido; el cliente no tiene permiso de `DELETE` directo sobre `course_activities`.
 
 ## 👤 Cuentas y roles
 
@@ -88,14 +93,14 @@ El contenido usa un sistema de **hojas navegables**. Las clases separan explicac
 
 Cada estudiante puede marcar una clase con **🔖 Guardar clase**. Los marcadores son personales por cuenta.
 
-Las actividades disponibles son:
+Las actividades disponibles en el selector **Tipo** son:
 
 - 📝 Tarea de cuaderno
 - 💻 Tarea virtual
 - ✏️ Ejercicio práctico
-- 📄 Hoja de ejercicios automática
+- 📄 Hoja de ejercicios
 
-Una actividad puede configurar curso, destinatarios, título, bloque, punteo, intentos, apertura, cierre, cronómetro, instrucciones, preguntas y estado Borrador/Publicada.
+Una actividad puede configurar curso, destinatarios, título, bloque, punteo, intentos, apertura, cierre, cronómetro, instrucciones, preguntas y estado Borrador/Publicada según su tipo.
 
 Desde **v0.35**, cada pregunta puede tener un **valor manual en puntos**. Desde **v0.35.1**, ese valor también puede usar hasta **2 decimales**, por ejemplo `2.5`, `1.25` o `0.75`. Al publicar, Supabase valida que cada valor esté entre 0 y 100 y que la suma coincida con el punteo total de la tarea. En ejercicios prácticos, la suma debe ser exactamente 100. Los valores aparecen en la hoja del estudiante y también durante la revisión del profesor. La calificación final continúa siendo manual.
 
@@ -107,20 +112,22 @@ Los ejercicios prácticos se califican sobre 100 como retroalimentación, pero n
 
 ### 📄 Hoja de ejercicios
 
-Desde **v0.37**, Nexora crea y mantiene automáticamente una **Hoja de ejercicios** para cada curso, bloque y nivel que tenga ejercicios prácticos publicados.
+Desde **v0.38**, la Hoja de ejercicios **ya no se crea automáticamente**. El profesor decide cuándo crearla desde **Administración → Tareas y ejercicios → Tipo → 📄 Hoja de ejercicios**.
 
-- La hoja vale **10 puntos académicos** y sí forma parte de los 100 puntos del bloque.
-- Los ejercicios prácticos continúan calificándose sobre 100 solo como retroalimentación.
-- Los ejercicios publicados aparecen automáticamente como casillas de selección múltiple.
+- El profesor elige la **materia** y el **bloque** que tendrán la hoja.
+- Al guardarla, Nexora toma los ejercicios prácticos publicados de esa materia y bloque y guarda esa lista como casillas de selección múltiple.
+- Si después se publican más ejercicios, la hoja no aparece ni se modifica por sí sola; el profesor puede editarla y guardar para reconstruir la lista con los ejercicios publicados actuales.
+- La hoja vale siempre **10 puntos académicos** y sí forma parte de los 100 puntos del bloque.
+- Tiene **un solo intento**.
 - El estudiante marca únicamente los ejercicios que realmente realizó.
-- La hoja tiene un solo intento y, una vez entregada, queda pendiente de revisión.
-- El profesor asigna manualmente una calificación entre **0 y 10**; Nexora no calcula la nota por cantidad de casillas marcadas.
-- Si se publica, renombra, mueve de bloque o retira un ejercicio, la hoja se sincroniza automáticamente.
-- Cuando un ejercicio está asignado solo a ciertos estudiantes, la hoja respeta esos destinatarios y cada estudiante ve únicamente los ejercicios que le corresponden.
+- Los ejercicios prácticos continúan calificándose sobre 100 solo como retroalimentación.
+- El profesor asigna manualmente una calificación entre **0 y 10**; Nexora no calcula la nota según la cantidad de casillas marcadas.
+- Cuando un ejercicio está asignado solo a ciertos estudiantes, cada alumno ve únicamente los ejercicios que realmente le corresponden.
 - El servidor valida la selección al guardar y entregar para impedir que se registren ejercicios no asignados.
+- Solo puede existir una Hoja de ejercicios por materia, nivel y bloque.
 - La Hoja de ejercicios no admite PMA.
 
-Como esos 10 puntos cuentan dentro del bloque, al existir una Hoja de ejercicios quedan **90 puntos** disponibles para las demás actividades académicas de ese bloque.
+Como esos 10 puntos cuentan dentro del bloque, cuando el profesor crea una Hoja de ejercicios quedan **90 puntos** disponibles para las demás actividades académicas de ese bloque.
 
 ### Tipos de pregunta
 
@@ -173,7 +180,7 @@ En materias normales, cada clase y actividad pertenece a una etapa y nivel concr
 
 Cada materia normal tiene 4 bloques por nivel, con exactamente 100 puntos publicados por bloque.
 
-Cuando el bloque tiene ejercicios prácticos publicados, su **Hoja de ejercicios ocupa 10 de esos 100 puntos**.
+Cuando el profesor crea una **Hoja de ejercicios**, esta ocupa 10 de esos 100 puntos.
 
 Formación esencial también usa 4 bloques, pero cada bloque reúne sus 6 áreas:
 
@@ -195,7 +202,7 @@ Administración puede escoger una tarea original y aplicar PMA.
 
 El PMA conserva materia, tipo de actividad, punteo, bloque, etapa, nivel y destinatarios. El profesor escribe ejercicios distintos del mismo tema.
 
-El PMA no agrega puntos nuevos al bloque: original y PMA ocupan el mismo espacio y se conserva el resultado más alto. Las Hojas de ejercicios automáticas no pueden ser actividades PMA.
+El PMA no agrega puntos nuevos al bloque: original y PMA ocupan el mismo espacio y se conserva el resultado más alto. Las Hojas de ejercicios no pueden ser actividades PMA.
 
 ## ⬆️ Ascenso automático
 
@@ -246,7 +253,8 @@ Cada sesión autenticada actualiza `user_presence`. Nexora distingue:
 - Crear, guardar y entregar intentos pasa por funciones de servidor.
 - La selección de una Hoja de ejercicios se valida contra los ejercicios realmente publicados y asignados al estudiante.
 - El guardado completo de una actividad pasa por un RPC que valida autenticación, rol, propiedad, curso, destinatarios, configuración y distribución de puntos antes de confirmar los cambios.
-- Las eliminaciones de tareas y ejercicios pasan por `remove_course_activity`; el rol autenticado no tiene `DELETE` directo sobre `course_activities`.
+- Las eliminaciones pasan por `remove_course_activity`; el rol autenticado no tiene `DELETE` directo sobre `course_activities`.
+- La eliminación definitiva exige una acción explícita y puede borrar intentos y calificaciones asociados a la actividad.
 - PMA valida servidor a servidor su relación con la tarea original.
 - El historial académico no admite escritura directa del estudiante.
 - El acceso visual a Administración no sustituye los controles reales de rol y RLS.
