@@ -29,10 +29,10 @@ export default function ActivityQuestionBuilder({
   onQuestionsChange,
   onAnswerKeyChange,
 }: Props) {
-  const assignedPoints = questions.reduce(
+  const assignedPoints = Number(questions.reduce(
     (total, question) => total + (typeof question.points === "number" && Number.isFinite(question.points) ? question.points : 0),
     0,
-  );
+  ).toFixed(2));
 
   function updateQuestion(id: string, patch: Partial<ActivityQuestionBlock>) {
     onQuestionsChange(questions.map((question) => question.id === id ? { ...question, ...patch } : question));
@@ -167,14 +167,14 @@ export default function ActivityQuestionBuilder({
                   type="number"
                   min="0"
                   max="100"
-                  step="1"
+                  step="0.01"
                   value={question.points ?? ""}
                   onChange={(event) => updateQuestion(question.id, {
                     points: event.target.value === "" ? undefined : Number(event.target.value),
                   })}
-                  placeholder="Ej. 10"
+                  placeholder="Ej. 2.5"
                 />
-                <small>Se asigna manualmente. Al publicar, la suma debe coincidir con el valor total de la actividad.</small>
+                <small>Puedes usar hasta 2 decimales. Al publicar, la suma debe coincidir con el valor total de la actividad.</small>
               </label>
 
               {question.type === "written" && (
