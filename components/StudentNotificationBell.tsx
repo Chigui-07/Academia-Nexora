@@ -5,6 +5,8 @@ import { goTo } from "@/lib/navigation";
 import { supabase } from "@/lib/supabase";
 import styles from "./StudentNotificationBell.module.css";
 
+const VAPID_PUBLIC_KEY = "BKhEgUXM32Q3sprlz1Uv0NI65y0Q5RMmJNxfa_KhdaLWiK9dB0kH5tynNh-d5EHl0KBb80v0Rg4IfiKTEOLuSo8";
+
 type NotificationCourse = {
   course_key: string;
   name: string;
@@ -21,6 +23,8 @@ type StudentNotification = {
   courses: NotificationCourse | null;
 };
 
+type PushState = "checking" | "unsupported" | "denied" | "disabled" | "enabled" | "working";
+
 function formatDate(value: string) {
   return new Intl.DateTimeFormat("es-GT", {
     day: "2-digit",
@@ -30,12 +34,24 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
+function getBasePath() {
+  return window.location.pathname.startsWith("/Academia-Nexora") ? "/Academia-Nexora" : "";
+}
+
+function urlBase64ToUint8Array(value: string) {
+  const padding = "=".repeat((4 - (value.length % 4)) % 4);
+  const base64 = (value + padding).replace(/-/g, "+").replace(/_/g, "/");
+  const raw = window.atob(base64);
+  return Uint8Array.from([...raw].map((character) => character.charCodeAt(0)));
+}
+
 export default function StudentNotificationBell() {
   const [open, setOpen] = useState(false);
   const [notifications, setNotifications] = useState<StudentNotification[]>([]);
   const [unread, setUnread] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [pushState, setPushState] = useState<PushState>("checking");
 
   async function loadNotifications(showLoading = false) {
     if (showLoading) setLoading(true);
@@ -70,11 +86,32 @@ export default function StudentNotificationBell() {
     setLoading(false);
   }
 
+  async function checkPushState() {
+    if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
+      setPushState("unsupported");
+      return;
+    }
+
+    if (Notification.permission === "denied") {
+      setPushState("denied");
+      return;
+    }
+
+    const basePath = getBasePath();
+    const registration = await navigator.serviceWorker.getRegistration(`${basePath}/`);
+    const subscription = await registration?.pushManager.getSubscription();
+    setPushState(subscription ? "enabled" : "disabled");
+  }
+
   useEffect(() => {
     void loadNotifications(true);
+    void checkPushState();
 
     const refresh = () => {
-      if (document.visibilityState === "visible") void loadNotifications(false);
+      if (document.visibilityState === "visible") {
+        void loadNotifications(false);
+        void checkPushState();
+      }
     };
     const intervalId = window.setInterval(refresh, 60_000);
     document.addEventListener("visibilitychange", refresh);
@@ -88,7 +125,9 @@ export default function StudentNotificationBell() {
   async function togglePanel() {
     const next = !open;
     setOpen(next);
-    if (next) await loadNotifications(false);
+    if (next) {
+      await Promise.all([loadNotifications(false), checkPushState()]);
+    }
   }
 
   async function markAllRead() {
@@ -106,6 +145,92 @@ export default function StudentNotificationBell() {
 
     setUnread(0);
     setNotifications((current) => current.map((item) => ({ ...item, read_at: item.read_at ?? readAt })));
+  }
+
+  async function enablePush() {
+    if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
+      setPushState("unsupported");
+      return;
+    }
+
+    setPushState("working");
+    setError(null);
+
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission !== "granted") {
+        setPushState(permission === "denied" ? "denied" : "disabled");
+        return;
+      }
+
+      const basePath = getBasePath();
+      const registration = await navigator.serviceWorker.register(`${basePath}/sw.js`, {
+        scope: `${basePath}/`,
+      });
+
+      let subscription = await registration.pushManager.getSubscription();
+      if (!subscription) {
+        subscription = await registration.pushManager.subscribe({
+          userVisibleOnly: true,
+          applicationServerKey: urlBase64ToUint8Array(VAPID_PUBLIC_KEY),
+        });
+      }
+
+      const { data: sessionData } = await supabase.auth.getSession();
+      const user = sessionData.session?.user;
+      if (!user) throw new Error("Tu sesión terminó. Vuelve a iniciar sesión.");
+
+      const serialized = subscription.toJSON();
+      const p256dh = serialized.keys?.p256dh;
+      const authKey = serialized.keys?.auth;
+      if (!p256dh || !authKey) throw new Error("El navegador no entregó las claves de la suscripción push.");
+
+      const { error: saveError } = await supabase
+        .from("student_push_subscriptions")
+        .upsert({
+          user_id: user.id,
+          endpoint: subscription.endpoint,
+          p256dh,
+          auth_key: authKey,
+          user_agent: navigator.userAgent,
+          active: true,
+          updated_at: new Date().toISOString(),
+        }, { onConflict: "endpoint" });
+
+      if (saveError) throw saveError;
+      setPushState("enabled");
+    } catch (pushError) {
+      setError(pushError instanceof Error ? pushError.message : "No se pudieron activar los avisos del dispositivo.");
+      await checkPushState();
+    }
+  }
+
+  async function disablePush() {
+    setPushState("working");
+    setError(null);
+
+    try {
+      const basePath = getBasePath();
+      const registration = await navigator.serviceWorker.getRegistration(`${basePath}/`);
+      const subscription = await registration?.pushManager.getSubscription();
+      const { data: sessionData } = await supabase.auth.getSession();
+      const user = sessionData.session?.user;
+
+      if (subscription && user) {
+        const { error: deleteError } = await supabase
+          .from("student_push_subscriptions")
+          .delete()
+          .eq("user_id", user.id)
+          .eq("endpoint", subscription.endpoint);
+        if (deleteError) throw deleteError;
+      }
+
+      if (subscription) await subscription.unsubscribe();
+      setPushState("disabled");
+    } catch (pushError) {
+      setError(pushError instanceof Error ? pushError.message : "No se pudieron desactivar los avisos del dispositivo.");
+      await checkPushState();
+    }
   }
 
   async function openNotification(notification: StudentNotification) {
@@ -162,6 +287,32 @@ export default function StudentNotificationBell() {
             )}
           </div>
 
+          <div className={styles.pushSettings}>
+            <div className={styles.pushCopy}>
+              <strong>📲 Avisos del dispositivo</strong>
+              <span>Recibe tareas nuevas y un recordatorio si una entrega está por vencer.</span>
+            </div>
+            {pushState === "enabled" && (
+              <button type="button" className={styles.pushAction} onClick={() => void disablePush()}>
+                Desactivar
+              </button>
+            )}
+            {pushState === "disabled" && (
+              <button type="button" className={styles.pushAction} onClick={() => void enablePush()}>
+                Activar
+              </button>
+            )}
+            {(pushState === "checking" || pushState === "working") && (
+              <span className={styles.pushStatus}>{pushState === "working" ? "Guardando..." : "Comprobando..."}</span>
+            )}
+            {pushState === "denied" && (
+              <span className={styles.pushStatus}>Bloqueadas por el navegador</span>
+            )}
+            {pushState === "unsupported" && (
+              <span className={styles.pushStatus}>No compatible en este navegador</span>
+            )}
+          </div>
+
           <div className={styles.list}>
             {loading ? (
               <div className={styles.empty}>Cargando avisos...</div>
@@ -189,7 +340,7 @@ export default function StudentNotificationBell() {
             )}
           </div>
 
-          <div className={styles.footer}>Solo avisamos tareas nuevas para no llenar tu bandeja.</div>
+          <div className={styles.footer}>Los ejercicios prácticos no generan avisos externos para evitar saturarte.</div>
         </div>
       )}
     </div>
