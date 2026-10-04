@@ -456,7 +456,7 @@ export default function StudentExerciseSheetList({
   if (!ready) return <div className="empty-state">Cargando hojas de ejercicios...</div>;
   if (error) return <div className="auth-message auth-error">{error}</div>;
   if (orderedSheets.length === 0) {
-    return <div className="empty-state">Todavía no hay una hoja de ejercicios disponible. Aparecerá automáticamente cuando el profesor publique ejercicios prácticos para este bloque.</div>;
+    return <div className="empty-state">Todavía no hay una Hoja de ejercicios creada por tu profesor para esta materia.</div>;
   }
 
   return (
