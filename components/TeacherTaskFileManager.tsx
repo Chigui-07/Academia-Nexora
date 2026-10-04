@@ -8,6 +8,9 @@ type Activity = {
   title: string;
   course_id: string;
   status: string;
+  allow_attachments: boolean;
+  max_attachments: number | null;
+  attachment_instructions: string | null;
   courses?: { name: string; icon: string } | null;
 };
 
@@ -44,13 +47,17 @@ export default function TeacherTaskFileManager() {
   const [activities, setActivities] = useState<Activity[]>([]);
   const [selectedId, setSelectedId] = useState("");
   const [materials, setMaterials] = useState<Material[]>([]);
+  const [allowAttachments, setAllowAttachments] = useState(false);
+  const [maxAttachments, setMaxAttachments] = useState("5");
+  const [attachmentInstructions, setAttachmentInstructions] = useState("");
+  const [savingSettings, setSavingSettings] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [message, setMessage] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const selected = useMemo(() => activities.find((item) => item.id === selectedId) ?? null, [activities, selectedId]);
 
-  async function loadActivities() {
+  async function loadActivities(preferredId?: string) {
     const { data: sessionData } = await supabase.auth.getSession();
     const userId = sessionData.session?.user.id;
     if (!userId) { setReady(true); return; }
@@ -63,14 +70,17 @@ export default function TeacherTaskFileManager() {
 
     const { data, error: activityError } = await supabase
       .from("course_activities")
-      .select("id, title, course_id, status, courses(name, icon)")
+      .select("id, title, course_id, status, allow_attachments, max_attachments, attachment_instructions, courses(name, icon)")
       .eq("activity_type", "notebook_task")
       .order("created_at", { ascending: false });
     if (activityError) throw activityError;
 
     const rows = (data ?? []) as unknown as Activity[];
     setActivities(rows);
-    setSelectedId((current) => current || rows[0]?.id || "");
+    setSelectedId((current) => {
+      const target = preferredId || current;
+      return target && rows.some((row) => row.id === target) ? target : rows[0]?.id || "";
+    });
     setReady(true);
   }
 
@@ -98,6 +108,51 @@ export default function TeacherTaskFileManager() {
       setError(caughtError instanceof Error ? caughtError.message : "No se pudieron cargar los archivos de la tarea.");
     });
   }, [selectedId]);
+
+  useEffect(() => {
+    if (!selected) {
+      setAllowAttachments(false);
+      setMaxAttachments("5");
+      setAttachmentInstructions("");
+      return;
+    }
+    setAllowAttachments(Boolean(selected.allow_attachments));
+    setMaxAttachments(String(selected.max_attachments ?? 5));
+    setAttachmentInstructions(selected.attachment_instructions ?? "");
+  }, [selected]);
+
+  async function saveSubmissionSettings() {
+    if (!selectedId) return;
+    const maxFiles = Number(maxAttachments);
+    if (!Number.isInteger(maxFiles) || maxFiles < 1 || maxFiles > 10) {
+      setError("La cantidad máxima de archivos debe estar entre 1 y 10.");
+      return;
+    }
+
+    setSavingSettings(true);
+    setError(null);
+    setMessage(null);
+    try {
+      const { error: updateError } = await supabase
+        .from("course_activities")
+        .update({
+          allow_attachments: allowAttachments,
+          max_attachments: maxFiles,
+          attachment_instructions: attachmentInstructions.trim() || null,
+        })
+        .eq("id", selectedId);
+      if (updateError) throw updateError;
+
+      await loadActivities(selectedId);
+      setMessage(allowAttachments
+        ? "Entrega por fotos o archivos activada para esta tarea."
+        : "Entrega por fotos o archivos desactivada para esta tarea.");
+    } catch (caughtError) {
+      setError(caughtError instanceof Error ? caughtError.message : "No se pudo guardar esta opción.");
+    } finally {
+      setSavingSettings(false);
+    }
+  }
 
   async function handleFiles(event: ChangeEvent<HTMLInputElement>) {
     const files = Array.from(event.target.files ?? []);
@@ -179,14 +234,14 @@ export default function TeacherTaskFileManager() {
     <section className="panel">
       <div className="section-heading">
         <div>
-          <p className="eyebrow">Tarea escrita · archivos</p>
-          <h2>📎 Archivos de la tarea</h2>
-          <p className="muted-copy">Adjunta documentos que el estudiante podrá abrir o descargar desde la tarjeta de su tarea escrita.</p>
+          <p className="eyebrow">Opciones de la tarea escrita</p>
+          <h2>🧰 Archivos y forma de entrega</h2>
+          <p className="muted-copy">Estas opciones se configuran por tarea. Si una tarea no necesita archivos o fotografías, puedes dejarlo desactivado.</p>
         </div>
       </div>
 
       {activities.length === 0 ? (
-        <div className="empty-state">Primero crea una tarea de cuaderno. Después podrás adjuntarle archivos desde aquí.</div>
+        <div className="empty-state">Primero crea una tarea de cuaderno. Después podrás configurar sus archivos y forma de entrega desde aquí.</div>
       ) : (
         <div style={{ display: "grid", gap: 14 }}>
           <label style={{ display: "grid", gap: 6 }}>
@@ -228,6 +283,45 @@ export default function TeacherTaskFileManager() {
               <input type="file" multiple hidden disabled={uploading || !selectedId} onChange={handleFiles} />
               <small>Máximo 20 MB por archivo. Puedes usar PDF, DOCX, imágenes u otros documentos.</small>
             </label>
+          </article>
+
+          <article className="action-card" style={{ display: "grid", gap: 12 }}>
+            <div>
+              <strong>📷 Entrega con fotos o archivos</strong>
+              <span>Actívala solo en las tareas donde el alumno deba subir evidencia al final.</span>
+            </div>
+
+            <label style={{ display: "grid", gap: 6 }}>
+              Permitir entrega por archivos
+              <select value={allowAttachments ? "yes" : "no"} onChange={(event) => setAllowAttachments(event.target.value === "yes")}>
+                <option value="no">No</option>
+                <option value="yes">Sí</option>
+              </select>
+            </label>
+
+            {allowAttachments && (
+              <>
+                <label style={{ display: "grid", gap: 6 }}>
+                  Máximo de archivos
+                  <input type="number" min="1" max="10" value={maxAttachments} onChange={(event) => setMaxAttachments(event.target.value)} />
+                </label>
+
+                <label style={{ display: "grid", gap: 6 }}>
+                  Instrucciones para subir la evidencia
+                  <textarea
+                    rows={3}
+                    maxLength={500}
+                    value={attachmentInstructions}
+                    onChange={(event) => setAttachmentInstructions(event.target.value)}
+                    placeholder="Ej. Sube fotos claras y completas de tu trabajo."
+                  />
+                </label>
+              </>
+            )}
+
+            <button className="secondary-button" type="button" disabled={savingSettings || !selectedId} onClick={() => void saveSubmissionSettings()}>
+              {savingSettings ? "Guardando..." : "Guardar opción de entrega"}
+            </button>
           </article>
         </div>
       )}
