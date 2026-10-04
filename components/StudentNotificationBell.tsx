@@ -37,8 +37,8 @@ export default function StudentNotificationBell() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  async function loadNotifications() {
-    setLoading(true);
+  async function loadNotifications(showLoading = false) {
+    if (showLoading) setLoading(true);
     setError(null);
 
     const { data: sessionData } = await supabase.auth.getSession();
@@ -71,13 +71,24 @@ export default function StudentNotificationBell() {
   }
 
   useEffect(() => {
-    void loadNotifications();
+    void loadNotifications(true);
+
+    const refresh = () => {
+      if (document.visibilityState === "visible") void loadNotifications(false);
+    };
+    const intervalId = window.setInterval(refresh, 60_000);
+    document.addEventListener("visibilitychange", refresh);
+
+    return () => {
+      window.clearInterval(intervalId);
+      document.removeEventListener("visibilitychange", refresh);
+    };
   }, []);
 
   async function togglePanel() {
     const next = !open;
     setOpen(next);
-    if (next) await loadNotifications();
+    if (next) await loadNotifications(false);
   }
 
   async function markAllRead() {
@@ -100,10 +111,17 @@ export default function StudentNotificationBell() {
   async function openNotification(notification: StudentNotification) {
     if (!notification.read_at) {
       const readAt = new Date().toISOString();
-      await supabase
+      const { error: updateError } = await supabase
         .from("student_notifications")
         .update({ read_at: readAt })
         .eq("id", notification.id);
+
+      if (!updateError) {
+        setUnread((current) => Math.max(0, current - 1));
+        setNotifications((current) => current.map((item) => (
+          item.id === notification.id ? { ...item, read_at: readAt } : item
+        )));
+      }
     }
 
     const courseKey = notification.courses?.course_key;
@@ -124,6 +142,7 @@ export default function StudentNotificationBell() {
         onClick={() => void togglePanel()}
         aria-label={unread > 0 ? `Notificaciones, ${unread} sin leer` : "Notificaciones"}
         aria-expanded={open}
+        aria-haspopup="dialog"
       >
         <span aria-hidden="true">🔔</span>
         {unread > 0 && <span className={styles.badge}>{unread > 9 ? "9+" : unread}</span>}
