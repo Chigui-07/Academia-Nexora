@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
-type ActivityType = "notebook_task" | "virtual_task" | "practice";
+type ActivityType = "notebook_task" | "virtual_task" | "practice" | "exercise_sheet";
 type Course = { id: string; name: string; icon: string };
 type Activity = {
   id: string;
@@ -17,7 +17,7 @@ type Activity = {
 };
 
 type RemovalResult = {
-  action?: "deleted" | "archived" | "protected";
+  action?: "deleted" | "archived" | "protected" | "deleted_force";
   reason?: string;
   attempts?: number;
   message?: string;
@@ -27,6 +27,7 @@ const typeLabels: Record<ActivityType, string> = {
   notebook_task: "📝 Tarea de cuaderno",
   virtual_task: "💻 Tarea virtual",
   practice: "✏️ Ejercicio práctico",
+  exercise_sheet: "📄 Hoja de ejercicios",
 };
 
 export default function ActivityRemovalManager() {
@@ -61,7 +62,6 @@ export default function ActivityRemovalManager() {
       .from("course_activities")
       .select("id, course_id, created_by, activity_type, title, status, block_number, created_at")
       .neq("status", "archived")
-      .neq("activity_type", "exercise_sheet")
       .order("created_at", { ascending: false });
 
     if (!isAdmin) activityQuery = activityQuery.eq("created_by", session.user.id);
@@ -93,13 +93,11 @@ export default function ActivityRemovalManager() {
     return true;
   }), [activities, courseFilter, typeFilter]);
 
-  async function removeActivity(activity: Activity) {
+  async function removeActivity(activity: Activity, force: boolean) {
     const course = courseMap.get(activity.course_id);
-    const confirmed = window.confirm(
-      `¿Quitar \"${activity.title}\" de ${course?.name ?? "este curso"}?\n\n` +
-      "• Si nunca fue utilizada, se eliminará definitivamente.\n" +
-      "• Si es un ejercicio con intentos, Nexora lo archivará y conservará su historial.\n" +
-      "• Si es una tarea que ya tiene entregas, Nexora impedirá borrarla para proteger las notas."
+    const confirmed = window.confirm(force
+      ? `⚠️ ELIMINACIÓN DEFINITIVA\n\n¿Eliminar \"${activity.title}\" de ${course?.name ?? "este curso"}?\n\nEsto borrará también sus intentos, entregas y calificaciones asociadas. Esta acción no se puede deshacer.`
+      : `¿Quitar \"${activity.title}\" de ${course?.name ?? "este curso"}?\n\n• Si no tiene historial, se eliminará.\n• Si ya fue utilizada, Nexora intentará archivarla o protegerla.`
     );
     if (!confirmed) return;
 
@@ -110,26 +108,24 @@ export default function ActivityRemovalManager() {
     try {
       const { data, error: removeError } = await supabase.rpc("remove_course_activity", {
         p_activity_id: activity.id,
+        p_force: force,
       });
       if (removeError) throw removeError;
 
       const result = (data ?? {}) as RemovalResult;
       if (result.action === "protected") {
-        setError(result.message || "Esta actividad tiene historial protegido y no se puede eliminar.");
+        setError(`${result.message || "Esta actividad tiene historial protegido."} Si estás seguro, usa “Eliminar definitivamente”.`);
         return;
       }
 
-      if (result.action !== "deleted" && result.action !== "archived") {
+      if (!["deleted", "archived", "deleted_force"].includes(result.action ?? "")) {
         throw new Error("Supabase no confirmó cómo se procesó la actividad.");
       }
 
       setActivities((current) => current.filter((item) => item.id !== activity.id));
-      setMessage(result.message || (result.action === "deleted" ? "Actividad eliminada." : "Actividad archivada."));
+      setMessage(result.message || (result.action === "archived" ? "Actividad archivada." : "Actividad eliminada."));
     } catch (caughtError) {
-      const text = caughtError instanceof Error ? caughtError.message : "No se pudo quitar la actividad.";
-      setError(text.includes("Exercise sheets are managed automatically")
-        ? "Las Hojas de ejercicios se generan automáticamente y no se eliminan desde aquí."
-        : text);
+      setError(caughtError instanceof Error ? caughtError.message : "No se pudo quitar la actividad.");
     } finally {
       setBusyId(null);
     }
@@ -145,13 +141,13 @@ export default function ActivityRemovalManager() {
           <p className="eyebrow">Limpieza de contenido</p>
           <h2>🗑️ Eliminar tareas y ejercicios</h2>
           <p className="muted-copy">
-            Quita actividades que ya no utilizarás. Nexora protege automáticamente las tareas que ya tienen entregas y conserva el historial de los ejercicios realizados.
+            Puedes retirar una actividad conservando historial o eliminarla definitivamente cuando quedó mal y necesitas borrar también sus entregas y notas.
           </p>
         </div>
       </div>
 
       <div className="security-note" style={{ marginBottom: 16 }}>
-        🔒 Las Hojas de ejercicios automáticas no aparecen aquí. Si eliminas un ejercicio sin historial, la Hoja de ejercicios de su bloque se actualizará sola.
+        ⚠️ <strong>Eliminar definitivamente</strong> borra la actividad y sus intentos/calificaciones asociados. Úsalo solo cuando realmente quieras rehacer esa actividad desde cero.
       </div>
 
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 12, marginBottom: 18 }}>
@@ -170,6 +166,7 @@ export default function ActivityRemovalManager() {
             <option value="notebook_task">Tareas de cuaderno</option>
             <option value="virtual_task">Tareas virtuales</option>
             <option value="practice">Ejercicios prácticos</option>
+            <option value="exercise_sheet">Hojas de ejercicios</option>
           </select>
         </label>
       </div>
@@ -183,6 +180,7 @@ export default function ActivityRemovalManager() {
         <div style={{ display: "grid", gap: 10 }}>
           {visible.map((activity) => {
             const course = courseMap.get(activity.course_id);
+            const busy = busyId === activity.id;
             return (
               <article className="action-card" key={activity.id} style={{ display: "grid", gap: 10 }}>
                 <div>
@@ -190,15 +188,23 @@ export default function ActivityRemovalManager() {
                   <strong>{activity.title}</strong>
                   <span>{typeLabels[activity.activity_type]} · {activity.status === "published" ? "Publicada" : "Borrador"}</span>
                 </div>
-                <div className="request-actions">
+                <div className="request-actions" style={{ flexWrap: "wrap" }}>
                   <button
                     className="secondary-button"
                     type="button"
-                    disabled={busyId === activity.id}
-                    onClick={() => void removeActivity(activity)}
-                    style={{ borderColor: "rgba(248, 113, 113, .55)" }}
+                    disabled={busy}
+                    onClick={() => void removeActivity(activity, false)}
                   >
-                    {busyId === activity.id ? "Procesando..." : "🗑️ Quitar actividad"}
+                    {busy ? "Procesando..." : "📦 Quitar / archivar"}
+                  </button>
+                  <button
+                    className="secondary-button"
+                    type="button"
+                    disabled={busy}
+                    onClick={() => void removeActivity(activity, true)}
+                    style={{ borderColor: "rgba(248, 113, 113, .72)", color: "#fecaca" }}
+                  >
+                    {busy ? "Procesando..." : "🗑️ Eliminar definitivamente"}
                   </button>
                 </div>
               </article>
