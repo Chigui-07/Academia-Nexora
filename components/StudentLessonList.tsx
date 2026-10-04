@@ -23,9 +23,15 @@ type StudentLessonListProps = {
   courseId: string;
   courseName: string;
   courseIcon?: string;
+  isEssentialCourse?: boolean;
 };
 
-export default function StudentLessonList({ courseId, courseName, courseIcon = "📚" }: StudentLessonListProps) {
+export default function StudentLessonList({
+  courseId,
+  courseName,
+  courseIcon = "📚",
+  isEssentialCourse = false,
+}: StudentLessonListProps) {
   const [lessons, setLessons] = useState<Lesson[]>([]);
   const [savedLessonIds, setSavedLessonIds] = useState<string[]>([]);
   const [filter, setFilter] = useState<LessonFilter>("all");
@@ -53,20 +59,28 @@ export default function StudentLessonList({ courseId, courseName, courseIcon = "
         .single();
       if (profileError) throw profileError;
 
+      let lessonQuery = supabase
+        .from("course_lessons")
+        .select("id, course_id, unit_title, title, lesson_content, examples, resources, position")
+        .eq("course_id", courseId)
+        .eq("status", "published");
+
+      if (!isEssentialCourse) {
+        lessonQuery = lessonQuery
+          .eq("academic_stage", profile.stage)
+          .eq("academic_level", profile.level);
+      }
+
+      lessonQuery = lessonQuery
+        .order("position", { ascending: true })
+        .order("created_at", { ascending: true });
+
       const [
         { data: lessonData, error: loadError },
         { data: bookmarkData, error: bookmarkError },
         { data: courseData, error: courseError },
       ] = await Promise.all([
-        supabase
-          .from("course_lessons")
-          .select("id, course_id, unit_title, title, lesson_content, examples, resources, position")
-          .eq("course_id", courseId)
-          .eq("status", "published")
-          .eq("academic_stage", profile.stage)
-          .eq("academic_level", profile.level)
-          .order("position", { ascending: true })
-          .order("created_at", { ascending: true }),
+        lessonQuery,
         supabase
           .from("lesson_bookmarks")
           .select("lesson_id")
@@ -93,7 +107,7 @@ export default function StudentLessonList({ courseId, courseName, courseIcon = "
       setError(caughtError instanceof Error ? caughtError.message : "No se pudieron cargar las clases.");
       setReady(true);
     });
-  }, [courseId]);
+  }, [courseId, isEssentialCourse]);
 
   const savedSet = useMemo(() => new Set(savedLessonIds), [savedLessonIds]);
   const visibleLessons = useMemo(
@@ -141,7 +155,9 @@ export default function StudentLessonList({ courseId, courseName, courseIcon = "
 
   if (!ready) return <div className="empty-state">Cargando clases...</div>;
   if (error && lessons.length === 0) return <div className="auth-message auth-error">{error}</div>;
-  if (lessons.length === 0) return <div className="empty-state">Todavía no hay clases publicadas para tu etapa y nivel actual.</div>;
+  if (lessons.length === 0) {
+    return <div className="empty-state">{isEssentialCourse ? "Todavía no hay clases publicadas en esta área esencial." : "Todavía no hay clases publicadas para tu etapa y nivel actual."}</div>;
+  }
 
   return (
     <div className={styles.wrapper}>
@@ -172,6 +188,10 @@ export default function StudentLessonList({ courseId, courseName, courseIcon = "
           {filter === "saved" ? `${visibleLessons.length} guardadas` : `${lessons.length} clases disponibles`}
         </span>
       </div>
+
+      {isEssentialCourse && (
+        <div className="security-note">🌱 Estas clases pertenecen a Formación esencial y permanecen disponibles durante tu único año obligatorio, aunque cambies de nivel académico.</div>
+      )}
 
       {error && <div className="auth-message auth-error">{error}</div>}
 
