@@ -8,6 +8,7 @@ import AdminEnrollmentManager from "./AdminEnrollmentManager";
 import TeacherActivityManager from "./TeacherActivityManager";
 import TeacherLessonManager from "./TeacherLessonManager";
 import TeacherTaskFileManager from "./TeacherTaskFileManager";
+import TeacherTaskSubmissionOptions from "./TeacherTaskSubmissionOptions";
 import styles from "./AdminWorkspace.module.css";
 
 type AdminSection = "activities" | "lessons" | "courses" | "students" | "requests" | "academic";
@@ -72,6 +73,7 @@ export default function AdminWorkspace() {
           {activeSection === "activities" && (
             <>
               <TeacherActivityManager />
+              <TeacherTaskSubmissionOptions />
               <TeacherTaskFileManager />
             </>
           )}
