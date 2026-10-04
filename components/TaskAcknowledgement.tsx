@@ -4,10 +4,12 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 
 type AcknowledgementLabel = "enterado" | "revisado";
+type AcknowledgementSubject = "tarea" | "ejercicio";
 
 type TaskAcknowledgementProps = {
   activityId: string;
   label: AcknowledgementLabel;
+  subject?: AcknowledgementSubject;
 };
 
 function titleCase(value: AcknowledgementLabel) {
@@ -24,7 +26,7 @@ function formatDate(value: string) {
   }).format(new Date(value));
 }
 
-export default function TaskAcknowledgement({ activityId, label }: TaskAcknowledgementProps) {
+export default function TaskAcknowledgement({ activityId, label, subject = "tarea" }: TaskAcknowledgementProps) {
   const [acknowledgedAt, setAcknowledgedAt] = useState<string | null>(null);
   const [ready, setReady] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -49,14 +51,14 @@ export default function TaskAcknowledgement({ activityId, label }: TaskAcknowled
         .maybeSingle();
 
       if (cancelled) return;
-      if (loadError) setError("No se pudo comprobar la confirmación de esta tarea.");
+      if (loadError) setError(`No se pudo comprobar la confirmación de ${subject === "ejercicio" ? "este ejercicio" : "esta tarea"}.`);
       else setAcknowledgedAt(data?.acknowledged_at ?? null);
       setReady(true);
     }
 
     void load();
     return () => { cancelled = true; };
-  }, [activityId]);
+  }, [activityId, subject]);
 
   async function acknowledge() {
     setSaving(true);
@@ -79,6 +81,7 @@ export default function TaskAcknowledgement({ activityId, label }: TaskAcknowled
   if (!ready) return null;
 
   const buttonLabel = titleCase(label);
+  const itemText = subject === "ejercicio" ? "este ejercicio" : "esta tarea";
 
   return (
     <section
@@ -96,11 +99,11 @@ export default function TaskAcknowledgement({ activityId, label }: TaskAcknowled
       }}
     >
       <div style={{ display: "grid", gap: 4 }}>
-        <strong>Confirmación de lectura</strong>
+        <strong>Confirmación de revisión</strong>
         <span className="muted-copy">
           {acknowledgedAt
-            ? `Confirmaste esta tarea el ${formatDate(acknowledgedAt)}.`
-            : "Cuando termines de revisar la tarea, confirma que ya la viste."}
+            ? `Confirmaste ${itemText} el ${formatDate(acknowledgedAt)}.`
+            : `Cuando termines de revisar ${itemText}, confirma que ya lo viste.`}
         </span>
       </div>
 
