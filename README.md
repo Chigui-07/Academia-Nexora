@@ -4,14 +4,14 @@
 
 ## 📌 Estado del proyecto
 
-**Fase actual: v0.39 — notificaciones estudiantiles ligeras para tareas nuevas.**
+**Fase actual: v0.40 — recordatorios externos con notificaciones push y correo preparado.**
 
 - Frontend: Next.js + TypeScript + CSS.
 - Publicación: GitHub Pages.
 - Backend, Auth, Storage y datos: Supabase.
 - El proyecto no depende de APIs de IA de pago.
 
-La base incluye registro, perfiles, Carné Nexora, roles, cursos, solicitudes e inscripciones, clases, seguimiento de clases nuevas/revisadas, tablas dentro de clases, clases guardadas por estudiante, tareas, ejercicios, Hoja de ejercicios manual, preguntas configurables con valor manual, archivos privados, intentos persistentes, confirmaciones de lectura/revisión, revisión y calificación manual, notificaciones estudiantiles, presencia en línea, Formación esencial anual, PMA, etapas, niveles, bloques, historial académico y ascenso automático.
+La base incluye registro, perfiles, Carné Nexora, roles, cursos, solicitudes e inscripciones, clases, seguimiento de clases nuevas/revisadas, tablas dentro de clases, clases guardadas por estudiante, tareas, ejercicios, Hoja de ejercicios manual, preguntas configurables con valor manual, archivos privados, intentos persistentes, confirmaciones de lectura/revisión, revisión y calificación manual, notificaciones internas y push, presencia en línea, Formación esencial anual, PMA, etapas, niveles, bloques, historial académico y ascenso automático.
 
 ## 🧭 Navegación
 
@@ -29,6 +29,8 @@ Las cuentas con permiso de gestión tienen acceso a **⚙️ Administración** t
 En **Inicio**, las clases disponibles se separan en **🆕 Nuevas** y **✅ Revisadas**. Una clase pasa a Revisadas automáticamente cuando el estudiante la abre por primera vez; puede volver a consultarla después sin que este estado afecte notas o entregas.
 
 Desde **v0.39**, la barra superior incluye una campana **🔔** con notificaciones internas para el estudiante. El contador muestra avisos pendientes y el panel permite abrir la materia correspondiente o marcar todos los avisos como leídos.
+
+Desde **v0.40**, esa misma campana permite activar voluntariamente **📲 avisos del dispositivo**. Si el navegador lo permite, el estudiante puede recibir notificaciones aunque Nexora no esté abierta.
 
 ## ⚙️ Administración
 
@@ -152,11 +154,30 @@ Desde **v0.39**, Nexora genera avisos internos cuando se publica una actividad a
 - 💻 Tarea virtual
 - 📄 Hoja de ejercicios
 
-Los **ejercicios prácticos no generan notificación** para evitar una bandeja demasiado cargada. Tampoco se mandan correos ni notificaciones del navegador.
+Los **ejercicios prácticos no generan notificación** para evitar una bandeja demasiado cargada.
 
 Cada aviso se crea únicamente para estudiantes que realmente tengan acceso a esa actividad según su inscripción, etapa, nivel, Formación esencial y destinatarios específicos. Editar una tarea ya publicada actualiza el texto del aviso sin volver a marcarlo como nuevo si el estudiante ya lo había leído.
 
 La campana de la barra superior muestra el número de avisos sin leer. El alumno puede abrir un aviso para ir directamente a la materia y sección correspondiente o usar **Marcar leídas** para limpiar el contador.
+
+### 📲 Avisos del dispositivo
+
+Desde **v0.40**, el estudiante puede activar o desactivar avisos push desde la campana.
+
+- Requieren permiso explícito del navegador/dispositivo.
+- Una tarea nueva puede generar un aviso externo mientras su notificación interna siga sin leer.
+- Si la actividad todavía no fue entregada y faltan menos de 24 horas para el cierre, Nexora puede enviar un recordatorio adicional.
+- Los ejercicios prácticos no generan avisos push.
+- La cola se revisa cada 5 minutos.
+- Las suscripciones que ya no existen se desactivan automáticamente.
+
+El service worker `public/sw.js` recibe el aviso y, al tocarlo, abre la materia correspondiente en Nexora.
+
+### 📧 Recordatorios por correo
+
+La infraestructura de correo también quedó preparada en v0.40: puede recordar una actividad no vista después de 24 horas y una entrega pendiente 24 horas antes del cierre.
+
+Como Academia Nexora todavía no tiene un dominio propio verificado, los envíos reales por Resend permanecen desactivados. La cola y la Edge Function quedan listas para activarse más adelante sin cambiar la lógica académica.
 
 ## ✍️ Intentos y revisión
 
@@ -266,6 +287,9 @@ Cada sesión autenticada actualiza `user_presence`. Nexora distingue:
 - RLS protege perfiles, cursos, solicitudes, inscripciones, clases, marcadores, vistas de clases, actividades, intentos, confirmaciones, notificaciones, historial y archivos.
 - `lesson_views` solo permite a cada estudiante leer, crear y actualizar sus propias marcas de revisión.
 - `student_notifications` solo permite a cada usuario leer sus propios avisos y actualizar únicamente `read_at` para marcarlos como leídos.
+- `student_push_subscriptions` permite a cada estudiante administrar únicamente sus propias suscripciones push.
+- `student_push_deliveries` no admite acceso directo de `anon` ni `authenticated`; la cola la procesa únicamente el backend.
+- La clave privada VAPID y los tokens de cron permanecen fuera del repositorio, en configuración privada de Supabase.
 - El estudiante solo recibe contenido publicado que le corresponde.
 - Crear, guardar y entregar intentos pasa por funciones de servidor.
 - La selección de una Hoja de ejercicios se valida contra los ejercicios realmente publicados y asignados al estudiante.
@@ -294,6 +318,9 @@ Cada sesión autenticada actualiza `user_presence`. Nexora distingue:
 - `activity_attempt_attachments`
 - `activity_acknowledgements`
 - `student_notifications`
+- `student_push_subscriptions`
+- `student_push_deliveries`
+- `student_email_reminders`
 - `academic_level_history`
 - `admin_notifications`
 - `private.course_activity_answer_keys`
