@@ -17,8 +17,6 @@ type Course = {
 type Enrollment = {
   id: string;
   status: string;
-  starting_level: number | null;
-  starting_title: string | null;
   required_until: string | null;
   courses: Course | null;
 };
@@ -49,9 +47,6 @@ function CourseCards({ items }: { items: Enrollment[] }) {
             <p className="eyebrow">{course.category}</p>
             <h3>{course.name}</h3>
             <p>{course.description}</p>
-            {enrollment.starting_level && (
-              <small>📍 Inicio recomendado: Nivel {enrollment.starting_level}{enrollment.starting_title ? ` · ${enrollment.starting_title}` : ""}</small>
-            )}
             <button
               className="primary-button"
               type="button"
@@ -108,7 +103,7 @@ export default function EnrolledCourses() {
 
       const { data, error: loadError } = await supabase
         .from("course_enrollments")
-        .select("id, status, starting_level, starting_title, required_until, courses(id, course_key, name, description, icon, category, is_essential)")
+        .select("id, status, required_until, courses(id, course_key, name, description, icon, category, is_essential)")
         .eq("user_id", session.user.id)
         .eq("status", "active")
         .order("enrolled_at", { ascending: false });
