@@ -4,14 +4,14 @@
 
 ## 📌 Estado del proyecto
 
-**Fase actual: v0.32.1 — base académica pública con confirmación de revisión en tareas y ejercicios.**
+**Fase actual: v0.33 — Formación esencial como materia anual única de 2400 puntos.**
 
 - Frontend: Next.js + TypeScript + CSS.
 - Publicación: GitHub Pages.
 - Backend, Auth, Storage y datos: Supabase.
 - El proyecto no depende de APIs de IA de pago.
 
-La base incluye registro, perfiles, Carné Nexora, roles, cursos, solicitudes e inscripciones, diagnósticos, clases, tablas dentro de clases, clases guardadas por estudiante, tareas, ejercicios, preguntas configurables, archivos privados, intentos persistentes, confirmaciones de lectura/revisión, revisión y calificación manual, presencia en línea, Formación esencial, PMA, etapas, niveles, bloques, historial académico y ascenso automático.
+La base incluye registro, perfiles, Carné Nexora, roles, cursos, solicitudes e inscripciones, diagnósticos, clases, tablas dentro de clases, clases guardadas por estudiante, tareas, ejercicios, preguntas configurables, archivos privados, intentos persistentes, confirmaciones de lectura/revisión, revisión y calificación manual, presencia en línea, Formación esencial anual, PMA, etapas, niveles, bloques, historial académico y ascenso automático.
 
 ## 🧭 Navegación
 
@@ -38,6 +38,8 @@ Los cursos viven en `courses`. Una inscripción activa vive en `course_enrollmen
 Administración puede crear, editar, activar o desactivar materias, aceptar solicitudes y asignar o retirar cursos directamente. Retirar una materia conserva su historial.
 
 Cada curso dispone de **Resumen, Clases, Tareas, Ejercicios y Calificaciones**.
+
+Las seis áreas de Formación esencial permanecen internamente como cursos del sistema para conservar diagnósticos, clases, actividades e historial, pero el estudiante las ve agrupadas como **una sola materia anual**.
 
 ## 🧠 Diagnósticos
 
@@ -112,7 +114,7 @@ Si una actividad permite varios intentos, Nexora conserva para el promedio el me
 
 ## 🏆 Sistema académico
 
-Nexora no usa años escolares como medida de progreso.
+Nexora no usa años escolares como medida de progreso para las materias normales.
 
 **Etapa → Nivel → Bloques → Materias**
 
@@ -126,26 +128,29 @@ Existen **5 etapas de 10 niveles cada una**, para un total de **50 niveles acad�
 | 🎓 Superior | 1–10 | 75/100 |
 | 🏆 Dominio | 1–10 | 80/100 |
 
-Cada clase y actividad pertenece a una **etapa y nivel concretos**. El estudiante solo recibe contenido correspondiente a su progreso actual.
+En materias normales, cada clase y actividad pertenece a una **etapa y nivel concretos**. El estudiante recibe el contenido correspondiente a su progreso actual.
+
+Formación esencial es la excepción: funciona como una **materia anual independiente de los niveles** y no se reinicia al avanzar académicamente.
 
 ### 📊 Bloques
 
-Cada materia tiene **4 bloques por nivel**.
+Cada materia normal tiene **4 bloques por nivel**, con exactamente **100 puntos publicados por bloque**.
 
-Cada bloque dispone de exactamente **100 puntos publicados**. Nexora impide publicar tareas normales que hagan superar ese límite.
+Formación esencial también usa 4 bloques, pero cada bloque reúne sus 6 áreas:
 
-Un bloque tiene dos estados distintos:
+- 100 puntos de cada área;
+- 600 puntos por bloque;
+- 2400 puntos durante todo el único año obligatorio.
 
-- **Cerrado:** ya existen 100 puntos publicados.
-- **Completo:** además, todas sus actividades calificables ya tienen una calificación válida para el estudiante.
+Cada área puede publicar como máximo 100 puntos calificables por bloque durante todo el año, sin volver a abrir otro cupo al cambiar de nivel.
 
 ### Nota final
 
-Cuando los cuatro bloques están completos, la nota final de la materia se calcula automáticamente:
+En materias normales, cuando los cuatro bloques están completos, la nota final se calcula automáticamente:
 
 `(Bloque 1 + Bloque 2 + Bloque 3 + Bloque 4) / 4`
 
-La materia se aprueba si la nota final alcanza el mínimo correspondiente a la etapa.
+Las notas siguen expresándose sobre 100 para mantener las notas mínimas de cada etapa.
 
 ## 🔁 PMA
 
@@ -159,17 +164,19 @@ El PMA **no agrega puntos nuevos al bloque**. Original y PMA ocupan el mismo esp
 
 ## ⬆️ Ascenso automático
 
-Después de cada calificación, Supabase vuelve a calcular el progreso académico.
+Después de cada calificación, Supabase vuelve a calcular el progreso académico de las materias normales.
 
 Para aprobar un nivel:
 
-1. cada materia activa debe tener sus cuatro bloques completos;
+1. cada materia normal activa debe tener sus cuatro bloques completos;
 2. Nexora calcula la nota final de cada materia;
-3. todas las materias deben alcanzar el mínimo de la etapa.
+3. todas las materias normales deben alcanzar el mínimo de la etapa.
 
-Si alguna materia queda debajo del mínimo, el nivel pasa a **Pendiente de aprobación**. Las materias aprobadas se conservan y solo la materia pendiente necesita recuperación.
+**Formación esencial no se repite ni bloquea un nuevo nivel académico**; tiene su propio recorrido anual de 365 días.
 
-Cuando todas las materias quedan aprobadas, Nexora guarda el nivel en el historial y avanza automáticamente:
+Si alguna materia normal queda debajo del mínimo, el nivel pasa a **Pendiente de aprobación**. Las materias aprobadas se conservan y solo la materia pendiente necesita recuperación.
+
+Cuando todas las materias normales quedan aprobadas, Nexora guarda el nivel en el historial y avanza automáticamente:
 
 - Nivel 1 → Nivel 2 → … → Nivel 10;
 - al superar Nivel 10, pasa a Nivel 1 de la siguiente etapa;
@@ -179,7 +186,7 @@ Cuando todas las materias quedan aprobadas, Nexora guarda el nivel en el histori
 
 `academic_level_history` conserva una fotografía permanente de cada nivel aprobado: etapa, nivel, mínimo requerido, resultados de materias y fecha de finalización.
 
-Perfil muestra automáticamente etapa y nivel actuales, progreso dentro de la etapa, nota mínima, estado académico, estado de cada materia y sus cuatro bloques, e historial de niveles completados.
+Perfil muestra automáticamente etapa y nivel actuales, progreso dentro de la etapa, nota mínima, estado académico, estado de cada materia normal y sus cuatro bloques, e historial de niveles completados.
 
 ## 🟢 Presencia
 
@@ -193,7 +200,9 @@ La vista general no expone Carné Nexora ni datos administrativos.
 
 ## 🌱 Formación esencial
 
-Durante los primeros 365 días se asignan automáticamente:
+Formación esencial es **una sola materia obligatoria durante los primeros 365 días** y se cursa **una sola vez**. No existe opción para repetirla en años posteriores.
+
+Tiene seis áreas internas:
 
 - ✍️ Caligrafía y escritura clara
 - 📖 Comprensión y expresión lectora
@@ -202,15 +211,26 @@ Durante los primeros 365 días se asignan automáticamente:
 - 🧩 Lógica y razonamiento
 - 📅 Organización y hábitos de estudio
 
+Su peso académico anual es:
+
+- **400 puntos por área**;
+- **600 puntos por bloque** entre las seis áreas;
+- **2400 puntos en todo el año**.
+
+Las áreas se conservan internamente como cursos del sistema para no perder diagnósticos, historial ni actividades existentes, pero en **Mis cursos** aparecen agrupadas dentro de una sola tarjeta de Formación esencial.
+
+Las clases, tareas, ejercicios y calificaciones de estas áreas permanecen accesibles durante el año aunque el estudiante cambie de etapa o nivel. Al cumplirse la fecha `required_until`, el acceso obligatorio termina y la inscripción no vuelve a reactivarse.
+
 ## 🔐 Seguridad
 
 - RLS protege perfiles, cursos, solicitudes, inscripciones, clases, marcadores personales, actividades, intentos, confirmaciones de lectura/revisión, historial y archivos.
 - El estudiante solo recibe contenido publicado que le corresponde.
+- En Formación esencial, RLS permite contenido de sus áreas durante el período anual aunque cambie de nivel, pero lo bloquea al vencer `required_until`.
 - Cada usuario solo puede leer sus propias confirmaciones; profesor y administración pueden consultarlas.
 - Cada usuario solo puede leer, crear y quitar sus propios marcadores de clases.
 - Las claves correctas no se exponen al navegador del estudiante.
 - Crear, guardar y entregar intentos pasa por funciones de servidor.
-- Confirmar una tarea o ejercicio pasa por una función de servidor que valida autenticación, curso, nivel y asignación.
+- Confirmar una tarea o ejercicio pasa por una función de servidor que valida autenticación, curso, período anual o nivel y asignación.
 - PMA valida servidor a servidor su relación con la tarea original.
 - El historial académico no admite escritura directa del estudiante.
 - Los RPC académicos públicos usan wrappers `SECURITY INVOKER`; las operaciones privilegiadas permanecen en funciones privadas con comprobaciones explícitas de autenticación y roles.
