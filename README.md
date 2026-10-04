@@ -4,14 +4,14 @@
 
 ## 📌 Estado del proyecto
 
-**Fase actual: v0.35.1 — valores decimales por pregunta en tareas y ejercicios.**
+**Fase actual: v0.36 — clases nuevas y revisadas en Inicio.**
 
 - Frontend: Next.js + TypeScript + CSS.
 - Publicación: GitHub Pages.
 - Backend, Auth, Storage y datos: Supabase.
 - El proyecto no depende de APIs de IA de pago.
 
-La base incluye registro, perfiles, Carné Nexora, roles, cursos, solicitudes e inscripciones, clases, tablas dentro de clases, clases guardadas por estudiante, tareas, ejercicios, preguntas configurables con valor manual, archivos privados, intentos persistentes, confirmaciones de lectura/revisión, revisión y calificación manual, presencia en línea, Formación esencial anual, PMA, etapas, niveles, bloques, historial académico y ascenso automático.
+La base incluye registro, perfiles, Carné Nexora, roles, cursos, solicitudes e inscripciones, clases, seguimiento de clases nuevas/revisadas, tablas dentro de clases, clases guardadas por estudiante, tareas, ejercicios, preguntas configurables con valor manual, archivos privados, intentos persistentes, confirmaciones de lectura/revisión, revisión y calificación manual, presencia en línea, Formación esencial anual, PMA, etapas, niveles, bloques, historial académico y ascenso automático.
 
 ## 🧭 Navegación
 
@@ -25,6 +25,8 @@ La base incluye registro, perfiles, Carné Nexora, roles, cursos, solicitudes e 
 - ⚙️ Administración, para cuentas con permiso de profesor o administrador
 
 Las cuentas con permiso de gestión tienen acceso a **⚙️ Administración** tanto desde el menú lateral como desde la barra superior.
+
+En **Inicio**, las clases disponibles se separan en **🆕 Nuevas** y **✅ Revisadas**. Una clase pasa a Revisadas automáticamente cuando el estudiante la abre por primera vez; puede volver a consultarla después sin que este estado afecte notas o entregas.
 
 ## ⚙️ Administración
 
@@ -72,6 +74,13 @@ Las clases admiten:
 - vista previa antes de publicar.
 
 En la vista del estudiante, las clases aparecen como **tarjetas compactas**. Al abrir una clase se muestra su contenido y al final existe el acceso **✏️ Haz el ejercicio para reforzar el tema**.
+
+Desde **v0.36**, Inicio muestra un panel **📖 Tus clases** con dos estados:
+
+- **🆕 Nuevas:** clases publicadas y accesibles que el estudiante todavía no ha abierto;
+- **✅ Revisadas:** clases que ya abrió al menos una vez.
+
+El estado se guarda por usuario en `lesson_views`. Abrir una tarjeta desde Inicio lleva directamente a esa clase dentro de su curso y actualiza su fecha de revisión. Este seguimiento es únicamente de organización: no entrega actividades, no modifica notas y no sustituye **🔖 Guardar clase**.
 
 El contenido usa un sistema de **hojas navegables**. Las clases separan explicación, tablas, ejemplos y recursos; las tareas y ejercicios muestran una pregunta por hoja mediante **Hoja X de Y**.
 
@@ -207,7 +216,8 @@ Cada sesión autenticada actualiza `user_presence`. Nexora distingue:
 
 ## 🔐 Seguridad
 
-- RLS protege perfiles, cursos, solicitudes, inscripciones, clases, marcadores, actividades, intentos, confirmaciones, historial y archivos.
+- RLS protege perfiles, cursos, solicitudes, inscripciones, clases, marcadores, vistas de clases, actividades, intentos, confirmaciones, historial y archivos.
+- `lesson_views` solo permite a cada estudiante leer, crear y actualizar sus propias marcas de revisión.
 - El estudiante solo recibe contenido publicado que le corresponde.
 - Crear, guardar y entregar intentos pasa por funciones de servidor.
 - El guardado completo de una actividad pasa por un RPC que valida autenticación, rol, propiedad, curso, destinatarios, configuración y distribución de puntos antes de confirmar los cambios.
@@ -226,6 +236,7 @@ Cada sesión autenticada actualiza `user_presence`. Nexora distingue:
 - `course_lessons`
 - `course_lesson_assignments`
 - `lesson_bookmarks`
+- `lesson_views`
 - `course_activities`
 - `course_activity_assignments`
 - `activity_attempts`
