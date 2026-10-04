@@ -17,6 +17,7 @@ export type ActivityQuestionBlock = {
   id: string;
   type: ActivityQuestionType;
   prompt: string;
+  points?: number;
   options?: ActivityQuestionOption[];
   pairs?: ActivityMatchingPair[];
   placeholder?: string;

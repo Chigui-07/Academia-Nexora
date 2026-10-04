@@ -335,7 +335,10 @@ export default function TeacherGradingManager({
                   return (
                     <article className={styles.questionCard} key={question.id}>
                       <div className={styles.questionTopline}>
-                        <strong>Pregunta {index + 1}</strong>
+                        <strong>
+                          Pregunta {index + 1}
+                          {typeof question.points === "number" ? ` · ${question.points} pts` : ""}
+                        </strong>
                         <span>
                           {question.type === "written"
                             ? "Respuesta escrita"

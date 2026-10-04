@@ -168,7 +168,10 @@ export default function ActivitySheet({
                 <div className={styles.question} key={question.id}>
                   <div className={styles.questionHeading}>
                     <span>Pregunta {index + 1}</span>
-                    <small>{activityQuestionTypeLabels[question.type]}</small>
+                    <small>
+                      {activityQuestionTypeLabels[question.type]}
+                      {typeof question.points === "number" ? ` · ${question.points} pts` : ""}
+                    </small>
                   </div>
                   <p>{question.prompt || "Pregunta sin enunciado"}</p>
 

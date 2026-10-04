@@ -4,14 +4,14 @@
 
 ## 📌 Estado del proyecto
 
-**Fase actual: v0.34.2 — acceso a cursos compatible con el sistema sin diagnósticos.**
+**Fase actual: v0.35 — valor manual por pregunta en tareas y ejercicios.**
 
 - Frontend: Next.js + TypeScript + CSS.
 - Publicación: GitHub Pages.
 - Backend, Auth, Storage y datos: Supabase.
 - El proyecto no depende de APIs de IA de pago.
 
-La base incluye registro, perfiles, Carné Nexora, roles, cursos, solicitudes e inscripciones, clases, tablas dentro de clases, clases guardadas por estudiante, tareas, ejercicios, preguntas configurables, archivos privados, intentos persistentes, confirmaciones de lectura/revisión, revisión y calificación manual, presencia en línea, Formación esencial anual, PMA, etapas, niveles, bloques, historial académico y ascenso automático.
+La base incluye registro, perfiles, Carné Nexora, roles, cursos, solicitudes e inscripciones, clases, tablas dentro de clases, clases guardadas por estudiante, tareas, ejercicios, preguntas configurables con valor manual, archivos privados, intentos persistentes, confirmaciones de lectura/revisión, revisión y calificación manual, presencia en línea, Formación esencial anual, PMA, etapas, niveles, bloques, historial académico y ascenso automático.
 
 ## 🧭 Navegación
 
@@ -84,6 +84,8 @@ Las actividades disponibles son:
 - ✏️ Ejercicio práctico
 
 Una actividad puede configurar curso, destinatarios, título, bloque, punteo, intentos, apertura, cierre, cronómetro, instrucciones, preguntas y estado Borrador/Publicada.
+
+Desde **v0.35**, cada pregunta puede tener un **valor manual en puntos**. El profesor decide el valor de cada inciso desde el constructor. Al publicar, Supabase valida que todas las preguntas tengan un valor entero entre 0 y 100 y que la suma coincida con el punteo total de la tarea. En ejercicios prácticos, la suma debe ser exactamente 100. Los valores aparecen en la hoja del estudiante y también durante la revisión del profesor. La calificación final continúa siendo manual.
 
 Desde **v0.34.1**, la edición de clases vuelve a cargar correctamente los estudiantes específicos asignados. Las tareas y ejercicios se guardan mediante una sola operación atómica en Supabase: datos principales, preguntas, respuestas correctas y destinatarios se confirman juntos. Si algo falla, Nexora no deja un guardado parcial y muestra el error antes de limpiar el editor.
 
@@ -208,7 +210,7 @@ Cada sesión autenticada actualiza `user_presence`. Nexora distingue:
 - RLS protege perfiles, cursos, solicitudes, inscripciones, clases, marcadores, actividades, intentos, confirmaciones, historial y archivos.
 - El estudiante solo recibe contenido publicado que le corresponde.
 - Crear, guardar y entregar intentos pasa por funciones de servidor.
-- El guardado completo de una actividad pasa por un RPC que valida autenticación, rol, propiedad, curso, destinatarios y configuración antes de confirmar los cambios.
+- El guardado completo de una actividad pasa por un RPC que valida autenticación, rol, propiedad, curso, destinatarios, configuración y distribución de puntos antes de confirmar los cambios.
 - PMA valida servidor a servidor su relación con la tarea original.
 - El historial académico no admite escritura directa del estudiante.
 - El acceso visual a Administración no sustituye los controles reales de rol y RLS.
