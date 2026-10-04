@@ -4,12 +4,14 @@
 
 ## 📌 Estado del proyecto
 
-**Fase actual: v0.40 — recordatorios externos con notificaciones push y correo preparado.**
+**Fase actual: v0.40.1 — hotfix de compilación para separar Next.js de las Edge Functions de Supabase.**
 
 - Frontend: Next.js + TypeScript + CSS.
 - Publicación: GitHub Pages.
 - Backend, Auth, Storage y datos: Supabase.
 - El proyecto no depende de APIs de IA de pago.
+
+Desde **v0.40.1**, el `tsconfig.json` excluye `supabase/functions/**/*` del type-check de Next.js. Las Edge Functions siguen desplegándose y ejecutándose en Supabase, pero ya no interfieren con el build estático de GitHub Pages.
 
 La base incluye registro, perfiles, Carné Nexora, roles, cursos, solicitudes e inscripciones, clases, seguimiento de clases nuevas/revisadas, tablas dentro de clases, clases guardadas por estudiante, tareas, ejercicios, Hoja de ejercicios manual, preguntas configurables con valor manual, archivos privados, intentos persistentes, confirmaciones de lectura/revisión, revisión y calificación manual, notificaciones internas y push, presencia en línea, Formación esencial anual, PMA, etapas, niveles, bloques, historial académico y ascenso automático.
 
