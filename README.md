@@ -4,14 +4,14 @@
 
 ## 📌 Estado del proyecto
 
-**Fase actual: v0.31.1 — base académica pública con contenido en hojas navegables y parejas aleatorias.**
+**Fase actual: v0.32 — base académica pública con confirmación de lectura en tareas.**
 
 - Frontend: Next.js + TypeScript + CSS.
 - Publicación: GitHub Pages.
 - Backend, Auth, Storage y datos: Supabase.
 - El proyecto no depende de APIs de IA de pago.
 
-La base incluye registro, perfiles, Carné Nexora, roles, cursos, solicitudes e inscripciones, diagnósticos, clases, tablas dentro de clases, clases guardadas por estudiante, tareas, ejercicios, preguntas configurables, archivos privados, intentos persistentes, revisión y calificación manual, presencia en línea, Formación esencial, PMA, etapas, niveles, bloques, historial académico y ascenso automático.
+La base incluye registro, perfiles, Carné Nexora, roles, cursos, solicitudes e inscripciones, diagnósticos, clases, tablas dentro de clases, clases guardadas por estudiante, tareas, ejercicios, preguntas configurables, archivos privados, intentos persistentes, confirmaciones de lectura, revisión y calificación manual, presencia en línea, Formación esencial, PMA, etapas, niveles, bloques, historial académico y ascenso automático.
 
 ## 🧭 Navegación
 
@@ -76,6 +76,8 @@ Las actividades disponibles son:
 - ✏️ Ejercicio práctico
 
 Una actividad puede configurar curso, destinatarios, título, bloque, punteo, intentos, apertura, cierre, cronómetro, instrucciones, preguntas y estado Borrador/Publicada.
+
+Desde v0.32, cada tarea incluye una **confirmación de lectura** al final. Las tareas de cuaderno muestran **✅ Enterado** y las tareas virtuales muestran **✅ Revisado**. Al pulsarlo, Nexora guarda por estudiante la fecha y hora de la confirmación. Esta acción no entrega la tarea, no modifica intentos y no afecta la calificación.
 
 Los ejercicios prácticos se califican sobre 100 como retroalimentación, pero no afectan el promedio académico.
 
@@ -202,11 +204,13 @@ Durante los primeros 365 días se asignan automáticamente:
 
 ## 🔐 Seguridad
 
-- RLS protege perfiles, cursos, solicitudes, inscripciones, clases, marcadores personales, actividades, intentos, historial y archivos.
+- RLS protege perfiles, cursos, solicitudes, inscripciones, clases, marcadores personales, actividades, intentos, confirmaciones de lectura, historial y archivos.
 - El estudiante solo recibe contenido publicado que le corresponde.
+- Cada usuario solo puede leer sus propias confirmaciones de lectura; profesor y administración pueden consultarlas.
 - Cada usuario solo puede leer, crear y quitar sus propios marcadores de clases.
 - Las claves correctas no se exponen al navegador del estudiante.
 - Crear, guardar y entregar intentos pasa por funciones de servidor.
+- Confirmar una tarea pasa por una función de servidor que valida autenticación, curso, nivel y asignación.
 - PMA valida servidor a servidor su relación con la tarea original.
 - El historial académico no admite escritura directa del estudiante.
 - Los RPC académicos públicos usan wrappers `SECURITY INVOKER`; las operaciones privilegiadas permanecen en funciones privadas con comprobaciones explícitas de autenticación y roles.
@@ -226,6 +230,7 @@ Durante los primeros 365 días se asignan automáticamente:
 - `course_activity_assignments`
 - `activity_attempts`
 - `activity_attempt_attachments`
+- `activity_acknowledgements`
 - `academic_level_history`
 - `admin_notifications`
 - tablas de diagnóstico
