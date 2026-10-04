@@ -39,7 +39,12 @@ type BlockSummary = {
   grades: BestGrade[];
 };
 
-type StudentCourseGradesProps = { courseId: string; courseName: string; courseIcon?: string };
+type StudentCourseGradesProps = {
+  courseId: string;
+  courseName: string;
+  courseIcon?: string;
+  isEssentialCourse?: boolean;
+};
 
 function numberValue(value: number | string | null | undefined) {
   const parsed = Number(value);
@@ -54,7 +59,12 @@ function formatDate(value: string | null) {
   return new Intl.DateTimeFormat("es-GT", { day: "2-digit", month: "short", year: "numeric" }).format(new Date(value));
 }
 
-export default function StudentCourseGrades({ courseId, courseName, courseIcon = "📚" }: StudentCourseGradesProps) {
+export default function StudentCourseGrades({
+  courseId,
+  courseName,
+  courseIcon = "📚",
+  isEssentialCourse = false,
+}: StudentCourseGradesProps) {
   const [grades, setGrades] = useState<BestGrade[]>([]);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -73,28 +83,40 @@ export default function StudentCourseGrades({ courseId, courseName, courseIcon =
         .single();
       if (profileError) throw profileError;
 
-      const { data: activityData, error: activityError } = await supabase
+      let activityQuery = supabase
         .from("course_activities")
         .select("id, title, activity_type, points, block_number, pma_source_activity_id")
         .eq("course_id", courseId)
-        .eq("academic_stage", profile.stage)
-        .eq("academic_level", profile.level)
         .neq("activity_type", "practice")
         .not("points", "is", null);
+
+      if (!isEssentialCourse) {
+        activityQuery = activityQuery
+          .eq("academic_stage", profile.stage)
+          .eq("academic_level", profile.level);
+      }
+
+      const { data: activityData, error: activityError } = await activityQuery;
       if (activityError) throw activityError;
 
       const activities = (activityData ?? []) as Activity[];
       const activityIds = activities.map((activity) => activity.id);
       if (activityIds.length === 0) { if (!cancelled) { setGrades([]); setReady(true); } return; }
 
-      const { data: attemptData, error: attemptError } = await supabase
+      let attemptQuery = supabase
         .from("activity_attempts")
         .select("id, activity_id, attempt_number, grade_value, grade_max, reviewer_name, reviewed_at")
         .eq("user_id", session.user.id)
-        .eq("stage_snapshot", profile.stage)
-        .eq("level_snapshot", profile.level)
         .in("activity_id", activityIds)
         .not("reviewed_at", "is", null);
+
+      if (!isEssentialCourse) {
+        attemptQuery = attemptQuery
+          .eq("stage_snapshot", profile.stage)
+          .eq("level_snapshot", profile.level);
+      }
+
+      const { data: attemptData, error: attemptError } = await attemptQuery;
       if (attemptError) throw attemptError;
 
       const activityMap = new Map(activities.map((activity) => [activity.id, activity]));
@@ -124,7 +146,7 @@ export default function StudentCourseGrades({ courseId, courseName, courseIcon =
       setReady(true);
     });
     return () => { cancelled = true; };
-  }, [courseId]);
+  }, [courseId, isEssentialCourse]);
 
   const blocks = useMemo<BlockSummary[]>(() => [1, 2, 3, 4].map((blockNumber) => {
     const blockGrades = grades.filter((grade) => grade.activity.block_number === blockNumber);
@@ -145,10 +167,14 @@ export default function StudentCourseGrades({ courseId, courseName, courseIcon =
         <div>
           <p className="eyebrow">{courseIcon} {courseName}</p>
           <h2>📊 Calificaciones</h2>
-          <p className="muted-copy">Cada bloque cierra con 100 puntos. Si existe PMA, se compara con la tarea original y solo cuenta la nota más alta.</p>
+          <p className="muted-copy">
+            {isEssentialCourse
+              ? "Esta área aporta 100 puntos por bloque y 400 puntos en tu único año de Formación esencial. Las notas se conservan aunque cambies de nivel."
+              : "Cada bloque cierra con 100 puntos. Si existe PMA, se compara con la tarea original y solo cuenta la nota más alta."}
+          </p>
         </div>
         <div className={styles.averageBox}>
-          <span>Nota final</span>
+          <span>{isEssentialCourse ? "Nota del área" : "Nota final"}</span>
           <strong>{finalGrade === null ? "—" : `${finalGrade}/100`}</strong>
           <small>{completedBlocks}/4 bloques con 100 puntos calificados</small>
         </div>
@@ -166,7 +192,7 @@ export default function StudentCourseGrades({ courseId, courseName, courseIcon =
 
       <section className={styles.detailPanel}>
         <div className="section-heading"><div><p className="eyebrow">Detalle del curso</p><h2>📝 Tareas calificadas</h2><p className="muted-copy">Los ejercicios prácticos no modifican el promedio académico.</p></div></div>
-        {sortedGrades.length === 0 ? <div className="empty-state">Todavía no tienes tareas calificadas en este curso y nivel.</div> : (
+        {sortedGrades.length === 0 ? <div className="empty-state">{isEssentialCourse ? "Todavía no tienes tareas calificadas en esta área esencial." : "Todavía no tienes tareas calificadas en este curso y nivel."}</div> : (
           <div className={styles.gradeList}>
             {sortedGrades.map((grade) => {
               const usedPma = Boolean(grade.attemptActivity.pma_source_activity_id);
