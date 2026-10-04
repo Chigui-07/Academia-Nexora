@@ -38,7 +38,6 @@ function CourseCards({ items }: { items: Enrollment[] }) {
       {items.map((enrollment) => {
         const course = enrollment.courses;
         if (!course) return null;
-        const requiredUntil = formatRequiredUntil(enrollment.required_until);
 
         return (
           <article className="course-card" key={enrollment.id}>
@@ -46,9 +45,6 @@ function CourseCards({ items }: { items: Enrollment[] }) {
             <p className="eyebrow">{course.category}</p>
             <h3>{course.name}</h3>
             <p>{course.description}</p>
-            {course.is_essential && requiredUntil && (
-              <small>🌱 Obligatorio durante tu primer año · hasta {requiredUntil}</small>
-            )}
             {enrollment.starting_level && (
               <small>📍 Inicio recomendado: Nivel {enrollment.starting_level}{enrollment.starting_title ? ` · ${enrollment.starting_title}` : ""}</small>
             )}
@@ -63,6 +59,31 @@ function CourseCards({ items }: { items: Enrollment[] }) {
         );
       })}
     </section>
+  );
+}
+
+function EssentialSubjectCard({ items }: { items: Enrollment[] }) {
+  const requiredDates = items
+    .map((item) => item.required_until)
+    .filter((value): value is string => Boolean(value))
+    .sort();
+  const requiredUntil = formatRequiredUntil(requiredDates.at(-1) ?? null);
+
+  return (
+    <article className="course-card" style={{ maxWidth: 720 }}>
+      <div className="course-icon">🌱</div>
+      <p className="eyebrow">Materia obligatoria · primer año</p>
+      <h3>Formación esencial</h3>
+      <p>
+        Una sola materia anual que reúne escritura clara, comprensión lectora, ortografía y redacción,
+        cálculo mental, lógica y hábitos de estudio.
+      </p>
+      <small><strong>🏆 2400 pts anuales</strong> · 600 pts por bloque · 400 pts por cada una de sus 6 áreas.</small>
+      {requiredUntil && <small>🌱 Obligatoria hasta {requiredUntil}</small>}
+      <button className="primary-button" type="button" onClick={() => goTo("/course/?course=essential-overview")}>
+        Entrar a Formación esencial
+      </button>
+    </article>
   );
 }
 
@@ -125,10 +146,10 @@ export default function EnrolledCourses() {
             <div>
               <p className="eyebrow">Primeros 365 días</p>
               <h2>🌱 Formación esencial</h2>
-              <p className="muted-copy">Son cursos breves y obligatorios durante tu primer año. Después podrás decidir cuáles quieres seguir practicando.</p>
+              <p className="muted-copy">Las seis áreas obligatorias ahora se presentan como una sola materia anual.</p>
             </div>
           </div>
-          <CourseCards items={essential} />
+          <EssentialSubjectCard items={essential} />
         </section>
       )}
 
