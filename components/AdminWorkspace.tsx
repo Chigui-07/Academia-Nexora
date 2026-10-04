@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import AcademicContentManager from "./AcademicContentManager";
+import ActivityRemovalManager from "./ActivityRemovalManager";
 import AdminCourseManager from "./AdminCourseManager";
 import AdminCourseRequests from "./AdminCourseRequests";
 import AdminEnrollmentManager from "./AdminEnrollmentManager";
@@ -14,7 +15,7 @@ import styles from "./AdminWorkspace.module.css";
 type AdminSection = "activities" | "lessons" | "courses" | "students" | "requests" | "academic";
 
 const sections: Array<{ id: AdminSection; title: string; description: string }> = [
-  { id: "activities", title: "📝 Tareas y ejercicios", description: "Crea tareas de cuaderno, tareas virtuales, ejercicios prácticos y administra sus archivos." },
+  { id: "activities", title: "📝 Tareas y ejercicios", description: "Crea tareas de cuaderno, tareas virtuales, ejercicios prácticos, administra sus archivos y elimina contenido que ya no uses." },
   { id: "lessons", title: "📖 Clases", description: "Crea, edita y publica clases para tus materias." },
   { id: "courses", title: "📚 Cursos", description: "Administra el catálogo de materias de Academia Nexora." },
   { id: "students", title: "👥 Alumnos", description: "Asigna cursos y revisa las entregas de cada estudiante." },
@@ -73,6 +74,7 @@ export default function AdminWorkspace() {
           {activeSection === "activities" && (
             <>
               <TeacherActivityManager />
+              <ActivityRemovalManager />
               <TeacherTaskSubmissionOptions />
               <TeacherTaskFileManager />
             </>
