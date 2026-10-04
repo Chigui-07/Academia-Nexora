@@ -337,7 +337,7 @@ export default function CoursePage() {
           <article className="panel" style={{ marginBottom: 18 }}>
             <p className="eyebrow">Puntos por práctica realizada</p>
             <h2>📄 Hoja de ejercicios</h2>
-            <p className="muted-copy">Marca los ejercicios que realmente realizaste. La hoja se crea y actualiza automáticamente con los ejercicios publicados del bloque, vale hasta 10 puntos académicos y el profesor asigna la nota manualmente.</p>
+            <p className="muted-copy">Cuando tu profesor cree una Hoja de ejercicios para esta materia y bloque, aquí podrás marcar los ejercicios que realizaste. La hoja vale hasta 10 puntos académicos y la nota la asigna manualmente el profesor.</p>
           </article>
           <StudentExerciseSheetList
             courseId={course.id}
