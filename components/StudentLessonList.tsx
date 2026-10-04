@@ -96,10 +96,17 @@ export default function StudentLessonList({
       if (bookmarkError) throw bookmarkError;
       if (courseError) throw courseError;
 
-      setLessons((lessonData ?? []) as Lesson[]);
+      const loadedLessons = (lessonData ?? []) as Lesson[];
+      const requestedLessonId = new URLSearchParams(window.location.search).get("lesson");
+
+      setLessons(loadedLessons);
       setSavedLessonIds((bookmarkData ?? []).map((row: { lesson_id: string }) => row.lesson_id));
       setCourseKey(courseData?.course_key ?? "");
-      setSelectedId(null);
+      setSelectedId(
+        requestedLessonId && loadedLessons.some((lesson) => lesson.id === requestedLessonId)
+          ? requestedLessonId
+          : null,
+      );
       setReady(true);
     }
 
@@ -108,6 +115,33 @@ export default function StudentLessonList({
       setReady(true);
     });
   }, [courseId, isEssentialCourse]);
+
+  useEffect(() => {
+    if (!userId || !selectedId || !lessons.some((lesson) => lesson.id === selectedId)) return;
+    let cancelled = false;
+
+    async function markReviewed() {
+      const { error: viewError } = await supabase
+        .from("lesson_views")
+        .upsert(
+          {
+            user_id: userId,
+            lesson_id: selectedId,
+            reviewed_at: new Date().toISOString(),
+          },
+          { onConflict: "user_id,lesson_id" },
+        );
+
+      if (viewError && !cancelled) {
+        setError("La clase se abrió, pero no se pudo marcar como revisada.");
+      }
+    }
+
+    void markReviewed();
+    return () => {
+      cancelled = true;
+    };
+  }, [lessons, selectedId, userId]);
 
   const savedSet = useMemo(() => new Set(savedLessonIds), [savedLessonIds]);
   const visibleLessons = useMemo(
