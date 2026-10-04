@@ -12,7 +12,7 @@ type ActivityStatus = "draft" | "published";
 type AssignmentMode = "course" | "selected";
 
 type Course = { id: string; name: string; icon: string };
-type CourseStudent = { user_id: string; display_name: string; student_code: string };
+type CourseStudent = { user_id: string; display_name: string; student_code: string | null };
 
 type Activity = {
   id: string;
@@ -46,8 +46,23 @@ function toLocalInput(value: string | null) {
   return local.toISOString().slice(0, 16);
 }
 
+function errorMessage(error: unknown) {
+  const message = error instanceof Error
+    ? error.message
+    : typeof error === "object" && error && "message" in error
+      ? String((error as { message?: unknown }).message ?? "")
+      : "";
+
+  if (message.includes("Activity not found or not editable")) return "No tienes permiso para editar esta actividad.";
+  if (message.includes("Select at least one student")) return "Selecciona al menos un estudiante.";
+  if (message.includes("Every selected user must be actively enrolled")) return "Uno de los estudiantes seleccionados ya no está inscrito en el curso.";
+  if (message.includes("Activity points must")) return "El punteo debe estar entre 0 y 100.";
+  if (message.includes("Invalid activity dates")) return "La fecha de cierre debe ser posterior a la fecha de apertura.";
+  return message || "No se pudo guardar la actividad.";
+}
+
 export default function TeacherActivityManager() {
-  const [isTeacher, setIsTeacher] = useState(false);
+  const [canManage, setCanManage] = useState(false);
   const [ready, setReady] = useState(false);
   const [courses, setCourses] = useState<Course[]>([]);
   const [activities, setActivities] = useState<Activity[]>([]);
@@ -81,11 +96,15 @@ export default function TeacherActivityManager() {
     const session = sessionData.session;
     if (!session) return;
 
-    const { data: roleData } = await supabase.from("user_roles").select("role").eq("user_id", session.user.id);
-    const teacher = (roleData ?? []).some((row) => row.role === "teacher");
-    setIsTeacher(teacher);
+    const { data: roleData, error: roleError } = await supabase
+      .from("user_roles")
+      .select("role")
+      .eq("user_id", session.user.id);
+    if (roleError) throw roleError;
 
-    if (!teacher) {
+    const allowed = (roleData ?? []).some((row) => row.role === "teacher" || row.role === "admin");
+    setCanManage(allowed);
+    if (!allowed) {
       setReady(true);
       return;
     }
@@ -109,14 +128,14 @@ export default function TeacherActivityManager() {
   }
 
   useEffect(() => {
-    loadData().catch((caughtError) => {
-      setError(caughtError instanceof Error ? caughtError.message : "No se pudo cargar el panel del profesor.");
+    void loadData().catch((caughtError) => {
+      setError(errorMessage(caughtError));
       setReady(true);
     });
   }, []);
 
   useEffect(() => {
-    if (!isTeacher || !courseId) {
+    if (!canManage || !courseId) {
       setCourseStudents([]);
       return;
     }
@@ -140,7 +159,7 @@ export default function TeacherActivityManager() {
 
     void loadStudents();
     return () => { cancelled = true; };
-  }, [isTeacher, courseId]);
+  }, [canManage, courseId]);
 
   function resetForm() {
     setEditingId(null);
@@ -164,7 +183,9 @@ export default function TeacherActivityManager() {
   }
 
   function toggleStudent(userId: string) {
-    setSelectedUserIds((current) => current.includes(userId) ? current.filter((id) => id !== userId) : [...current, userId]);
+    setSelectedUserIds((current) => current.includes(userId)
+      ? current.filter((id) => id !== userId)
+      : [...current, userId]);
   }
 
   async function editActivity(activity: Activity) {
@@ -191,17 +212,12 @@ export default function TeacherActivityManager() {
       supabase.rpc("get_course_activity_assignments", { p_activity_id: activity.id }),
     ]);
 
-    if (keyResponse.error) {
+    if (keyResponse.error || assignmentResponse.error) {
       setAnswerKey({});
-      setError("La actividad abrió, pero no se pudo cargar su clave de respuestas.");
+      setSelectedUserIds([]);
+      setError("La actividad se abrió, pero faltó cargar información necesaria para editarla. Recarga la página e inténtalo de nuevo.");
     } else {
       setAnswerKey((keyResponse.data ?? {}) as ActivityAnswerKey);
-    }
-
-    if (assignmentResponse.error) {
-      setSelectedUserIds([]);
-      setError("La actividad abrió, pero no se pudo cargar a quién está asignada.");
-    } else {
       setSelectedUserIds((assignmentResponse.data ?? []) as string[]);
     }
 
@@ -212,7 +228,6 @@ export default function TeacherActivityManager() {
     if (status !== "published") return;
     for (const [index, question] of questions.entries()) {
       if (!question.prompt.trim()) throw new Error(`Escribe el enunciado de la pregunta ${index + 1}.`);
-
       if (question.type === "single_choice" || question.type === "multiple_choice") {
         const options = question.options ?? [];
         if (options.length < 2 || options.some((option) => !option.label.trim())) {
@@ -239,33 +254,26 @@ export default function TeacherActivityManager() {
 
     try {
       const { data: sessionData } = await supabase.auth.getSession();
-      const session = sessionData.session;
-      if (!session) throw new Error("Tu sesión terminó. Inicia sesión nuevamente.");
+      if (!sessionData.session) throw new Error("Tu sesión terminó. Inicia sesión nuevamente.");
       if (!courseId) throw new Error("Selecciona un curso.");
-      if (!title.trim()) throw new Error("Escribe un título para la actividad.");
+      if (title.trim().length < 2) throw new Error("Escribe un título para la actividad.");
       if (!worksheet.trim() && questions.length === 0) throw new Error("Agrega instrucciones o al menos una pregunta a la actividad.");
       if (assignmentMode === "selected" && selectedUserIds.length === 0) throw new Error("Selecciona al menos un estudiante para esta actividad.");
 
       validatePublishedQuestions();
 
       const pointsValue = activityType === "practice" ? null : Number(points);
-      if (
-        activityType !== "practice" &&
-        (pointsValue === null || !Number.isFinite(pointsValue) || pointsValue < 0 || pointsValue > 100)
-      ) {
+      if (activityType !== "practice" && (!Number.isFinite(pointsValue) || pointsValue! < 0 || pointsValue! > 100)) {
         throw new Error("El punteo debe estar entre 0 y 100.");
       }
-
       const attemptsValue = Number(maxAttempts);
       if (!Number.isInteger(attemptsValue) || attemptsValue < 1 || attemptsValue > 20) {
         throw new Error("Los intentos permitidos deben estar entre 1 y 20.");
       }
-
       const blockValue = Number(blockNumber);
       if (!Number.isInteger(blockValue) || blockValue < 1 || blockValue > 4) {
         throw new Error("Selecciona un bloque entre 1 y 4.");
       }
-
       const timerValue = timeLimit.trim() === "" ? null : Number(timeLimit);
       if (timerValue !== null && (!Number.isInteger(timerValue) || timerValue < 1 || timerValue > 1440)) {
         throw new Error("El cronómetro debe estar entre 1 y 1440 minutos.");
@@ -274,66 +282,46 @@ export default function TeacherActivityManager() {
         throw new Error("La fecha de cierre debe ser posterior a la fecha de apertura.");
       }
 
-      const payload = {
-        course_id: courseId,
-        activity_type: activityType,
-        title: title.trim(),
-        worksheet_content: worksheet,
-        question_blocks: questions,
-        points: pointsValue,
-        block_number: blockValue,
-        max_attempts: attemptsValue,
-        opens_at: opensAt ? new Date(opensAt).toISOString() : null,
-        closes_at: closesAt ? new Date(closesAt).toISOString() : null,
-        time_limit_minutes: timerValue,
-        assignment_mode: assignmentMode,
-        status,
-      };
+      const { data: savedId, error: saveError } = await supabase.rpc("save_course_activity", {
+        p_activity_id: editingId,
+        p_course_id: courseId,
+        p_activity_type: activityType,
+        p_title: title.trim(),
+        p_worksheet_content: worksheet,
+        p_question_blocks: questions,
+        p_answer_key: answerKey,
+        p_points: pointsValue,
+        p_opens_at: opensAt ? new Date(opensAt).toISOString() : null,
+        p_closes_at: closesAt ? new Date(closesAt).toISOString() : null,
+        p_time_limit_minutes: timerValue,
+        p_max_attempts: attemptsValue,
+        p_block_number: blockValue,
+        p_assignment_mode: assignmentMode,
+        p_status: status,
+        p_user_ids: assignmentMode === "selected" ? selectedUserIds : [],
+      });
+      if (saveError) throw saveError;
+      if (!savedId) throw new Error("Supabase no confirmó el guardado de la actividad.");
 
-      let activityId = editingId;
-      if (editingId) {
-        const { error: updateError } = await supabase.from("course_activities").update(payload).eq("id", editingId);
-        if (updateError) throw updateError;
-      } else {
-        const { data: inserted, error: insertError } = await supabase
-          .from("course_activities")
-          .insert({ ...payload, created_by: session.user.id })
-          .select("id")
-          .single();
-        if (insertError) throw insertError;
-        activityId = inserted.id;
-      }
+      const successText = editingId
+        ? "✅ Cambios guardados correctamente."
+        : status === "published"
+          ? "✅ Actividad publicada correctamente."
+          : "✅ Borrador guardado correctamente.";
 
-      if (!activityId) throw new Error("No se pudo identificar la actividad guardada.");
-
-      const [questionsResponse, assignmentsResponse] = await Promise.all([
-        supabase.rpc("save_course_activity_questions", {
-          p_activity_id: activityId,
-          p_question_blocks: questions,
-          p_answer_key: answerKey,
-        }),
-        supabase.rpc("save_course_activity_assignments", {
-          p_activity_id: activityId,
-          p_assignment_mode: assignmentMode,
-          p_user_ids: assignmentMode === "selected" ? selectedUserIds : [],
-        }),
-      ]);
-      if (questionsResponse.error) throw questionsResponse.error;
-      if (assignmentsResponse.error) throw assignmentsResponse.error;
-
-      setMessage(editingId ? "Actividad actualizada correctamente." : status === "published" ? "Actividad publicada correctamente." : "Borrador guardado correctamente.");
-      resetForm();
-      setMessage(status === "published" ? "Actividad publicada correctamente." : "Actividad guardada correctamente.");
       await loadData();
+      resetForm();
+      setMessage(successText);
     } catch (caughtError) {
-      setError(caughtError instanceof Error ? caughtError.message : "No se pudo guardar la actividad.");
+      setError(errorMessage(caughtError));
+      window.scrollTo({ top: 0, behavior: "smooth" });
     } finally {
       setSaving(false);
     }
   }
 
   if (!ready) return <div className="empty-state">Cargando herramientas del profesor...</div>;
-  if (!isTeacher) return null;
+  if (!canManage) return null;
 
   const previewCourse = courseMap.get(courseId);
   const previewPoints = activityType === "practice" || points.trim() === "" ? null : Number(points);
@@ -350,19 +338,17 @@ export default function TeacherActivityManager() {
         </div>
       </div>
 
-      <form className={styles.builder} onSubmit={handleSubmit}>
+      <form className={styles.builder} onSubmit={handleSubmit} noValidate>
         <div className={styles.settingsPanel}>
           <h3>{editingId ? "Editar actividad" : "Nueva actividad"}</h3>
 
-          <label>
-            Curso
-            <select value={courseId} onChange={(event) => { setCourseId(event.target.value); setSelectedUserIds([]); }} required>
+          <label>Curso
+            <select value={courseId} onChange={(event) => { setCourseId(event.target.value); setSelectedUserIds([]); }}>
               {courses.map((course) => <option key={course.id} value={course.id}>{course.icon} {course.name}</option>)}
             </select>
           </label>
 
-          <label>
-            👥 Asignar a
+          <label>👥 Asignar a
             <select value={assignmentMode} onChange={(event) => {
               const value = event.target.value as AssignmentMode;
               setAssignmentMode(value);
@@ -376,10 +362,7 @@ export default function TeacherActivityManager() {
 
           {assignmentMode === "selected" && (
             <div className={styles.studentPicker}>
-              <div className={styles.studentPickerHeader}>
-                <strong>Estudiantes inscritos</strong>
-                <span>{selectedUserIds.length} seleccionados</span>
-              </div>
+              <div className={styles.studentPickerHeader}><strong>Estudiantes inscritos</strong><span>{selectedUserIds.length} seleccionados</span></div>
               {studentsLoading ? <small>Cargando estudiantes...</small> : courseStudents.length === 0 ? (
                 <small>No hay estudiantes activos inscritos en este curso.</small>
               ) : (
@@ -387,7 +370,7 @@ export default function TeacherActivityManager() {
                   {courseStudents.map((student) => (
                     <label className={styles.studentRow} key={student.user_id}>
                       <input type="checkbox" checked={selectedUserIds.includes(student.user_id)} onChange={() => toggleStudent(student.user_id)} />
-                      <span><strong>{student.display_name}</strong><small>{student.student_code}</small></span>
+                      <span><strong>{student.display_name}</strong><small>{student.student_code ?? "Sin Carné"}</small></span>
                     </label>
                   ))}
                 </div>
@@ -395,17 +378,14 @@ export default function TeacherActivityManager() {
             </div>
           )}
 
-          <label>
-            Tipo
+          <label>Tipo
             <select value={activityType} onChange={(event) => {
               const value = event.target.value as ActivityType;
               setActivityType(value);
               if (value === "practice") {
                 setPoints("");
                 if (maxAttempts === "1") setMaxAttempts("3");
-              } else if (!points) {
-                setPoints("10");
-              }
+              } else if (!points) setPoints("10");
             }}>
               <option value="notebook_task">📝 Tarea de cuaderno</option>
               <option value="virtual_task">💻 Tarea virtual</option>
@@ -413,34 +393,25 @@ export default function TeacherActivityManager() {
             </select>
           </label>
 
-          <label>
-            Título
-            <input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Ej. Práctica de fracciones" maxLength={120} required />
+          <label>Título
+            <input value={title} onChange={(event) => setTitle(event.target.value)} placeholder="Ej. Práctica de fracciones" maxLength={120} />
           </label>
 
           {activityType !== "practice" && (
-            <label>
-              Punteo
-              <input type="number" min="0" max="100" value={points} onChange={(event) => setPoints(event.target.value)} required />
+            <label>Punteo
+              <input type="number" min="0" max="100" value={points} onChange={(event) => setPoints(event.target.value)} />
               <small>Este punteo sí cuenta para Calificaciones y el promedio.</small>
             </label>
           )}
 
-          <label>
-            📊 Bloque académico
+          <label>📊 Bloque académico
             <select value={blockNumber} onChange={(event) => setBlockNumber(event.target.value)}>
-              <option value="1">Bloque 1</option>
-              <option value="2">Bloque 2</option>
-              <option value="3">Bloque 3</option>
-              <option value="4">Bloque 4</option>
+              <option value="1">Bloque 1</option><option value="2">Bloque 2</option><option value="3">Bloque 3</option><option value="4">Bloque 4</option>
             </select>
-            <small>{activityType === "practice" ? "Sirve para organizar el ejercicio; no afecta el promedio." : "La nota aparecerá dentro de este bloque."}</small>
           </label>
 
-          <label>
-            🔁 Intentos permitidos
-            <input type="number" min="1" max="20" value={maxAttempts} onChange={(event) => setMaxAttempts(event.target.value)} required />
-            <small>El estudiante podrá comenzar un nuevo intento hasta alcanzar este número. Para el promedio se conservará su mejor nota.</small>
+          <label>🔁 Intentos permitidos
+            <input type="number" min="1" max="20" value={maxAttempts} onChange={(event) => setMaxAttempts(event.target.value)} />
           </label>
 
           <div className={styles.dateGrid}>
@@ -448,17 +419,13 @@ export default function TeacherActivityManager() {
             <label>Cierre<input type="datetime-local" value={closesAt} onChange={(event) => setClosesAt(event.target.value)} /></label>
           </div>
 
-          <label>
-            ⏱️ Cronómetro en minutos
+          <label>⏱️ Cronómetro en minutos
             <input type="number" min="1" max="1440" value={timeLimit} onChange={(event) => setTimeLimit(event.target.value)} placeholder="Déjalo vacío para no poner límite" />
-            <small>El tiempo comienza de nuevo con cada intento.</small>
           </label>
 
-          <label>
-            Estado
+          <label>Estado
             <select value={status} onChange={(event) => setStatus(event.target.value as ActivityStatus)}>
-              <option value="draft">Borrador</option>
-              <option value="published">Publicada</option>
+              <option value="draft">Borrador</option><option value="published">Publicada</option>
             </select>
           </label>
 
