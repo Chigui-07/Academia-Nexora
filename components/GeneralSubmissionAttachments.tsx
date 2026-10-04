@@ -11,6 +11,12 @@ type Attachment = {
   file_size: number;
 };
 
+type SubmissionConfig = {
+  enabled: boolean;
+  maxFiles: number;
+  instructions: string;
+};
+
 const MAX_FILE_SIZE = 20 * 1024 * 1024;
 
 function safeFileName(name: string) {
@@ -37,6 +43,7 @@ export default function GeneralSubmissionAttachments({
   editable: boolean;
   maxFiles?: number;
 }) {
+  const [config, setConfig] = useState<SubmissionConfig>({ enabled: false, maxFiles, instructions: "" });
   const [attachments, setAttachments] = useState<Attachment[]>([]);
   const [previewUrls, setPreviewUrls] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
@@ -44,7 +51,33 @@ export default function GeneralSubmissionAttachments({
   const [error, setError] = useState<string | null>(null);
   const [message, setMessage] = useState<string | null>(null);
 
-  const remaining = Math.max(0, maxFiles - attachments.length);
+  const effectiveMax = config.maxFiles || maxFiles;
+  const remaining = Math.max(0, effectiveMax - attachments.length);
+
+  async function loadConfig() {
+    const { data: attempt, error: attemptError } = await supabase
+      .from("activity_attempts")
+      .select("activity_id")
+      .eq("id", attemptId)
+      .single();
+    if (attemptError) throw attemptError;
+
+    const { data: activity, error: activityError } = await supabase
+      .from("course_activities")
+      .select("activity_type, allow_attachments, max_attachments, attachment_instructions")
+      .eq("id", attempt.activity_id)
+      .single();
+    if (activityError) throw activityError;
+
+    const enabled = activity.activity_type === "notebook_task" && Boolean(activity.allow_attachments);
+    const nextConfig = {
+      enabled,
+      maxFiles: Number(activity.max_attachments) || maxFiles,
+      instructions: String(activity.attachment_instructions ?? ""),
+    };
+    setConfig(nextConfig);
+    return nextConfig;
+  }
 
   async function loadAttachments() {
     const { data, error: loadError } = await supabase
@@ -69,13 +102,23 @@ export default function GeneralSubmissionAttachments({
   useEffect(() => {
     let cancelled = false;
     setLoading(true);
-    loadAttachments()
+    setError(null);
+
+    (async () => {
+      const loadedConfig = await loadConfig();
+      if (loadedConfig.enabled) await loadAttachments();
+      else {
+        setAttachments([]);
+        setPreviewUrls({});
+      }
+    })()
       .catch((caughtError) => {
-        if (!cancelled) setError(caughtError instanceof Error ? caughtError.message : "No se pudieron cargar las fotos de la tarea.");
+        if (!cancelled) setError(caughtError instanceof Error ? caughtError.message : "No se pudieron cargar las opciones de entrega.");
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
       });
+
     return () => { cancelled = true; };
   }, [attemptId]);
 
@@ -83,6 +126,7 @@ export default function GeneralSubmissionAttachments({
     const files = Array.from(event.target.files ?? []);
     event.target.value = "";
     if (files.length === 0) return;
+    if (!config.enabled) { setError("Esta tarea no tiene habilitada la entrega por archivos."); return; }
     if (!editable) { setError("Este intento ya fue entregado y no puede modificarse."); return; }
     if (files.length > remaining) { setError(`Solo puedes agregar ${remaining} archivo${remaining === 1 ? "" : "s"} más.`); return; }
 
@@ -149,48 +193,49 @@ export default function GeneralSubmissionAttachments({
     setMessage("Archivo eliminado.");
   }
 
+  if (loading) return null;
+  if (!config.enabled) return null;
+
   return (
     <section className="panel" style={{ marginTop: 18 }}>
       <div className="section-heading">
         <div>
           <p className="eyebrow">📷 Evidencia de la tarea escrita</p>
           <h3>Subir la tarea</h3>
-          <p className="muted-copy">Adjunta fotos claras, completas y con buena iluminación de tu trabajo escrito. También puedes subir un PDF si corresponde.</p>
+          <p className="muted-copy">{config.instructions || "Adjunta fotos claras, completas y con buena iluminación de tu trabajo escrito. También puedes subir un PDF si corresponde."}</p>
         </div>
-        <span className="eyebrow">{attachments.length}/{maxFiles} archivos</span>
+        <span className="eyebrow">{attachments.length}/{effectiveMax} archivos</span>
       </div>
 
-      {loading ? <div className="empty-state">Cargando archivos...</div> : (
-        <div style={{ display: "grid", gap: 12 }}>
-          {attachments.length > 0 && (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 10 }}>
-              {attachments.map((item) => (
-                <article className="action-card" key={item.id} style={{ display: "grid", gap: 8 }}>
-                  {previewUrls[item.id] && <img src={previewUrls[item.id]} alt={item.file_name} style={{ width: "100%", maxHeight: 220, objectFit: "cover", borderRadius: 12 }} />}
-                  <strong>{item.file_name}</strong>
-                  <small>{formatBytes(Number(item.file_size))}</small>
-                  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
-                    <button className="secondary-button" type="button" onClick={() => void openAttachment(item)}>Abrir</button>
-                    {editable && <button className="secondary-button" type="button" onClick={() => void removeAttachment(item)}>Eliminar</button>}
-                  </div>
-                </article>
-              ))}
-            </div>
-          )}
+      <div style={{ display: "grid", gap: 12 }}>
+        {attachments.length > 0 && (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(210px, 1fr))", gap: 10 }}>
+            {attachments.map((item) => (
+              <article className="action-card" key={item.id} style={{ display: "grid", gap: 8 }}>
+                {previewUrls[item.id] && <img src={previewUrls[item.id]} alt={item.file_name} style={{ width: "100%", maxHeight: 220, objectFit: "cover", borderRadius: 12 }} />}
+                <strong>{item.file_name}</strong>
+                <small>{formatBytes(Number(item.file_size))}</small>
+                <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+                  <button className="secondary-button" type="button" onClick={() => void openAttachment(item)}>Abrir</button>
+                  {editable && <button className="secondary-button" type="button" onClick={() => void removeAttachment(item)}>Eliminar</button>}
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
 
-          {editable && remaining > 0 && (
-            <label style={{ display: "grid", gap: 6, cursor: "pointer" }}>
-              <span className="secondary-button" style={{ textAlign: "center" }}>{uploading ? "Subiendo..." : "＋ Seleccionar fotos o archivos"}</span>
-              <input type="file" hidden multiple accept="image/*,application/pdf" onChange={handleFiles} disabled={uploading} />
-              <small>Máximo 20 MB por archivo. Puedes agregar {remaining} más.</small>
-            </label>
-          )}
+        {editable && remaining > 0 && (
+          <label style={{ display: "grid", gap: 6, cursor: "pointer" }}>
+            <span className="secondary-button" style={{ textAlign: "center" }}>{uploading ? "Subiendo..." : "＋ Seleccionar fotos o archivos"}</span>
+            <input type="file" hidden multiple accept="image/*,application/pdf" onChange={handleFiles} disabled={uploading} />
+            <small>Máximo 20 MB por archivo. Puedes agregar {remaining} más.</small>
+          </label>
+        )}
 
-          {!editable && attachments.length === 0 && <div className="empty-state">No se adjuntaron fotos o archivos en esta entrega.</div>}
-          {error && <div className="auth-message auth-error">{error}</div>}
-          {message && <div className="auth-message auth-success">{message}</div>}
-        </div>
-      )}
+        {!editable && attachments.length === 0 && <div className="empty-state">No se adjuntaron fotos o archivos en esta entrega.</div>}
+        {error && <div className="auth-message auth-error">{error}</div>}
+        {message && <div className="auth-message auth-success">{message}</div>}
+      </div>
     </section>
   );
 }
