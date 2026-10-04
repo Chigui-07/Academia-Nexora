@@ -1,5 +1,6 @@
 import AcademicStageBadge from "@/components/AcademicStageBadge";
 import AppShell from "@/components/AppShell";
+import DashboardLessonBoard from "@/components/DashboardLessonBoard";
 import DashboardTaskBoard from "@/components/DashboardTaskBoard";
 import DashboardWelcome from "@/components/DashboardWelcome";
 import DashboardStats from "@/components/DashboardStats";
@@ -22,6 +23,17 @@ export default function DashboardPage() {
       <section className="panel" style={{ marginTop: 18 }}>
         <div className="section-heading">
           <div>
+            <p className="eyebrow">Aprendizaje</p>
+            <h2>📖 Tus clases</h2>
+            <p className="muted-copy">Las clases que todavía no has abierto aparecen como nuevas. Cuando entres a una, pasa automáticamente a Revisadas para que puedas volver a consultarla cuando quieras.</p>
+          </div>
+        </div>
+        <DashboardLessonBoard />
+      </section>
+
+      <section className="panel" style={{ marginTop: 18 }}>
+        <div className="section-heading">
+          <div>
             <p className="eyebrow">Organización académica</p>
             <h2>📝 Tus tareas</h2>
             <p className="muted-copy">Pendientes, próximas, entregadas, calificadas y vencidas se separan aquí para que sepas qué atender primero.</p>
@@ -40,7 +52,7 @@ export default function DashboardPage() {
 
         <article className="panel">
           <h2>💡 Prioridad</h2>
-          <p className="muted-copy">Empieza por las tareas de la pestaña Pendientes con la fecha límite más cercana. Las que ya entregaste dejan de contarse como pendientes.</p>
+          <p className="muted-copy">Empieza por las clases nuevas y las tareas de la pestaña Pendientes con la fecha límite más cercana.</p>
         </article>
       </section>
 
