@@ -4,7 +4,7 @@
 
 ## 📌 Estado del proyecto
 
-**Fase actual: v0.34.1 — guardado fiable de clases, tareas y ejercicios.**
+**Fase actual: v0.34.2 — acceso a cursos compatible con el sistema sin diagnósticos.**
 
 - Frontend: Next.js + TypeScript + CSS.
 - Publicación: GitHub Pages.
@@ -54,6 +54,8 @@ Los cursos viven en `courses`. Una inscripción activa vive en `course_enrollmen
 Administración puede crear, editar, activar o desactivar materias, aceptar solicitudes y asignar o retirar cursos directamente. Retirar una materia conserva su historial.
 
 Cada curso dispone de **Resumen, Clases, Tareas, Ejercicios y Calificaciones**.
+
+Desde **v0.34.2**, la pantalla de curso ya no consulta los antiguos campos `starting_level` y `starting_title` que pertenecían al sistema de diagnósticos eliminado. El acceso usa únicamente la inscripción activa y los datos vigentes del curso.
 
 Las seis áreas de Formación esencial permanecen internamente como cursos del sistema para conservar clases, actividades e historial, pero el estudiante las ve agrupadas como **una sola materia anual**.
 

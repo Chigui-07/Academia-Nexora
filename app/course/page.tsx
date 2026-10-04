@@ -22,9 +22,6 @@ type Course = {
 
 type Enrollment = {
   id: string;
-  starting_level: number | null;
-  starting_title: string | null;
-  enrolled_at: string;
   required_until: string | null;
 };
 
@@ -86,7 +83,7 @@ export default function CoursePage() {
       if (courseKey === "essential-overview") {
         const { data, error: essentialError } = await supabase
           .from("course_enrollments")
-          .select("id, starting_level, starting_title, enrolled_at, required_until, courses!inner(id, course_key, name, description, icon, category, is_essential)")
+          .select("id, required_until, courses!inner(id, course_key, name, description, icon, category, is_essential)")
           .eq("user_id", session.user.id)
           .eq("status", "active")
           .eq("courses.is_essential", true)
@@ -122,7 +119,7 @@ export default function CoursePage() {
 
       const { data: enrollmentData, error: enrollmentError } = await supabase
         .from("course_enrollments")
-        .select("id, starting_level, starting_title, enrolled_at, required_until")
+        .select("id, required_until")
         .eq("user_id", session.user.id)
         .eq("course_id", courseData.id)
         .eq("status", "active")
@@ -213,9 +210,6 @@ export default function CoursePage() {
                 <h3>{area.name}</h3>
                 <p>{area.description}</p>
                 <small>🎯 400 pts anuales · 100 pts por bloque</small>
-                {item.starting_level && (
-                  <small>📍 Inicio recomendado: Nivel {item.starting_level}{item.starting_title ? ` · ${item.starting_title}` : ""}</small>
-                )}
                 <button className="primary-button" type="button" onClick={() => goTo(`/course/?course=${encodeURIComponent(area.course_key)}`)}>
                   Entrar al área
                 </button>
@@ -279,13 +273,9 @@ export default function CoursePage() {
       {activeTab === "resumen" && (
         <section className="dashboard-grid">
           <article className="panel">
-            <p className="eyebrow">Tu punto de inicio</p>
-            <h2>{enrollment.starting_level ? `Nivel ${enrollment.starting_level}` : "Por definir"}</h2>
-            <p className="muted-copy">
-              {enrollment.starting_title
-                ? `El diagnóstico recomendó comenzar alrededor de: ${enrollment.starting_title}.`
-                : "Todavía no hay un resultado de diagnóstico asociado. Podremos definir el punto de inicio al preparar tus primeras clases."}
-            </p>
+            <p className="eyebrow">Estado de inscripción</p>
+            <h2>✅ Curso asignado</h2>
+            <p className="muted-copy">Tu inscripción está activa. Desde aquí puedes consultar las clases, tareas, ejercicios y calificaciones disponibles para esta materia.</p>
           </article>
           <article className="panel">
             <p className="eyebrow">Estructura</p>
