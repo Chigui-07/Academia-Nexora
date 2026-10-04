@@ -4,7 +4,7 @@
 
 ## 📌 Estado del proyecto
 
-**Fase actual: v0.37 — Hoja de ejercicios automática con 10 puntos académicos.**
+**Fase actual: v0.37.1 — Hoja de ejercicios automática y limpieza segura de actividades.**
 
 - Frontend: Next.js + TypeScript + CSS.
 - Publicación: GitHub Pages.
@@ -42,6 +42,8 @@ Secciones disponibles:
 - 🎓 Progresión académica
 
 La sección **Tareas y ejercicios** se abre inicialmente para facilitar la creación rápida de actividades y archivos para los alumnos.
+
+Desde **v0.37.1**, esta sección también incluye **🗑️ Eliminar tareas y ejercicios** con filtros por curso y tipo. Las actividades nunca utilizadas pueden borrarse; los ejercicios con intentos pueden archivarse para conservar su historial; y las tareas con entregas quedan protegidas para evitar alterar notas ya registradas. Las Hojas de ejercicios automáticas no se eliminan manualmente.
 
 ## 👤 Cuentas y roles
 
@@ -244,6 +246,7 @@ Cada sesión autenticada actualiza `user_presence`. Nexora distingue:
 - Crear, guardar y entregar intentos pasa por funciones de servidor.
 - La selección de una Hoja de ejercicios se valida contra los ejercicios realmente publicados y asignados al estudiante.
 - El guardado completo de una actividad pasa por un RPC que valida autenticación, rol, propiedad, curso, destinatarios, configuración y distribución de puntos antes de confirmar los cambios.
+- Las eliminaciones de tareas y ejercicios pasan por `remove_course_activity`; el rol autenticado no tiene `DELETE` directo sobre `course_activities`.
 - PMA valida servidor a servidor su relación con la tarea original.
 - El historial académico no admite escritura directa del estudiante.
 - El acceso visual a Administración no sustituye los controles reales de rol y RLS.
