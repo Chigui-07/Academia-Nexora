@@ -2,6 +2,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import ActivityAttachments from "./ActivityAttachments";
+import ActivityMaterials from "./ActivityMaterials";
+import GeneralSubmissionAttachments from "./GeneralSubmissionAttachments";
 import ActivitySheet, { ActivityQuestionReview, ActivitySheetType } from "./ActivitySheet";
 import { ActivityAnswerKey, ActivityAnswerValue, ActivityQuestionBlock, fileAcceptAttribute } from "@/lib/activityQuestions";
 import { supabase } from "@/lib/supabase";
@@ -357,6 +359,7 @@ export default function ActivityRunner({
             </div>
           )}
         </article>
+        <ActivityMaterials activityId={activity.id} />
       </section>
     );
   }
@@ -462,6 +465,8 @@ export default function ActivityRunner({
             activeQuestionIndex={questionCount > 0 ? safeQuestion : null}
           />
 
+          <ActivityMaterials activityId={activity.id} />
+
           {activeQuestion?.type === "file_upload" && (
             <ActivityAttachments
               attemptId={attempt.id}
@@ -495,6 +500,10 @@ export default function ActivityRunner({
                 Siguiente →
               </button>
             </div>
+          )}
+
+          {activity.activity_type === "notebook_task" && atLastQuestion && (
+            <GeneralSubmissionAttachments attemptId={attempt.id} editable={active} maxFiles={5} />
           )}
 
           {(active || canRepeat) && atLastQuestion && (
