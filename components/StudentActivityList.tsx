@@ -24,6 +24,7 @@ type AttemptSummary = {
 
 type StudentActivity = RunnableActivity & {
   acknowledgement_label: "enterado" | "revisado" | null;
+  assignment_mode: "course" | "selected";
 };
 
 type StudentActivityListProps = {
@@ -86,7 +87,7 @@ export default function StudentActivityList({
 
       let query = supabase
         .from("course_activities")
-        .select("id, course_id, activity_type, title, worksheet_content, question_blocks, points, opens_at, closes_at, time_limit_minutes, max_attempts, block_number, acknowledgement_label")
+        .select("id, course_id, activity_type, title, worksheet_content, question_blocks, points, opens_at, closes_at, time_limit_minutes, max_attempts, block_number, acknowledgement_label, assignment_mode")
         .eq("status", "published")
         .in("activity_type", types)
         .order("opens_at", { ascending: true, nullsFirst: true });
@@ -103,8 +104,28 @@ export default function StudentActivityList({
       if (activityError) throw activityError;
 
       const loaded = (data ?? []) as StudentActivity[];
+      const selectedActivityIds = loaded
+        .filter((activity) => activity.assignment_mode === "selected")
+        .map((activity) => activity.id);
+      const assignedActivityIds = new Set<string>();
+
+      if (selectedActivityIds.length > 0) {
+        const { data: assignmentData, error: assignmentError } = await supabase
+          .from("course_activity_assignments")
+          .select("activity_id")
+          .eq("user_id", session.user.id)
+          .in("activity_id", selectedActivityIds);
+
+        if (assignmentError) throw assignmentError;
+        for (const row of assignmentData ?? []) assignedActivityIds.add(row.activity_id);
+      }
+
+      const accessible = loaded.filter((activity) =>
+        activity.assignment_mode === "course" || assignedActivityIds.has(activity.id)
+      );
+
       const now = Date.now();
-      let visible = loaded.filter((activity) => {
+      let visible = accessible.filter((activity) => {
         const opens = activity.opens_at ? new Date(activity.opens_at).getTime() : null;
         const closes = activity.closes_at ? new Date(activity.closes_at).getTime() : null;
         const alreadyOpened = opens === null || opens <= now;
