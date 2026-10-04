@@ -4,11 +4,12 @@ import { useEffect, useState } from "react";
 import AppShell from "@/components/AppShell";
 import StudentActivityList from "@/components/StudentActivityList";
 import StudentCourseGrades from "@/components/StudentCourseGrades";
+import StudentExerciseSheetList from "@/components/StudentExerciseSheetList";
 import StudentLessonList from "@/components/StudentLessonList";
 import { goTo } from "@/lib/navigation";
 import { supabase } from "@/lib/supabase";
 
-type Tab = "resumen" | "clases" | "tareas" | "ejercicios" | "calificaciones";
+type Tab = "resumen" | "clases" | "tareas" | "ejercicios" | "hoja-ejercicios" | "calificaciones";
 
 type Course = {
   id: string;
@@ -34,6 +35,7 @@ const tabs: { key: Tab; label: string }[] = [
   { key: "clases", label: "Clases" },
   { key: "tareas", label: "Tareas" },
   { key: "ejercicios", label: "Ejercicios" },
+  { key: "hoja-ejercicios", label: "Hoja de ejercicios" },
   { key: "calificaciones", label: "Calificaciones" },
 ];
 
@@ -275,7 +277,7 @@ export default function CoursePage() {
           <article className="panel">
             <p className="eyebrow">Estado de inscripción</p>
             <h2>✅ Curso asignado</h2>
-            <p className="muted-copy">Tu inscripción está activa. Desde aquí puedes consultar las clases, tareas, ejercicios y calificaciones disponibles para esta materia.</p>
+            <p className="muted-copy">Tu inscripción está activa. Desde aquí puedes consultar las clases, tareas, ejercicios, hoja de ejercicios y calificaciones disponibles para esta materia.</p>
           </article>
           <article className="panel">
             <p className="eyebrow">Estructura</p>
@@ -326,6 +328,22 @@ export default function CoursePage() {
             selectableCards
             isEssentialCourse={Boolean(course.is_essential)}
             emptyMessage="Todavía no hay ejercicios publicados en este curso."
+          />
+        </>
+      )}
+
+      {activeTab === "hoja-ejercicios" && (
+        <>
+          <article className="panel" style={{ marginBottom: 18 }}>
+            <p className="eyebrow">Puntos por práctica realizada</p>
+            <h2>📄 Hoja de ejercicios</h2>
+            <p className="muted-copy">Marca los ejercicios que realmente realizaste. La hoja se crea y actualiza automáticamente con los ejercicios publicados del bloque, vale hasta 10 puntos académicos y el profesor asigna la nota manualmente.</p>
+          </article>
+          <StudentExerciseSheetList
+            courseId={course.id}
+            courseName={course.name}
+            courseIcon={course.icon}
+            isEssentialCourse={Boolean(course.is_essential)}
           />
         </>
       )}

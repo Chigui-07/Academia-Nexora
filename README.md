@@ -4,14 +4,14 @@
 
 ## 📌 Estado del proyecto
 
-**Fase actual: v0.36 — clases nuevas y revisadas en Inicio.**
+**Fase actual: v0.37 — Hoja de ejercicios automática con 10 puntos académicos.**
 
 - Frontend: Next.js + TypeScript + CSS.
 - Publicación: GitHub Pages.
 - Backend, Auth, Storage y datos: Supabase.
 - El proyecto no depende de APIs de IA de pago.
 
-La base incluye registro, perfiles, Carné Nexora, roles, cursos, solicitudes e inscripciones, clases, seguimiento de clases nuevas/revisadas, tablas dentro de clases, clases guardadas por estudiante, tareas, ejercicios, preguntas configurables con valor manual, archivos privados, intentos persistentes, confirmaciones de lectura/revisión, revisión y calificación manual, presencia en línea, Formación esencial anual, PMA, etapas, niveles, bloques, historial académico y ascenso automático.
+La base incluye registro, perfiles, Carné Nexora, roles, cursos, solicitudes e inscripciones, clases, seguimiento de clases nuevas/revisadas, tablas dentro de clases, clases guardadas por estudiante, tareas, ejercicios, Hoja de ejercicios automática, preguntas configurables con valor manual, archivos privados, intentos persistentes, confirmaciones de lectura/revisión, revisión y calificación manual, presencia en línea, Formación esencial anual, PMA, etapas, niveles, bloques, historial académico y ascenso automático.
 
 ## 🧭 Navegación
 
@@ -55,7 +55,7 @@ Los cursos viven en `courses`. Una inscripción activa vive en `course_enrollmen
 
 Administración puede crear, editar, activar o desactivar materias, aceptar solicitudes y asignar o retirar cursos directamente. Retirar una materia conserva su historial.
 
-Cada curso dispone de **Resumen, Clases, Tareas, Ejercicios y Calificaciones**.
+Cada curso dispone de **Resumen, Clases, Tareas, Ejercicios, Hoja de ejercicios y Calificaciones**.
 
 Desde **v0.34.2**, la pantalla de curso ya no consulta los antiguos campos `starting_level` y `starting_title` que pertenecían al sistema de diagnósticos eliminado. El acceso usa únicamente la inscripción activa y los datos vigentes del curso.
 
@@ -91,6 +91,7 @@ Las actividades disponibles son:
 - 📝 Tarea de cuaderno
 - 💻 Tarea virtual
 - ✏️ Ejercicio práctico
+- 📄 Hoja de ejercicios automática
 
 Una actividad puede configurar curso, destinatarios, título, bloque, punteo, intentos, apertura, cierre, cronómetro, instrucciones, preguntas y estado Borrador/Publicada.
 
@@ -100,7 +101,24 @@ Desde **v0.34.1**, la edición de clases vuelve a cargar correctamente los estud
 
 Las tareas de cuaderno pueden cerrar con **✅ Enterado**. Las tareas virtuales y los ejercicios prácticos pueden cerrar con **✅ Revisado**. La confirmación guarda fecha y hora, pero no entrega la actividad ni modifica la calificación.
 
-Los ejercicios prácticos se califican sobre 100 como retroalimentación, pero no afectan el promedio académico.
+Los ejercicios prácticos se califican sobre 100 como retroalimentación, pero no afectan directamente el promedio académico.
+
+### 📄 Hoja de ejercicios
+
+Desde **v0.37**, Nexora crea y mantiene automáticamente una **Hoja de ejercicios** para cada curso, bloque y nivel que tenga ejercicios prácticos publicados.
+
+- La hoja vale **10 puntos académicos** y sí forma parte de los 100 puntos del bloque.
+- Los ejercicios prácticos continúan calificándose sobre 100 solo como retroalimentación.
+- Los ejercicios publicados aparecen automáticamente como casillas de selección múltiple.
+- El estudiante marca únicamente los ejercicios que realmente realizó.
+- La hoja tiene un solo intento y, una vez entregada, queda pendiente de revisión.
+- El profesor asigna manualmente una calificación entre **0 y 10**; Nexora no calcula la nota por cantidad de casillas marcadas.
+- Si se publica, renombra, mueve de bloque o retira un ejercicio, la hoja se sincroniza automáticamente.
+- Cuando un ejercicio está asignado solo a ciertos estudiantes, la hoja respeta esos destinatarios y cada estudiante ve únicamente los ejercicios que le corresponden.
+- El servidor valida la selección al guardar y entregar para impedir que se registren ejercicios no asignados.
+- La Hoja de ejercicios no admite PMA.
+
+Como esos 10 puntos cuentan dentro del bloque, al existir una Hoja de ejercicios quedan **90 puntos** disponibles para las demás actividades académicas de ese bloque.
 
 ### Tipos de pregunta
 
@@ -127,6 +145,8 @@ Profesor revisa cada pregunta con una de tres decisiones:
 
 Neutral cuenta como decisión tomada. El profesor puede dejar comentarios individuales, retroalimentación general y una nota final manual.
 
+La Hoja de ejercicios usa una revisión neutral automática para su lista de casillas: el profesor solo decide la calificación final de 0 a 10 y puede añadir retroalimentación.
+
 Si una actividad permite varios intentos, Nexora conserva para el promedio el mejor resultado válido.
 
 ## 🏆 Sistema académico
@@ -151,6 +171,8 @@ En materias normales, cada clase y actividad pertenece a una etapa y nivel concr
 
 Cada materia normal tiene 4 bloques por nivel, con exactamente 100 puntos publicados por bloque.
 
+Cuando el bloque tiene ejercicios prácticos publicados, su **Hoja de ejercicios ocupa 10 de esos 100 puntos**.
+
 Formación esencial también usa 4 bloques, pero cada bloque reúne sus 6 áreas:
 
 - 100 puntos por área;
@@ -171,7 +193,7 @@ Administración puede escoger una tarea original y aplicar PMA.
 
 El PMA conserva materia, tipo de actividad, punteo, bloque, etapa, nivel y destinatarios. El profesor escribe ejercicios distintos del mismo tema.
 
-El PMA no agrega puntos nuevos al bloque: original y PMA ocupan el mismo espacio y se conserva el resultado más alto.
+El PMA no agrega puntos nuevos al bloque: original y PMA ocupan el mismo espacio y se conserva el resultado más alto. Las Hojas de ejercicios automáticas no pueden ser actividades PMA.
 
 ## ⬆️ Ascenso automático
 
@@ -204,7 +226,7 @@ Peso anual:
 - 600 puntos por bloque;
 - 2400 puntos durante todo el año.
 
-Las clases, tareas, ejercicios y calificaciones permanecen disponibles durante ese año aunque el estudiante cambie de etapa o nivel. Al cumplirse `required_until`, la materia deja de ser obligatoria y no se vuelve a asignar.
+Las clases, tareas, ejercicios, hojas de ejercicios y calificaciones permanecen disponibles durante ese año aunque el estudiante cambie de etapa o nivel. Al cumplirse `required_until`, la materia deja de ser obligatoria y no se vuelve a asignar.
 
 ## 🟢 Presencia
 
@@ -220,6 +242,7 @@ Cada sesión autenticada actualiza `user_presence`. Nexora distingue:
 - `lesson_views` solo permite a cada estudiante leer, crear y actualizar sus propias marcas de revisión.
 - El estudiante solo recibe contenido publicado que le corresponde.
 - Crear, guardar y entregar intentos pasa por funciones de servidor.
+- La selección de una Hoja de ejercicios se valida contra los ejercicios realmente publicados y asignados al estudiante.
 - El guardado completo de una actividad pasa por un RPC que valida autenticación, rol, propiedad, curso, destinatarios, configuración y distribución de puntos antes de confirmar los cambios.
 - PMA valida servidor a servidor su relación con la tarea original.
 - El historial académico no admite escritura directa del estudiante.
