@@ -4,14 +4,14 @@
 
 ## 📌 Estado del proyecto
 
-**Fase actual: v0.32 — base académica pública con confirmación de lectura en tareas.**
+**Fase actual: v0.32.1 — base académica pública con confirmación de revisión en tareas y ejercicios.**
 
 - Frontend: Next.js + TypeScript + CSS.
 - Publicación: GitHub Pages.
 - Backend, Auth, Storage y datos: Supabase.
 - El proyecto no depende de APIs de IA de pago.
 
-La base incluye registro, perfiles, Carné Nexora, roles, cursos, solicitudes e inscripciones, diagnósticos, clases, tablas dentro de clases, clases guardadas por estudiante, tareas, ejercicios, preguntas configurables, archivos privados, intentos persistentes, confirmaciones de lectura, revisión y calificación manual, presencia en línea, Formación esencial, PMA, etapas, niveles, bloques, historial académico y ascenso automático.
+La base incluye registro, perfiles, Carné Nexora, roles, cursos, solicitudes e inscripciones, diagnósticos, clases, tablas dentro de clases, clases guardadas por estudiante, tareas, ejercicios, preguntas configurables, archivos privados, intentos persistentes, confirmaciones de lectura/revisión, revisión y calificación manual, presencia en línea, Formación esencial, PMA, etapas, niveles, bloques, historial académico y ascenso automático.
 
 ## 🧭 Navegación
 
@@ -77,7 +77,7 @@ Las actividades disponibles son:
 
 Una actividad puede configurar curso, destinatarios, título, bloque, punteo, intentos, apertura, cierre, cronómetro, instrucciones, preguntas y estado Borrador/Publicada.
 
-Desde v0.32, cada tarea incluye una **confirmación de lectura** al final. Las tareas de cuaderno muestran **✅ Enterado** y las tareas virtuales muestran **✅ Revisado**. Al pulsarlo, Nexora guarda por estudiante la fecha y hora de la confirmación. Esta acción no entrega la tarea, no modifica intentos y no afecta la calificación.
+Desde v0.32, cada actividad académica puede cerrar con una **confirmación de lectura o revisión**. Las tareas de cuaderno muestran **✅ Enterado**, mientras que las tareas virtuales y los ejercicios prácticos muestran **✅ Revisado**. Al pulsarlo, Nexora guarda por estudiante la fecha y hora de la confirmación. Esta acción no entrega la actividad, no modifica intentos y no afecta la calificación.
 
 Los ejercicios prácticos se califican sobre 100 como retroalimentación, pero no afectan el promedio académico.
 
@@ -204,13 +204,13 @@ Durante los primeros 365 días se asignan automáticamente:
 
 ## 🔐 Seguridad
 
-- RLS protege perfiles, cursos, solicitudes, inscripciones, clases, marcadores personales, actividades, intentos, confirmaciones de lectura, historial y archivos.
+- RLS protege perfiles, cursos, solicitudes, inscripciones, clases, marcadores personales, actividades, intentos, confirmaciones de lectura/revisión, historial y archivos.
 - El estudiante solo recibe contenido publicado que le corresponde.
-- Cada usuario solo puede leer sus propias confirmaciones de lectura; profesor y administración pueden consultarlas.
+- Cada usuario solo puede leer sus propias confirmaciones; profesor y administración pueden consultarlas.
 - Cada usuario solo puede leer, crear y quitar sus propios marcadores de clases.
 - Las claves correctas no se exponen al navegador del estudiante.
 - Crear, guardar y entregar intentos pasa por funciones de servidor.
-- Confirmar una tarea pasa por una función de servidor que valida autenticación, curso, nivel y asignación.
+- Confirmar una tarea o ejercicio pasa por una función de servidor que valida autenticación, curso, nivel y asignación.
 - PMA valida servidor a servidor su relación con la tarea original.
 - El historial académico no admite escritura directa del estudiante.
 - Los RPC académicos públicos usan wrappers `SECURITY INVOKER`; las operaciones privilegiadas permanecen en funciones privadas con comprobaciones explícitas de autenticación y roles.
